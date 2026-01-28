@@ -35,6 +35,13 @@ public class UserProvisioningService
         {
             existingUser.LastLoginAt = DateTimeOffset.UtcNow;
             await _userRepository.UpdateAsync(existingUser, cancellationToken);
+
+            // Link any unlinked emails to this user (in case emails arrived after user was created)
+            // Include both primary email and any additional addresses
+            var userAddresses = new List<string> { existingUser.Email };
+            userAddresses.AddRange(existingUser.AdditionalAddresses.Select(a => a.Address));
+            await _emailRepository.LinkEmailsToUserAsync(existingUser.Id, userAddresses, cancellationToken);
+
             return existingUser;
         }
 

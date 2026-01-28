@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useAuth } from 'react-oidc-context'
 import { useSmtpCredentials, useCreateSmtpApiKey, useRevokeSmtpApiKey } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,11 +14,20 @@ export const Route = createFileRoute('/smtp-settings')({
 })
 
 function SmtpSettingsPage() {
+  const auth = useAuth()
   const { data: credentials, isLoading } = useSmtpCredentials()
   const createKey = useCreateSmtpApiKey()
   const revokeKey = useRevokeSmtpApiKey()
 
   const [isCreatingKey, setIsCreatingKey] = useState(false)
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    const authority = import.meta.env.VITE_OIDC_AUTHORITY
+    if (authority && !auth.isLoading && !auth.isAuthenticated) {
+      window.location.href = '/login'
+    }
+  }, [auth.isAuthenticated, auth.isLoading])
   const [keyName, setKeyName] = useState('')
   const [createdKey, setCreatedKey] = useState<{ apiKey: string; name: string } | null>(null)
   const [copiedKey, setCopiedKey] = useState(false)

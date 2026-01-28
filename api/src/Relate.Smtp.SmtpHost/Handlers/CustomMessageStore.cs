@@ -6,6 +6,7 @@ using SmtpServer.Storage;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Relate.Smtp.SmtpHost.Handlers;
 
@@ -39,6 +40,7 @@ public class CustomMessageStore : MessageStore
 
             using var scope = _serviceProvider.CreateScope();
             var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
+            var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
             var email = new Email
             {
@@ -53,10 +55,10 @@ public class CustomMessageStore : MessageStore
                 SizeBytes = buffer.Length
             };
 
-            // Add recipients
-            AddRecipients(email, message.To, RecipientType.To);
-            AddRecipients(email, message.Cc, RecipientType.Cc);
-            AddRecipients(email, message.Bcc, RecipientType.Bcc);
+            // Add recipients (and link to users if they exist)
+            await AddRecipientsAsync(email, message.To, RecipientType.To, userRepository, cancellationToken);
+            await AddRecipientsAsync(email, message.Cc, RecipientType.Cc, userRepository, cancellationToken);
+            await AddRecipientsAsync(email, message.Bcc, RecipientType.Bcc, userRepository, cancellationToken);
 
             // Add attachments
             foreach (var attachment in message.Attachments)
@@ -94,10 +96,18 @@ public class CustomMessageStore : MessageStore
         }
     }
 
-    private static void AddRecipients(Email email, InternetAddressList addresses, RecipientType type)
+    private static async Task AddRecipientsAsync(
+        Email email,
+        InternetAddressList addresses,
+        RecipientType type,
+        IUserRepository userRepository,
+        CancellationToken cancellationToken)
     {
         foreach (var address in addresses.Mailboxes)
         {
+            // Try to find a user with this email address
+            var user = await userRepository.GetByEmailAsync(address.Address, cancellationToken);
+
             email.Recipients.Add(new EmailRecipient
             {
                 Id = Guid.NewGuid(),
@@ -105,6 +115,7 @@ public class CustomMessageStore : MessageStore
                 Address = address.Address,
                 DisplayName = address.Name,
                 Type = type,
+                UserId = user?.Id, // Link to user if found, otherwise null
                 IsRead = false
             });
         }

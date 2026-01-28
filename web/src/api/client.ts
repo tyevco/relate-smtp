@@ -8,9 +8,23 @@ export class ApiError extends Error {
 }
 
 async function getAuthHeader(): Promise<Record<string, string>> {
-  // In a real app, get the token from the auth context
-  // For now, return empty headers (dev mode)
-  return {}
+  // Try sessionStorage first (where OIDC stores tokens), then localStorage as fallback
+  const storageKey = Object.keys(sessionStorage).find(key => key.startsWith('oidc.user:'));
+  const token = storageKey ? sessionStorage.getItem(storageKey) : localStorage.getItem('oidc.user');
+
+  if (token) {
+    try {
+      const user = JSON.parse(token);
+      const accessToken = user?.access_token;
+      if (accessToken) {
+        return { Authorization: `Bearer ${accessToken}` };
+      }
+    } catch (error) {
+      console.error('Failed to parse user token:', error);
+    }
+  }
+
+  return {};
 }
 
 export async function apiRequest<T>(

@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useAuth } from 'react-oidc-context'
 import { useProfile, useUpdateProfile, useAddEmailAddress, useRemoveEmailAddress } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/profile')({
 })
 
 function ProfilePage() {
+  const auth = useAuth()
   const { data: profile, isLoading } = useProfile()
   const updateProfile = useUpdateProfile()
   const addAddress = useAddEmailAddress()
@@ -21,6 +23,14 @@ function ProfilePage() {
   const [displayName, setDisplayName] = useState('')
   const [newAddress, setNewAddress] = useState('')
   const [isAddingAddress, setIsAddingAddress] = useState(false)
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    const authority = import.meta.env.VITE_OIDC_AUTHORITY
+    if (authority && !auth.isLoading && !auth.isAuthenticated) {
+      window.location.href = '/login'
+    }
+  }, [auth.isAuthenticated, auth.isLoading])
 
   const handleSaveName = () => {
     updateProfile.mutate({ displayName }, {

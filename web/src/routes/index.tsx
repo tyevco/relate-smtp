@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
+import { useAuth } from 'react-oidc-context'
 import { useEmails, useEmail, useMarkEmailRead, useDeleteEmail } from '@/api/hooks'
 import { EmailList } from '@/components/mail/email-list'
 import { EmailDetailView } from '@/components/mail/email-detail'
@@ -12,13 +13,33 @@ export const Route = createFileRoute('/')({
 })
 
 function InboxPage() {
+  const auth = useAuth()
   const [page, setPage] = useState(1)
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
 
+  // Call all hooks unconditionally at the top
   const { data: emailsData, isLoading, refetch } = useEmails(page)
   const { data: selectedEmail } = useEmail(selectedEmailId || '')
   const markRead = useMarkEmailRead()
   const deleteEmail = useDeleteEmail()
+
+  // Redirect to login if not authenticated (after all hooks are called)
+  useEffect(() => {
+    const authority = import.meta.env.VITE_OIDC_AUTHORITY
+    if (authority && !auth.isLoading && !auth.isAuthenticated) {
+      console.log('🔐 Index: Not authenticated, redirecting to login')
+      window.location.href = '/login'
+    }
+  }, [auth.isAuthenticated, auth.isLoading])
+
+  // Show loading while checking auth
+  if (auth.isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-lg">Loading...</div>
+      </div>
+    )
+  }
 
   const handleSelectEmail = (id: string) => {
     setSelectedEmailId(id)

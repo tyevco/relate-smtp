@@ -33,7 +33,10 @@ public class UserRepository : IUserRepository
         var normalizedEmail = email.ToLowerInvariant();
         return await _context.Users
             .Include(u => u.AdditionalAddresses)
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
+            .FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == normalizedEmail ||
+                u.AdditionalAddresses.Any(a => a.Address.ToLower() == normalizedEmail),
+                cancellationToken);
     }
 
     public async Task<User?> GetByEmailWithApiKeysAsync(string email, CancellationToken cancellationToken = default)
