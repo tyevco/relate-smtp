@@ -43,6 +43,23 @@ public class CustomMessageStore : MessageStore
             var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
             var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
+            // Parse threading headers
+            var inReplyTo = message.InReplyTo;
+            var references = message.References?.ToString();
+
+            // Determine thread ID: use existing thread or create new one
+            Guid? threadId = null;
+            if (!string.IsNullOrEmpty(inReplyTo))
+            {
+                // Try to find parent email by MessageId
+                var parentEmail = await emailRepository.GetByMessageIdAsync(inReplyTo, cancellationToken);
+                if (parentEmail != null)
+                {
+                    // Use parent's thread ID or parent's ID as thread
+                    threadId = parentEmail.ThreadId ?? parentEmail.Id;
+                }
+            }
+
             var email = new Email
             {
                 Id = Guid.NewGuid(),
@@ -53,7 +70,10 @@ public class CustomMessageStore : MessageStore
                 TextBody = message.TextBody,
                 HtmlBody = message.HtmlBody,
                 ReceivedAt = DateTimeOffset.UtcNow,
-                SizeBytes = buffer.Length
+                SizeBytes = buffer.Length,
+                InReplyTo = inReplyTo,
+                References = references,
+                ThreadId = threadId
             };
 
             // Add recipients (and link to users if they exist)

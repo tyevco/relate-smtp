@@ -29,6 +29,23 @@ public class EmailRepository : IEmailRepository
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
+    public async Task<Email?> GetByMessageIdAsync(string messageId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .FirstOrDefaultAsync(e => e.MessageId == messageId, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Email>> GetByThreadIdAsync(Guid threadId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Include(e => e.Recipients)
+            .Include(e => e.Attachments)
+            .Where(e => (e.ThreadId == threadId || e.Id == threadId) &&
+                        e.Recipients.Any(r => r.UserId == userId))
+            .OrderBy(e => e.ReceivedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<Email>> GetByUserIdAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default)
     {
         return await _context.Emails

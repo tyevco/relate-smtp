@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { api } from './client'
-import type { EmailListResponse, EmailDetail, Profile, EmailAddress, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey, Label, CreateLabelRequest, UpdateLabelRequest, EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest } from './types'
+import type { EmailListResponse, EmailDetail, Profile, EmailAddress, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey, Label, CreateLabelRequest, UpdateLabelRequest, EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest, UserPreference, UpdateUserPreferenceRequest } from './types'
 
 // Email hooks
 export function useEmails(page = 1, pageSize = 20) {
@@ -273,5 +273,73 @@ export function useTestFilter(id: string, limit = 10) {
     queryKey: ['filters', 'test', id, limit],
     queryFn: () => api.post<{ matchCount: number; matchedEmailIds: string[] }>(`/filters/${id}/test?limit=${limit}`, {}),
     enabled: false, // Only run when manually triggered
+  })
+}
+
+// Preference hooks
+export function usePreferences() {
+  return useQuery({
+    queryKey: ['preferences'],
+    queryFn: () => api.get<UserPreference>('/preferences'),
+  })
+}
+
+export function useUpdatePreferences() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UpdateUserPreferenceRequest) =>
+      api.put<UserPreference>('/preferences', data),
+    onSuccess: (data) => {
+      queryClient.setQueryData(['preferences'], data)
+    },
+  })
+}
+
+// Infinite scroll hook
+export function useInfiniteEmails(pageSize = 20) {
+  return useInfiniteQuery({
+    queryKey: ['emails', 'infinite', pageSize],
+    queryFn: ({ pageParam = 1 }) =>
+      api.get<EmailListResponse>(`/emails?page=${pageParam}&pageSize=${pageSize}`),
+    getNextPageParam: (lastPage) => {
+      const totalPages = Math.ceil(lastPage.totalCount / lastPage.pageSize)
+      return lastPage.page < totalPages ? lastPage.page + 1 : undefined
+    },
+    initialPageParam: 1,
+  })
+}
+
+// Bulk operations hooks
+export function useBulkMarkRead() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ emailIds, isRead }: { emailIds: string[]; isRead: boolean }) =>
+      api.post<void>('/emails/bulk/mark-read', { emailIds, isRead }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] })
+    },
+  })
+}
+
+export function useBulkDelete() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (emailIds: string[]) =>
+      api.post<void>('/emails/bulk/delete', { emailIds }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['emails'] })
+    },
+  })
+}
+
+// Thread hooks
+export function useThread(threadId: string) {
+  return useQuery({
+    queryKey: ['thread', threadId],
+    queryFn: () => api.get<EmailDetail[]>(`/emails/threads/${threadId}`),
+    enabled: !!threadId,
   })
 }

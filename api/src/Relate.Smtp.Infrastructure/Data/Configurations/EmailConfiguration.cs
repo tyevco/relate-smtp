@@ -25,8 +25,15 @@ public class EmailConfiguration : IEntityTypeConfiguration<Email>
             .HasMaxLength(1000)
             .IsRequired();
 
+        builder.Property(e => e.InReplyTo)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.References)
+            .HasMaxLength(2000);
+
         builder.HasIndex(e => e.MessageId);
         builder.HasIndex(e => e.ReceivedAt);
+        builder.HasIndex(e => e.ThreadId);
 
         builder.HasMany(e => e.Recipients)
             .WithOne(r => r.Email)

@@ -162,3 +162,32 @@ export interface UpdateEmailFilterRequest {
   assignLabelId?: string
   delete?: boolean
 }
+
+export interface UserPreference {
+  id: string
+  userId: string
+  theme: 'light' | 'dark' | 'system'
+  displayDensity: 'compact' | 'comfortable' | 'spacious'
+  emailsPerPage: number
+  defaultSort: string
+  showPreview: boolean
+  groupByDate: boolean
+  desktopNotifications: boolean
+  emailDigest: boolean
+  digestFrequency: 'daily' | 'weekly'
+  digestTime: string
+  updatedAt: string
+}
+
+export interface UpdateUserPreferenceRequest {
+  theme?: 'light' | 'dark' | 'system'
+  displayDensity?: 'compact' | 'comfortable' | 'spacious'
+  emailsPerPage?: number
+  defaultSort?: string
+  showPreview?: boolean
+  groupByDate?: boolean
+  desktopNotifications?: boolean
+  emailDigest?: boolean
+  digestFrequency?: 'daily' | 'weekly'
+  digestTime?: string
+}

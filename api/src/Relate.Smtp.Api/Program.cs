@@ -18,6 +18,10 @@ builder.Services.AddScoped<UserProvisioningService>();
 builder.Services.AddScoped<SmtpCredentialService>();
 builder.Services.AddScoped<EmailFilterService>();
 builder.Services.AddScoped<IEmailNotificationService, SignalREmailNotificationService>();
+builder.Services.AddScoped<PushNotificationService>();
+
+// Configure push notification options
+builder.Services.Configure<PushOptions>(builder.Configuration.GetSection("Push"));
 
 // Configure OIDC/JWT authentication
 var oidcAuthority = builder.Configuration["Oidc:Authority"];

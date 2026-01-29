@@ -1,8 +1,9 @@
 import { format } from 'date-fns'
-import { ArrowLeft, Paperclip, Trash2 } from 'lucide-react'
+import { ArrowLeft, Paperclip, Trash2, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AttachmentPreview } from './attachment-preview'
+import { ExportDialog } from './export-dialog'
 import type { EmailDetail } from '@/api/types'
 
 interface EmailDetailViewProps {
@@ -19,6 +20,14 @@ export function EmailDetailView({ email, onBack, onDelete }: EmailDetailViewProp
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1" />
+        <ExportDialog
+          emailId={email.id}
+          trigger={
+            <Button variant="ghost" size="icon">
+              <Download className="h-4 w-4" />
+            </Button>
+          }
+        />
         <Button variant="ghost" size="icon" onClick={onDelete}>
           <Trash2 className="h-4 w-4" />
         </Button>

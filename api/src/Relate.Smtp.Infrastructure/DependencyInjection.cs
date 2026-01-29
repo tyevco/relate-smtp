@@ -28,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<ILabelRepository, LabelRepository>();
         services.AddScoped<IEmailLabelRepository, EmailLabelRepository>();
         services.AddScoped<IEmailFilterRepository, EmailFilterRepository>();
+        services.AddScoped<IUserPreferenceRepository, UserPreferenceRepository>();
+        services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
 
         return services;
     }

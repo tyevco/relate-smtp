@@ -2,6 +2,7 @@ import { createRootRoute, Link, Outlet, useLocation } from '@tanstack/react-rout
 import { useAuth } from 'react-oidc-context'
 import { Mail, User, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTheme } from '@/hooks/use-theme'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -10,6 +11,7 @@ export const Route = createRootRoute({
 function RootComponent() {
   const auth = useAuth()
   const location = useLocation()
+  useTheme() // Apply theme from user preferences
 
   // Don't show navigation on login/callback pages
   const isAuthPage = location.pathname === '/login' || location.pathname === '/callback'
@@ -48,6 +50,12 @@ function RootComponent() {
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors [&.active]:text-foreground"
                   >
                     SMTP Settings
+                  </Link>
+                  <Link
+                    to="/preferences"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors [&.active]:text-foreground"
+                  >
+                    Preferences
                   </Link>
                 </nav>
               </div>

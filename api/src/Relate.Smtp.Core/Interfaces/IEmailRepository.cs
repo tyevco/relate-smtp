@@ -7,6 +7,8 @@ public interface IEmailRepository
 {
     Task<Email?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Email?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Email?> GetByMessageIdAsync(string messageId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Email>> GetByThreadIdAsync(Guid threadId, Guid userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Email>> GetByUserIdAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default);
     Task<int> GetCountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<int> GetUnreadCountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);

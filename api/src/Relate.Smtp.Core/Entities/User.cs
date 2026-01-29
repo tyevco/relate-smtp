@@ -16,4 +16,5 @@ public class User
     public ICollection<Label> Labels { get; set; } = new List<Label>();
     public ICollection<EmailLabel> EmailLabels { get; set; } = new List<EmailLabel>();
     public ICollection<EmailFilter> EmailFilters { get; set; } = new List<EmailFilter>();
+    public UserPreference? Preference { get; set; }
 }

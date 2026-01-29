@@ -6,6 +6,7 @@ import { useEmails, useEmail, useMarkEmailRead, useDeleteEmail, useSearchEmails,
 import { EmailList } from '@/components/mail/email-list'
 import { EmailDetailView } from '@/components/mail/email-detail'
 import { SearchBar } from '@/components/mail/search-bar'
+import { ExportDialog } from '@/components/mail/export-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
@@ -138,9 +139,12 @@ function InboxPage() {
                 <Badge variant="secondary">{unreadCount} unread</Badge>
               )}
             </div>
-            <Button variant="ghost" size="icon" onClick={() => currentRefetch()}>
-              <RefreshCw className={`h-4 w-4 ${currentLoading ? 'animate-spin' : ''}`} />
-            </Button>
+            <div className="flex items-center gap-1">
+              <ExportDialog />
+              <Button variant="ghost" size="icon" onClick={() => currentRefetch()}>
+                <RefreshCw className={`h-4 w-4 ${currentLoading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
 
           <SearchBar onSearch={handleSearch} initialValue={searchFilters.query} />

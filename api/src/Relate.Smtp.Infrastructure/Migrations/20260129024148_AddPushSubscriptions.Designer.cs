@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Relate.Smtp.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using Relate.Smtp.Infrastructure.Data;
 namespace Relate.Smtp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260129024148_AddPushSubscriptions")]
+    partial class AddPushSubscriptions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
@@ -35,20 +38,12 @@ namespace Relate.Smtp.Infrastructure.Migrations
                     b.Property<string>("HtmlBody")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("InReplyTo")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("MessageId")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("References")
-                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<long>("SizeBytes")
@@ -62,16 +57,11 @@ namespace Relate.Smtp.Infrastructure.Migrations
                     b.Property<string>("TextBody")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ThreadId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.HasIndex("MessageId");
 
                     b.HasIndex("ReceivedAt");
-
-                    b.HasIndex("ThreadId");
 
                     b.ToTable("Emails");
                 });

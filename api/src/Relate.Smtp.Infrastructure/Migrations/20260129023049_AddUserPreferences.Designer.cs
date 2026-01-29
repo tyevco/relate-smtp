@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Relate.Smtp.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using Relate.Smtp.Infrastructure.Data;
 namespace Relate.Smtp.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260129023049_AddUserPreferences")]
+    partial class AddUserPreferences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.2");
@@ -35,20 +38,12 @@ namespace Relate.Smtp.Infrastructure.Migrations
                     b.Property<string>("HtmlBody")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("InReplyTo")
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("MessageId")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset>("ReceivedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("References")
-                        .HasMaxLength(2000)
                         .HasColumnType("TEXT");
 
                     b.Property<long>("SizeBytes")
@@ -62,16 +57,11 @@ namespace Relate.Smtp.Infrastructure.Migrations
                     b.Property<string>("TextBody")
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("ThreadId")
-                        .HasColumnType("TEXT");
-
                     b.HasKey("Id");
 
                     b.HasIndex("MessageId");
 
                     b.HasIndex("ReceivedAt");
-
-                    b.HasIndex("ThreadId");
 
                     b.ToTable("Emails");
                 });
@@ -274,48 +264,6 @@ namespace Relate.Smtp.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Labels");
-                });
-
-            modelBuilder.Entity("Relate.Smtp.Core.Entities.PushSubscription", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("AuthKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Endpoint")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTimeOffset?>("LastUsedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("P256dhKey")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("UserAgent")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PushSubscriptions");
                 });
 
             modelBuilder.Entity("Relate.Smtp.Core.Entities.SmtpApiKey", b =>
@@ -562,17 +510,6 @@ namespace Relate.Smtp.Infrastructure.Migrations
                 {
                     b.HasOne("Relate.Smtp.Core.Entities.User", "User")
                         .WithMany("Labels")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Relate.Smtp.Core.Entities.PushSubscription", b =>
-                {
-                    b.HasOne("Relate.Smtp.Core.Entities.User", "User")
-                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

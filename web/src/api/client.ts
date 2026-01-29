@@ -55,6 +55,14 @@ export async function apiRequest<T>(
 }
 
 export const api = {
+  baseUrl: API_BASE,
+  getHeaders: async () => {
+    const authHeaders = await getAuthHeader()
+    return {
+      'Content-Type': 'application/json',
+      ...authHeaders,
+    }
+  },
   get: <T>(endpoint: string) => apiRequest<T>(endpoint),
   post: <T>(endpoint: string, data: unknown) =>
     apiRequest<T>(endpoint, {

@@ -18,6 +18,8 @@ public class AppDbContext : DbContext
     public DbSet<Label> Labels => Set<Label>();
     public DbSet<EmailLabel> EmailLabels => Set<EmailLabel>();
     public DbSet<EmailFilter> EmailFilters => Set<EmailFilter>();
+    public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

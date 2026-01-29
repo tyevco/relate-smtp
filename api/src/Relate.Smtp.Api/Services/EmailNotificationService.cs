@@ -6,15 +6,19 @@ using Relate.Smtp.Infrastructure.Services;
 namespace Relate.Smtp.Api.Services;
 
 /// <summary>
-/// SignalR implementation of email notification service.
+/// SignalR implementation of email notification service with push notification support.
 /// </summary>
 public class SignalREmailNotificationService : IEmailNotificationService
 {
     private readonly IHubContext<EmailHub> _hubContext;
+    private readonly PushNotificationService _pushNotificationService;
 
-    public SignalREmailNotificationService(IHubContext<EmailHub> hubContext)
+    public SignalREmailNotificationService(
+        IHubContext<EmailHub> hubContext,
+        PushNotificationService pushNotificationService)
     {
         _hubContext = hubContext;
+        _pushNotificationService = pushNotificationService;
     }
 
     public async Task NotifyNewEmailAsync(Guid userId, Email email, CancellationToken ct = default)
@@ -29,9 +33,13 @@ public class SignalREmailNotificationService : IEmailNotificationService
             hasAttachments = email.HasAttachments
         };
 
+        // Send SignalR notification
         await _hubContext.Clients
             .Group($"user_{userId}")
             .SendAsync("NewEmail", emailData, ct);
+
+        // Send push notification
+        await _pushNotificationService.SendNewEmailNotificationAsync(userId, email, ct);
     }
 
     public async Task NotifyEmailUpdatedAsync(Guid userId, Guid emailId, bool isRead, CancellationToken ct = default)
@@ -73,11 +81,18 @@ public class SignalREmailNotificationService : IEmailNotificationService
             hasAttachments = email.HasAttachments
         };
 
-        var tasks = userIds.Select(userId =>
+        var userIdList = userIds.ToList();
+
+        // Send SignalR notifications
+        var signalRTasks = userIdList.Select(userId =>
             _hubContext.Clients
                 .Group($"user_{userId}")
                 .SendAsync("NewEmail", emailData, ct));
 
-        await Task.WhenAll(tasks);
+        // Send push notifications
+        var pushTasks = userIdList.Select(userId =>
+            _pushNotificationService.SendNewEmailNotificationAsync(userId, email, ct));
+
+        await Task.WhenAll(signalRTasks.Concat(pushTasks));
     }
 }

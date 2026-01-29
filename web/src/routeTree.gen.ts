@@ -11,7 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SmtpSettingsRouteImport } from './routes/smtp-settings'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PreferencesRouteImport } from './routes/preferences'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as FiltersRouteImport } from './routes/filters'
 import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -25,9 +27,19 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreferencesRoute = PreferencesRouteImport.update({
+  id: '/preferences',
+  path: '/preferences',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FiltersRoute = FiltersRouteImport.update({
+  id: '/filters',
+  path: '/filters',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CallbackRoute = CallbackRouteImport.update({
@@ -44,14 +56,18 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
+  '/filters': typeof FiltersRoute
   '/login': typeof LoginRoute
+  '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
   '/smtp-settings': typeof SmtpSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
+  '/filters': typeof FiltersRoute
   '/login': typeof LoginRoute
+  '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
   '/smtp-settings': typeof SmtpSettingsRoute
 }
@@ -59,22 +75,48 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
+  '/filters': typeof FiltersRoute
   '/login': typeof LoginRoute
+  '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
   '/smtp-settings': typeof SmtpSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/callback' | '/login' | '/profile' | '/smtp-settings'
+  fullPaths:
+    | '/'
+    | '/callback'
+    | '/filters'
+    | '/login'
+    | '/preferences'
+    | '/profile'
+    | '/smtp-settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/callback' | '/login' | '/profile' | '/smtp-settings'
-  id: '__root__' | '/' | '/callback' | '/login' | '/profile' | '/smtp-settings'
+  to:
+    | '/'
+    | '/callback'
+    | '/filters'
+    | '/login'
+    | '/preferences'
+    | '/profile'
+    | '/smtp-settings'
+  id:
+    | '__root__'
+    | '/'
+    | '/callback'
+    | '/filters'
+    | '/login'
+    | '/preferences'
+    | '/profile'
+    | '/smtp-settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallbackRoute: typeof CallbackRoute
+  FiltersRoute: typeof FiltersRoute
   LoginRoute: typeof LoginRoute
+  PreferencesRoute: typeof PreferencesRoute
   ProfileRoute: typeof ProfileRoute
   SmtpSettingsRoute: typeof SmtpSettingsRoute
 }
@@ -95,11 +137,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preferences': {
+      id: '/preferences'
+      path: '/preferences'
+      fullPath: '/preferences'
+      preLoaderRoute: typeof PreferencesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/filters': {
+      id: '/filters'
+      path: '/filters'
+      fullPath: '/filters'
+      preLoaderRoute: typeof FiltersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/callback': {
@@ -122,7 +178,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallbackRoute: CallbackRoute,
+  FiltersRoute: FiltersRoute,
   LoginRoute: LoginRoute,
+  PreferencesRoute: PreferencesRoute,
   ProfileRoute: ProfileRoute,
   SmtpSettingsRoute: SmtpSettingsRoute,
 }

@@ -12,6 +12,11 @@ public class Email
     public DateTimeOffset ReceivedAt { get; set; }
     public long SizeBytes { get; set; }
 
+    // Threading fields
+    public string? InReplyTo { get; set; }
+    public string? References { get; set; }
+    public Guid? ThreadId { get; set; }
+
     public ICollection<EmailRecipient> Recipients { get; set; } = new List<EmailRecipient>();
     public ICollection<EmailAttachment> Attachments { get; set; } = new List<EmailAttachment>();
     public ICollection<EmailLabel> EmailLabels { get; set; } = new List<EmailLabel>();
