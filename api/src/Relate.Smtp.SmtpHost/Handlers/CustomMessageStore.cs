@@ -43,6 +43,13 @@ public class CustomMessageStore : MessageStore
             var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
             var userRepository = scope.ServiceProvider.GetRequiredService<IUserRepository>();
 
+            // Extract authenticated user ID from session context (set by CustomUserAuthenticator)
+            Guid? sentByUserId = null;
+            if (context.Properties.TryGetValue("AuthenticatedUserId", out var userId))
+            {
+                sentByUserId = (Guid)userId;
+            }
+
             // Parse threading headers
             var inReplyTo = message.InReplyTo;
             var references = message.References?.ToString();
@@ -73,7 +80,8 @@ public class CustomMessageStore : MessageStore
                 SizeBytes = buffer.Length,
                 InReplyTo = inReplyTo,
                 References = references,
-                ThreadId = threadId
+                ThreadId = threadId,
+                SentByUserId = sentByUserId
             };
 
             // Add recipients (and link to users if they exist)

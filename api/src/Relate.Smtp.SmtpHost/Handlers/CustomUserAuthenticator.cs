@@ -71,6 +71,10 @@ public class CustomUserAuthenticator : IUserAuthenticator
             {
                 _logger.LogInformation("SMTP user authenticated: {User} using key: {KeyName}", user, apiKey.Name);
 
+                // Store authenticated user info in session context for later use
+                context.Properties["AuthenticatedUserId"] = dbUser.Id;
+                context.Properties["AuthenticatedEmail"] = normalizedEmail;
+
                 // Update last used timestamp
                 await apiKeyRepository.UpdateLastUsedAsync(apiKey.Id, DateTimeOffset.UtcNow, cancellationToken);
 

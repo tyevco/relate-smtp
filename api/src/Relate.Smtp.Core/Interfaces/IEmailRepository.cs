@@ -18,4 +18,11 @@ public interface IEmailRepository
     Task UpdateAsync(Email email, CancellationToken cancellationToken = default);
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task LinkEmailsToUserAsync(Guid userId, IEnumerable<string> emailAddresses, CancellationToken cancellationToken = default);
+
+    // Sent mail methods
+    Task<IReadOnlyList<Email>> GetSentByUserIdAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default);
+    Task<int> GetSentCountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Email>> GetSentByUserIdAndFromAddressAsync(Guid userId, string fromAddress, int skip, int take, CancellationToken cancellationToken = default);
+    Task<int> GetSentCountByUserIdAndFromAddressAsync(Guid userId, string fromAddress, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> GetDistinctSentFromAddressesByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 }

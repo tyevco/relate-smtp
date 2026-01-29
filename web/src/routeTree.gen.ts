@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SmtpSettingsRouteImport } from './routes/smtp-settings'
+import { Route as SentRouteImport } from './routes/sent'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PreferencesRouteImport } from './routes/preferences'
 import { Route as LoginRouteImport } from './routes/login'
@@ -20,6 +21,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SmtpSettingsRoute = SmtpSettingsRouteImport.update({
   id: '/smtp-settings',
   path: '/smtp-settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SentRoute = SentRouteImport.update({
+  id: '/sent',
+  path: '/sent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
+  '/sent': typeof SentRoute
   '/smtp-settings': typeof SmtpSettingsRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
+  '/sent': typeof SentRoute
   '/smtp-settings': typeof SmtpSettingsRoute
 }
 export interface FileRoutesById {
@@ -79,6 +87,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
+  '/sent': typeof SentRoute
   '/smtp-settings': typeof SmtpSettingsRoute
 }
 export interface FileRouteTypes {
@@ -90,6 +99,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/preferences'
     | '/profile'
+    | '/sent'
     | '/smtp-settings'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -99,6 +109,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/preferences'
     | '/profile'
+    | '/sent'
     | '/smtp-settings'
   id:
     | '__root__'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/preferences'
     | '/profile'
+    | '/sent'
     | '/smtp-settings'
   fileRoutesById: FileRoutesById
 }
@@ -118,6 +130,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PreferencesRoute: typeof PreferencesRoute
   ProfileRoute: typeof ProfileRoute
+  SentRoute: typeof SentRoute
   SmtpSettingsRoute: typeof SmtpSettingsRoute
 }
 
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/smtp-settings'
       fullPath: '/smtp-settings'
       preLoaderRoute: typeof SmtpSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sent': {
+      id: '/sent'
+      path: '/sent'
+      fullPath: '/sent'
+      preLoaderRoute: typeof SentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -182,6 +202,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PreferencesRoute: PreferencesRoute,
   ProfileRoute: ProfileRoute,
+  SentRoute: SentRoute,
   SmtpSettingsRoute: SmtpSettingsRoute,
 }
 export const routeTree = rootRouteImport

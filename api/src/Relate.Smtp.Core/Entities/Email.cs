@@ -17,6 +17,9 @@ public class Email
     public string? References { get; set; }
     public Guid? ThreadId { get; set; }
 
+    // Tracks which user account authenticated to send this email via SMTP
+    public Guid? SentByUserId { get; set; }
+
     public ICollection<EmailRecipient> Recipients { get; set; } = new List<EmailRecipient>();
     public ICollection<EmailAttachment> Attachments { get; set; } = new List<EmailAttachment>();
     public ICollection<EmailLabel> EmailLabels { get; set; } = new List<EmailLabel>();

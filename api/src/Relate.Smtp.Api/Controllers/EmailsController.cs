@@ -413,4 +413,49 @@ public class EmailsController : ControllerBase
 
         return NoContent();
     }
+
+    [HttpGet("sent")]
+    public async Task<ActionResult<EmailListResponse>> GetSentEmails(
+        [FromQuery] string? fromAddress,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
+        var skip = (page - 1) * pageSize;
+
+        IReadOnlyList<Core.Entities.Email> emails;
+        int totalCount;
+
+        if (string.IsNullOrWhiteSpace(fromAddress))
+        {
+            emails = await _emailRepository.GetSentByUserIdAsync(user.Id, skip, pageSize, cancellationToken);
+            totalCount = await _emailRepository.GetSentCountByUserIdAsync(user.Id, cancellationToken);
+        }
+        else
+        {
+            emails = await _emailRepository.GetSentByUserIdAndFromAddressAsync(
+                user.Id, fromAddress, skip, pageSize, cancellationToken);
+            totalCount = await _emailRepository.GetSentCountByUserIdAndFromAddressAsync(
+                user.Id, fromAddress, cancellationToken);
+        }
+
+        var items = emails.Select(e => e.ToListItemDto(user.Id)).ToList();
+
+        return Ok(new EmailListResponse(items, totalCount, 0, page, pageSize));
+    }
+
+    [HttpGet("sent/addresses")]
+    public async Task<ActionResult<IReadOnlyList<string>>> GetSentFromAddresses(
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
+        var addresses = await _emailRepository.GetDistinctSentFromAddressesByUserIdAsync(
+            user.Id, cancellationToken);
+
+        return Ok(addresses);
+    }
 }

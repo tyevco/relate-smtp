@@ -186,4 +186,66 @@ public class EmailRepository : IEmailRepository
 
         await _context.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<Email>> GetSentByUserIdAsync(
+        Guid userId,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Include(e => e.Recipients)
+            .Where(e => e.SentByUserId == userId)
+            .OrderByDescending(e => e.ReceivedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetSentCountByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Where(e => e.SentByUserId == userId)
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Email>> GetSentByUserIdAndFromAddressAsync(
+        Guid userId,
+        string fromAddress,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Include(e => e.Recipients)
+            .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == fromAddress.ToLower())
+            .OrderByDescending(e => e.ReceivedAt)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<int> GetSentCountByUserIdAndFromAddressAsync(
+        Guid userId,
+        string fromAddress,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == fromAddress.ToLower())
+            .CountAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetDistinctSentFromAddressesByUserIdAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Where(e => e.SentByUserId == userId)
+            .Select(e => e.FromAddress)
+            .Distinct()
+            .OrderBy(a => a)
+            .ToListAsync(cancellationToken);
+    }
 }

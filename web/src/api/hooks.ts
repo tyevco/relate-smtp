@@ -343,3 +343,23 @@ export function useThread(threadId: string) {
     enabled: !!threadId,
   })
 }
+
+// Sent mail hooks
+export function useSentEmails(fromAddress?: string, page = 1, pageSize = 20) {
+  const params = new URLSearchParams()
+  params.set('page', page.toString())
+  params.set('pageSize', pageSize.toString())
+  if (fromAddress) params.set('fromAddress', fromAddress)
+
+  return useQuery({
+    queryKey: ['emails', 'sent', fromAddress, page, pageSize],
+    queryFn: () => api.get<EmailListResponse>(`/emails/sent?${params.toString()}`),
+  })
+}
+
+export function useSentFromAddresses() {
+  return useQuery({
+    queryKey: ['emails', 'sent', 'addresses'],
+    queryFn: () => api.get<string[]>('/emails/sent/addresses'),
+  })
+}
