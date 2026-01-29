@@ -9,7 +9,7 @@ A full-stack email server and management system with SMTP, POP3, and REST API ac
 - **REST API** - Full programmatic email access with scoped permissions
 - **Web UI** - Modern React frontend for email management
 - **Scoped API Keys** - Granular permissions: `smtp`, `pop3`, `api:read`, `api:write`
-- **Multi-Database** - PostgreSQL or SQLite (auto-detected from connection string)
+- **PostgreSQL Database** - Production-ready database with full concurrency support
 - **Docker Ready** - Multi-platform images published to GitHub Container Registry
 - **Runtime Configuration** - Deploy once, configure anywhere (no rebuild needed)
 
@@ -49,7 +49,7 @@ All images are published to GitHub Container Registry:
 - **Relate.Smtp.SmtpHost** - SMTP server with API key authentication
 - **Relate.Smtp.Pop3Host** - POP3 server with API key authentication
 - **Relate.Smtp.Core** - Domain entities and interfaces
-- **Relate.Smtp.Infrastructure** - EF Core data access (PostgreSQL or SQLite)
+- **Relate.Smtp.Infrastructure** - EF Core data access with PostgreSQL
 
 ### Frontend (React + TypeScript)
 
@@ -141,13 +141,9 @@ docker compose up -d --build
 
 ### Backend Environment Variables
 
-**Database:**
+**Database (PostgreSQL):**
 ```bash
-# SQLite (default)
-ConnectionStrings__DefaultConnection=Data Source=/data/relate-smtp.db
-
-# PostgreSQL
-ConnectionStrings__DefaultConnection=host=postgres;port=5432;database=relate-smtp;user id=myuser;password=mypass
+ConnectionStrings__DefaultConnection=host=postgres;port=5432;database=relate-smtp;user id=postgres;password=postgres
 ```
 
 **OIDC Authentication (optional):**
@@ -327,17 +323,11 @@ docker compose logs -f web
 ### Database Backup
 
 ```bash
-# Backup SQLite database
-docker run --rm \
-  -v relate-smtp-db-data:/data \
-  -v $(pwd):/backup \
-  alpine tar czf /backup/backup.tar.gz -C /data .
+# Backup PostgreSQL database
+docker exec postgres pg_dump -U postgres relate-smtp > backup.sql
 
 # Restore
-docker run --rm \
-  -v relate-smtp-db-data:/data \
-  -v $(pwd):/backup \
-  alpine tar xzf /backup/backup.tar.gz -C /data
+docker exec -i postgres psql -U postgres relate-smtp < backup.sql
 ```
 
 ### Health Checks
@@ -389,12 +379,16 @@ ports:
   - "2587:587"  # Use different host port
 ```
 
-### Database Locked (SQLite)
+### Database Connection Issues
 
-SQLite doesn't handle high concurrency well. For production, use PostgreSQL:
+Verify PostgreSQL connection:
 
 ```bash
-ConnectionStrings__DefaultConnection=host=postgres;port=5432;database=relate;user id=postgres;password=postgres
+# Test connection
+docker exec postgres psql -U postgres -d relate-smtp -c "SELECT 1;"
+
+# Check logs
+docker logs postgres
 ```
 
 ### Permission Issues
@@ -431,7 +425,7 @@ docker compose logs web
 
 1. **Use version tags** in production (not `latest`)
 2. **Enable OIDC authentication** instead of dev mode
-3. **Use PostgreSQL** for production (better than SQLite)
+3. **Configure PostgreSQL** with proper credentials and SSL
 4. **Set up SSL/TLS** for SMTP/POP3/HTTPS
 5. **Restrict port access** with firewall rules
 6. **Regular backups** of database
@@ -475,7 +469,7 @@ relate-smtp/
 
 **Backend:**
 - .NET 10.0 (ASP.NET Core, Worker Services)
-- Entity Framework Core (PostgreSQL, SQLite)
+- Entity Framework Core with PostgreSQL
 - BCrypt.Net-Next (password hashing)
 - SmtpServer library (SMTP protocol)
 - Custom POP3 implementation (RFC 1939)
