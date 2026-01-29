@@ -29,15 +29,15 @@ jobs:
       matrix:
         include:
           - name: api
-            context: ./api
+            context: .
             dockerfile: ./api/Dockerfile
             target: api
           - name: smtp
-            context: ./api
+            context: .
             dockerfile: ./api/Dockerfile
             target: smtp
           - name: pop3
-            context: ./api
+            context: .
             dockerfile: ./api/Dockerfile
             target: pop3
           - name: web

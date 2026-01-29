@@ -2,18 +2,32 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy csproj files and restore
-COPY src/Relate.Smtp.Core/Relate.Smtp.Core.csproj src/Relate.Smtp.Core/
-COPY src/Relate.Smtp.Infrastructure/Relate.Smtp.Infrastructure.csproj src/Relate.Smtp.Infrastructure/
-COPY src/Relate.Smtp.Api/Relate.Smtp.Api.csproj src/Relate.Smtp.Api/
-COPY src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj src/Relate.Smtp.SmtpHost/
-COPY src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj src/Relate.Smtp.Pop3Host/
-RUN dotnet restore src/Relate.Smtp.Api/Relate.Smtp.Api.csproj
-RUN dotnet restore src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj
-RUN dotnet restore src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj
+# Install Node.js for web frontend build
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy everything and build
-COPY . .
+# Copy csproj files and restore
+COPY api/src/Relate.Smtp.Core/Relate.Smtp.Core.csproj api/src/Relate.Smtp.Core/
+COPY api/src/Relate.Smtp.Infrastructure/Relate.Smtp.Infrastructure.csproj api/src/Relate.Smtp.Infrastructure/
+COPY api/src/Relate.Smtp.Api/Relate.Smtp.Api.csproj api/src/Relate.Smtp.Api/
+COPY api/src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj api/src/Relate.Smtp.SmtpHost/
+COPY api/src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj api/src/Relate.Smtp.Pop3Host/
+RUN dotnet restore api/src/Relate.Smtp.Api/Relate.Smtp.Api.csproj
+RUN dotnet restore api/src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj
+RUN dotnet restore api/src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj
+
+# Copy backend and web sources
+COPY api api/
+COPY web web/
+
+# Build web frontend first
+WORKDIR /src/web
+RUN npm ci && npm run build
+
+# Build backend (API publish will copy web/dist to wwwroot)
+WORKDIR /src/api
 RUN dotnet publish src/Relate.Smtp.Api/Relate.Smtp.Api.csproj -c Release -o /app/api
 RUN dotnet publish src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj -c Release -o /app/smtp
 RUN dotnet publish src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj -c Release -o /app/pop3
