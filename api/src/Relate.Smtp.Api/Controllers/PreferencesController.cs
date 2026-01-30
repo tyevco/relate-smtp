@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Relate.Smtp.Api.Models;
+using Relate.Smtp.Api.Services;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 
@@ -7,21 +9,26 @@ namespace Relate.Smtp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class PreferencesController : ControllerBase
 {
     private readonly IUserPreferenceRepository _preferenceRepository;
+    private readonly UserProvisioningService _userProvisioningService;
 
-    public PreferencesController(IUserPreferenceRepository preferenceRepository)
+    public PreferencesController(
+        IUserPreferenceRepository preferenceRepository,
+        UserProvisioningService userProvisioningService)
     {
         _preferenceRepository = preferenceRepository;
+        _userProvisioningService = userProvisioningService;
     }
 
     [HttpGet]
     public async Task<ActionResult<UserPreferenceDto>> GetPreferences(CancellationToken cancellationToken = default)
     {
-        var userId = GetUserId();
+        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
-        var preference = await _preferenceRepository.GetByUserIdAsync(userId, cancellationToken);
+        var preference = await _preferenceRepository.GetByUserIdAsync(user.Id, cancellationToken);
 
         if (preference == null)
         {
@@ -29,7 +36,7 @@ public class PreferencesController : ControllerBase
             return Ok(new UserPreferenceDto
             {
                 Id = Guid.Empty,
-                UserId = userId,
+                UserId = user.Id,
                 Theme = "system",
                 DisplayDensity = "comfortable",
                 EmailsPerPage = 20,
@@ -52,14 +59,14 @@ public class PreferencesController : ControllerBase
         [FromBody] UpdateUserPreferenceRequest request,
         CancellationToken cancellationToken = default)
     {
-        var userId = GetUserId();
+        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
-        var existing = await _preferenceRepository.GetByUserIdAsync(userId, cancellationToken);
+        var existing = await _preferenceRepository.GetByUserIdAsync(user.Id, cancellationToken);
 
         var preference = existing ?? new UserPreference
         {
             Id = Guid.NewGuid(),
-            UserId = userId
+            UserId = user.Id
         };
 
         // Update only provided fields
@@ -79,18 +86,6 @@ public class PreferencesController : ControllerBase
         var updated = await _preferenceRepository.UpsertAsync(preference, cancellationToken);
 
         return Ok(MapToDto(updated));
-    }
-
-    private Guid GetUserId()
-    {
-        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in token");
-        }
-
-        return userId;
     }
 
     private static UserPreferenceDto MapToDto(UserPreference preference)
