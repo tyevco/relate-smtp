@@ -4,12 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Relate SMTP is a full-stack application that provides SMTP and POP3 email servers with a web-based management interface. The system consists of four main components:
+Relate SMTP is a full-stack application that provides SMTP, POP3, and IMAP email servers with a web-based management interface. The system consists of five main components:
 
 1. **API** (.NET 10.0 ASP.NET Core) - REST API for managing emails and users
 2. **SMTP Server** (.NET 10.0 Worker Service) - Custom SMTP server for receiving emails
 3. **POP3 Server** (.NET 10.0 Worker Service) - Custom POP3 server for retrieving emails
-4. **Web Frontend** (React + TypeScript + Vite) - Email management UI
+4. **IMAP Server** (.NET 10.0 Worker Service) - Custom IMAP4rev2 server for retrieving emails
+5. **Web Frontend** (React + TypeScript + Vite) - Email management UI (bundled with API)
 
 All services share a database for email and user data persistence. Uses PostgreSQL database for production-grade performance and concurrency.
 
@@ -47,6 +48,19 @@ The backend follows Clean Architecture principles with three layers:
   - Custom handlers: `Pop3UserAuthenticator`, `Pop3CommandHandler`, `Pop3MessageManager`
   - Authenticates users with API keys and retrieves emails from database
   - Supports all standard POP3 commands (USER, PASS, STAT, LIST, RETR, DELE, UIDL, TOP, etc.)
+
+- **Relate.Smtp.ImapHost** - IMAP server (ports 143, 993)
+  - Custom IMAP4rev2 protocol implementation (RFC 9051)
+  - TCP server with BackgroundService pattern
+  - Custom handlers: `ImapUserAuthenticator`, `ImapCommandHandler`, `ImapMessageManager`
+  - Authenticates users with API keys (requires 'imap' scope)
+  - Supports IMAP4rev2 commands:
+    - Any State: CAPABILITY, NOOP, LOGOUT, ENABLE
+    - Not Authenticated: LOGIN
+    - Authenticated: SELECT, EXAMINE, LIST, STATUS
+    - Selected: FETCH, STORE, SEARCH, EXPUNGE, CLOSE, UNSELECT, UID
+  - Full flag support: \Seen, \Answered, \Flagged, \Deleted, \Draft
+  - 30-minute session timeout, per-connection state tracking
 
 ### Frontend (React + TypeScript)
 
@@ -94,6 +108,10 @@ dotnet run
 cd src/Relate.Smtp.Pop3Host
 dotnet run
 
+# Run IMAP server (development)
+cd src/Relate.Smtp.ImapHost
+dotnet run
+
 # Database migrations (from api/ directory)
 # Database migrations
 dotnet ef migrations add MigrationName --project src/Relate.Smtp.Infrastructure --startup-project src/Relate.Smtp.Api
@@ -135,10 +153,11 @@ docker compose -f docker/docker-compose.yml up
 docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
 
 # Services:
-# - api: http://localhost:5000
+# - postgres: PostgreSQL database (port 5432 in dev)
+# - api: http://localhost:8080 (includes web frontend)
 # - smtp: ports 587, 465
 # - pop3: ports 110, 995
-# - web: http://localhost:3000
+# - imap: ports 143, 993
 ```
 
 ## Configuration
@@ -161,6 +180,16 @@ docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
 - `Pop3__SessionTimeout` - POP3 session timeout (default: 10 minutes)
 - `Pop3__CertificatePath` - Path to SSL/TLS certificate for POP3S (optional)
 - `Pop3__CertificatePassword` - Certificate password (optional)
+- `Imap__ServerName` - IMAP server hostname
+- `Imap__Port` - IMAP listening port (default: 143)
+- `Imap__SecurePort` - IMAPS secure port (default: 993)
+- `Imap__RequireAuthentication` - Whether IMAP requires auth
+- `Imap__SessionTimeout` - IMAP session timeout (default: 30 minutes)
+- `Imap__CertificatePath` - Path to SSL/TLS certificate for IMAPS (optional)
+- `Imap__CertificatePassword` - Certificate password (optional)
+- `Smtp__Enabled` - Enable/disable SMTP protocol (default: true)
+- `Pop3__Enabled` - Enable/disable POP3 protocol (default: true)
+- `Imap__Enabled` - Enable/disable IMAP protocol (default: true)
 
 ### Frontend Environment Variables (.env)
 
@@ -209,6 +238,25 @@ Both frontend and backend support optional OIDC/JWT authentication. If `Oidc__Au
 - Runs as a BackgroundService with custom TCP server
 - Same API keys work for both SMTP (sending) and POP3 (retrieving)
 
+### IMAP Server
+
+- Custom implementation of RFC 9051 (IMAP4rev2 protocol)
+- **Authentication**: Reuses SMTP API keys with 'imap' scope - same credentials work across protocols
+- **Security**: BCrypt-hashed keys with 30-second authentication cache (same as SMTP/POP3)
+- **Protocol Support**: IMAP4rev2 commands implemented:
+  - Any State: CAPABILITY, NOOP, LOGOUT, ENABLE
+  - Not Authenticated: LOGIN
+  - Authenticated: SELECT, EXAMINE, LIST, STATUS
+  - Selected: FETCH, STORE, SEARCH, EXPUNGE, CLOSE, UNSELECT
+  - UID-prefixed: UID FETCH, UID STORE, UID SEARCH
+- **Capabilities**: IMAP4rev2, AUTH=PLAIN, LITERAL+, ENABLE, UNSELECT, UIDPLUS, CHILDREN
+- **Flag Support**: \Seen, \Answered, \Flagged, \Deleted, \Draft (persistent)
+- **Message Retrieval**: Builds RFC 822 messages from database using MimeKit
+- **Session Management**: 30-minute timeout, per-connection state tracking
+- **SSL/TLS**: Supports IMAPS on port 993 with certificate configuration
+- Runs as a BackgroundService with custom TCP server
+- Same API keys work for SMTP, POP3, and IMAP (with appropriate scopes)
+
 ### Frontend Routing
 
 - TanStack Router generates type-safe routes
@@ -234,8 +282,9 @@ Users configure email clients to send and receive emails through the server:
 1. Log into the web application
 2. Navigate to "SMTP Settings" page
 3. Generate an API key with a descriptive name (e.g., "Work Laptop", "iPhone")
-4. Copy the generated API key (shown only once)
-5. Configure email client:
+4. Select the required scopes: `smtp`, `pop3`, `imap`, `api:read`, `api:write`
+5. Copy the generated API key (shown only once)
+6. Configure email client:
    - **Outgoing Mail (SMTP)**:
      - Server: Value from connection info (e.g., localhost, smtp.example.com)
      - Port: 587 (STARTTLS) or 465 (SSL/TLS)
@@ -246,5 +295,10 @@ Users configure email clients to send and receive emails through the server:
      - Port: 110 (plain) or 995 (SSL/TLS)
      - Username: User's email address
      - Password: Same generated API key
+   - **Incoming Mail (IMAP)** (recommended):
+     - Server: Value from connection info (e.g., localhost, imap.example.com)
+     - Port: 143 (plain) or 993 (SSL/TLS)
+     - Username: User's email address
+     - Password: Same generated API key
 
-Users can create multiple API keys for different devices and revoke them individually via the web UI. The same API key works for both SMTP (sending) and POP3 (retrieving) protocols.
+Users can create multiple API keys for different devices and revoke them individually via the web UI. The same API key works for SMTP (sending), POP3 (retrieving), and IMAP (retrieving) protocols when the appropriate scopes are selected.

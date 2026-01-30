@@ -1,14 +1,16 @@
 # Relate SMTP
 
-A full-stack email server and management system with SMTP, POP3, and REST API access.
+A full-stack email server and management system with SMTP, POP3, IMAP, and REST API access.
 
 ## Features
 
 - **SMTP Server** (ports 587, 465) - Receive emails with per-user API key authentication
 - **POP3 Server** (ports 110, 995) - Retrieve emails via standard POP3 protocol
+- **IMAP Server** (ports 143, 993) - Retrieve emails via IMAP4rev2 protocol (RFC 9051)
 - **REST API** - Full programmatic email access with scoped permissions
-- **Web UI** - Modern React frontend for email management
-- **Scoped API Keys** - Granular permissions: `smtp`, `pop3`, `api:read`, `api:write`
+- **Web UI** - Modern React frontend for email management (bundled with API)
+- **Scoped API Keys** - Granular permissions: `smtp`, `pop3`, `imap`, `api:read`, `api:write`
+- **Protocol Toggles** - Enable/disable SMTP, POP3, IMAP independently
 - **PostgreSQL Database** - Production-ready database with full concurrency support
 - **Docker Ready** - Multi-platform images published to GitHub Container Registry
 - **Runtime Configuration** - Deploy once, configure anywhere (no rebuild needed)
@@ -36,18 +38,19 @@ All images are published to GitHub Container Registry:
 
 | Image | Purpose | Ports |
 |-------|---------|-------|
-| `ghcr.io/tyevco/relate-smtp-api` | REST API | 8080 |
+| `ghcr.io/tyevco/relate-smtp-api` | REST API + Web UI | 8080 |
 | `ghcr.io/tyevco/relate-smtp-smtp` | SMTP Server | 587, 465 |
 | `ghcr.io/tyevco/relate-smtp-pop3` | POP3 Server | 110, 995 |
-| `ghcr.io/tyevco/relate-smtp-web` | Web UI | 80 |
+| `ghcr.io/tyevco/relate-smtp-imap` | IMAP Server | 143, 993 |
 
 ## Architecture
 
 ### Backend (.NET 10.0)
 
-- **Relate.Smtp.Api** - REST API with JWT/OIDC authentication
+- **Relate.Smtp.Api** - REST API with JWT/OIDC authentication (serves bundled web frontend)
 - **Relate.Smtp.SmtpHost** - SMTP server with API key authentication
 - **Relate.Smtp.Pop3Host** - POP3 server with API key authentication
+- **Relate.Smtp.ImapHost** - IMAP4rev2 server with API key authentication
 - **Relate.Smtp.Core** - Domain entities and interfaces
 - **Relate.Smtp.Infrastructure** - EF Core data access with PostgreSQL
 
@@ -88,6 +91,13 @@ dotnet run
 cd api/src/Relate.Smtp.Pop3Host
 dotnet run
 # Listens on ports 110, 995
+```
+
+**IMAP Server:**
+```bash
+cd api/src/Relate.Smtp.ImapHost
+dotnet run
+# Listens on ports 143, 993
 ```
 
 **Web Frontend:**
@@ -164,24 +174,31 @@ Smtp__SecurePort=465
 Pop3__ServerName=pop3.example.com
 Pop3__Port=110
 Pop3__SecurePort=995
+Pop3__Enabled=true
 ```
 
-### Web UI Runtime Configuration
+**IMAP Server:**
+```bash
+Imap__ServerName=imap.example.com
+Imap__Port=143
+Imap__SecurePort=993
+Imap__Enabled=true
+```
 
-The web frontend supports **runtime configuration** - deploy once, configure anywhere:
+### Runtime Configuration
+
+The application supports **runtime configuration** - deploy once, configure anywhere:
 
 ```bash
-# Set OIDC at container startup (no rebuild needed!)
-docker run -d \
-  -e OIDC_AUTHORITY=https://sso.example.com \
-  -e OIDC_CLIENT_ID=your-client-id \
-  -e OIDC_REDIRECT_URI=https://mail.example.com \
-  ghcr.io/tyevco/relate-smtp-web:latest
+# Set OIDC via environment variables (no rebuild needed!)
+docker compose -f docker/docker-compose.ghcr.yml up -d \
+  -e Oidc__Authority=https://sso.example.com \
+  -e Oidc__Audience=your-audience
 ```
 
-These variables are injected into `/config.json` at container startup. The same Docker image works across dev, staging, and production with different OIDC settings.
+The same Docker images work across dev, staging, and production with different settings.
 
-**Development mode:** Leave `OIDC_AUTHORITY` empty to run without authentication.
+**Development mode:** Leave `Oidc__Authority` empty to run without authentication.
 
 ## External API
 
@@ -189,12 +206,13 @@ Programmatic email access with scoped API keys.
 
 ### Generate API Key
 
-1. Log into web UI at http://localhost:3000
+1. Log into web UI at http://localhost:8080
 2. Navigate to "SMTP Settings"
 3. Click "Generate New Key"
 4. Select permissions:
    - `smtp` - Send emails via SMTP
    - `pop3` - Retrieve emails via POP3
+   - `imap` - Retrieve emails via IMAP
    - `api:read` - Read emails via REST API
    - `api:write` - Modify/delete emails via REST API
 5. Copy the API key (shown only once)
@@ -241,7 +259,7 @@ curl -X PATCH http://localhost:8080/api/external/emails/{email_id} \
 
 Configure email clients to send and receive:
 
-1. Generate an API key in the web UI
+1. Generate an API key in the web UI (with appropriate scopes)
 2. Configure your email client:
 
 **Outgoing (SMTP):**
@@ -249,6 +267,12 @@ Configure email clients to send and receive:
 - Port: 587 (STARTTLS) or 465 (SSL/TLS)
 - Username: Your email address
 - Password: API key from web UI
+
+**Incoming (IMAP)** - Recommended:
+- Server: `localhost` (or your domain)
+- Port: 143 (plain) or 993 (SSL/TLS)
+- Username: Your email address
+- Password: Same API key
 
 **Incoming (POP3):**
 - Server: `localhost` (or your domain)
@@ -317,7 +341,7 @@ docker compose logs -f
 docker compose logs -f api
 docker compose logs -f smtp
 docker compose logs -f pop3
-docker compose logs -f web
+docker compose logs -f imap
 ```
 
 ### Database Backup
@@ -333,40 +357,37 @@ docker exec -i postgres psql -U postgres relate-smtp < backup.sql
 ### Health Checks
 
 ```bash
-# API
+# API + Web UI
 curl http://localhost:8080/health
-
-# Web UI
-curl http://localhost:3000
 
 # SMTP (telnet)
 telnet localhost 587
 
 # POP3 (telnet)
 telnet localhost 110
+
+# IMAP (telnet)
+telnet localhost 143
 ```
 
 ## Multiple Environments
 
-Deploy the same Docker image to different environments:
+Deploy the same Docker images to different environments by setting environment variables:
 
 **Development:**
 ```bash
-docker run -d \
-  -e OIDC_AUTHORITY=https://sso.dev.example.com \
-  -e OIDC_CLIENT_ID=dev-client \
-  ghcr.io/tyevco/relate-smtp-web:v1.0.0
+docker compose -f docker/docker-compose.ghcr.yml up -d
+# Default: No OIDC, uses dev mode
 ```
 
 **Production:**
 ```bash
-docker run -d \
-  -e OIDC_AUTHORITY=https://sso.example.com \
-  -e OIDC_CLIENT_ID=prod-client \
-  ghcr.io/tyevco/relate-smtp-web:v1.0.0
+export OIDC_AUTHORITY=https://sso.example.com
+export OIDC_AUDIENCE=your-audience
+docker compose -f docker/docker-compose.ghcr.yml up -d
 ```
 
-Same image (`v1.0.0`), different configurations!
+Same images, different configurations!
 
 ## Troubleshooting
 
@@ -407,19 +428,16 @@ Check logs:
 docker compose logs api
 docker compose logs smtp
 docker compose logs pop3
-docker compose logs web
+docker compose logs imap
+docker compose logs postgres
 ```
 
 ### OIDC Authentication Not Working
 
 1. Verify `OIDC_AUTHORITY` is accessible from browser
-2. Check `OIDC_REDIRECT_URI` matches OAuth2 client config
-3. Ensure `OIDC_CLIENT_ID` is correct
-4. Check browser console for errors
-5. Verify `/config.json` was generated:
-   ```bash
-   docker exec relate-smtp-web cat /usr/share/nginx/html/config.json
-   ```
+2. Ensure `OIDC_AUDIENCE` matches your OAuth2 configuration
+3. Check browser console for errors
+4. Verify the API is receiving the correct environment variables
 
 ## Security Best Practices
 
@@ -438,12 +456,13 @@ docker compose logs web
 relate-smtp/
 ├── api/                          # Backend (.NET 10.0)
 │   ├── src/
-│   │   ├── Relate.Smtp.Api/     # REST API
+│   │   ├── Relate.Smtp.Api/     # REST API (serves bundled web frontend)
 │   │   ├── Relate.Smtp.SmtpHost # SMTP server
 │   │   ├── Relate.Smtp.Pop3Host # POP3 server
+│   │   ├── Relate.Smtp.ImapHost # IMAP server
 │   │   ├── Relate.Smtp.Core/    # Domain entities
 │   │   └── Relate.Smtp.Infrastructure/ # Data access
-│   └── Dockerfile                # Multi-stage build (3 targets)
+│   └── Dockerfile                # Multi-stage build (4 targets: api, smtp, pop3, imap)
 ├── web/                          # Frontend (React + TypeScript)
 │   ├── src/
 │   │   ├── routes/              # TanStack Router pages
@@ -451,12 +470,10 @@ relate-smtp/
 │   │   ├── auth/                # OIDC authentication
 │   │   ├── api/                 # API client
 │   │   └── config.ts            # Runtime configuration
-│   ├── public/
-│   │   └── config.json          # Runtime config template
-│   ├── docker-entrypoint.sh     # Generate config at startup
-│   └── Dockerfile               # Node build + nginx
+│   └── public/
+│       └── config.json          # Runtime config template
 ├── docker/                       # Docker Compose files
-│   ├── docker-compose.yml       # Build locally
+│   ├── docker-compose.yml       # Build locally (includes PostgreSQL)
 │   ├── docker-compose.ghcr.yml  # Use GHCR images
 │   └── .env.example             # Environment template
 ├── .github/
@@ -473,6 +490,7 @@ relate-smtp/
 - BCrypt.Net-Next (password hashing)
 - SmtpServer library (SMTP protocol)
 - Custom POP3 implementation (RFC 1939)
+- Custom IMAP4rev2 implementation (RFC 9051)
 - MimeKit (email parsing)
 
 **Frontend:**
