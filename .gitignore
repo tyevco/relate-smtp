@@ -40,3 +40,5 @@ Thumbs.db
 **/PublishProfiles/**
 
 appsettings.Production.json
+
+terraform/
