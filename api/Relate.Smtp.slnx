@@ -7,4 +7,10 @@
     <Project Path="src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj" />
     <Project Path="src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Relate.Smtp.Tests.Common/Relate.Smtp.Tests.Common.csproj" />
+    <Project Path="tests/Relate.Smtp.Tests.Unit/Relate.Smtp.Tests.Unit.csproj" />
+    <Project Path="tests/Relate.Smtp.Tests.Integration/Relate.Smtp.Tests.Integration.csproj" />
+    <Project Path="tests/Relate.Smtp.Tests.E2E/Relate.Smtp.Tests.E2E.csproj" />
+  </Folder>
 </Solution>

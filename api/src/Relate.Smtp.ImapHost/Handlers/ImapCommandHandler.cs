@@ -27,7 +27,8 @@ public class ImapCommandHandler
     public async Task HandleSessionAsync(Stream stream, CancellationToken ct)
     {
         using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: true);
-        using var writer = new StreamWriter(stream, Encoding.UTF8) { AutoFlush = true };
+        // Use UTF8 without BOM - MailKit and other clients don't expect BOM in protocol greetings
+        using var writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true };
 
         var session = new ImapSession();
         _logger.LogInformation("IMAP session started: {ConnectionId}", session.ConnectionId);
