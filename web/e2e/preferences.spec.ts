@@ -12,10 +12,6 @@ test.describe('Preferences', () => {
   })
 
   test('shows theme preference section', async ({ page }) => {
-    // Look for theme options
-    const themeSection = page.getByText(/theme/i)
-    const _hasThemeSection = await themeSection.first().isVisible().catch(() => false)
-
     // Either shows preferences or auth required
     const content = page.locator('body')
     await expect(content).toBeVisible()
@@ -24,12 +20,8 @@ test.describe('Preferences', () => {
   test('has theme toggle options', async ({ page }) => {
     // Look for light/dark/system theme options
     const lightOption = page.getByText(/light/i)
-    const darkOption = page.getByText(/dark/i)
-    const systemOption = page.getByText(/system/i)
 
     const hasLight = await lightOption.first().isVisible().catch(() => false)
-    const _hasDark = await darkOption.first().isVisible().catch(() => false)
-    const _hasSystem = await systemOption.first().isVisible().catch(() => false)
 
     expect(typeof hasLight).toBe('boolean')
   })
@@ -59,12 +51,8 @@ test.describe('Preferences', () => {
 
   test('has density options', async ({ page }) => {
     const compactOption = page.getByText(/compact/i)
-    const comfortableOption = page.getByText(/comfortable/i)
-    const spaciousOption = page.getByText(/spacious/i)
 
     const hasCompact = await compactOption.first().isVisible().catch(() => false)
-    const _hasComfortable = await comfortableOption.first().isVisible().catch(() => false)
-    const _hasSpaciousOption = await spaciousOption.first().isVisible().catch(() => false)
 
     expect(typeof hasCompact).toBe('boolean')
   })
@@ -95,7 +83,6 @@ test.describe('Preferences', () => {
     const notificationToggle = page.getByLabel(/desktop.*notification/i) || page.getByRole('switch')
 
     if (await notificationToggle.first().isVisible()) {
-      const _isChecked = await notificationToggle.first().isChecked().catch(() => null)
       await notificationToggle.first().click()
       await page.waitForTimeout(500)
 
@@ -115,10 +102,8 @@ test.describe('Preferences', () => {
 
   test('has digest frequency options', async ({ page }) => {
     const dailyOption = page.getByText(/daily/i)
-    const weeklyOption = page.getByText(/weekly/i)
 
     const hasDaily = await dailyOption.first().isVisible().catch(() => false)
-    const _hasWeekly = await weeklyOption.first().isVisible().catch(() => false)
 
     expect(typeof hasDaily).toBe('boolean')
   })
