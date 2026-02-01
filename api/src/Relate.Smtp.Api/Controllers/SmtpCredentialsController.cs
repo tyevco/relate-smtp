@@ -136,4 +136,67 @@ public class SmtpCredentialsController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Create an API key from a mobile device during OIDC bootstrap.
+    /// This endpoint is called after successful OIDC authentication to generate
+    /// a persistent API key for the mobile app.
+    /// </summary>
+    [HttpPost("mobile")]
+    public async Task<ActionResult<CreatedSmtpApiKeyDto>> CreateMobileApiKey(
+        [FromBody] CreateMobileApiKeyRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.DeviceName))
+        {
+            return BadRequest(new { error = "DeviceName is required" });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Platform))
+        {
+            return BadRequest(new { error = "Platform is required" });
+        }
+
+        var validPlatforms = new[] { "ios", "android", "windows", "macos", "web" };
+        var platform = request.Platform.ToLowerInvariant();
+        if (!validPlatforms.Contains(platform))
+        {
+            return BadRequest(new { error = $"Invalid platform: {request.Platform}. Valid platforms are: {string.Join(", ", validPlatforms)}" });
+        }
+
+        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
+
+        // Mobile apps get api:read and api:write scopes by default
+        var scopes = new List<string> { ApiKeyScopes.ApiRead, ApiKeyScopes.ApiWrite };
+
+        // Generate a descriptive name for the key
+        var keyName = $"Mobile App - {request.DeviceName} ({platform})";
+        if (keyName.Length > 100)
+        {
+            keyName = keyName.Substring(0, 100);
+        }
+
+        var apiKey = _credentialService.GenerateApiKey();
+        var keyHash = _credentialService.HashPassword(apiKey);
+
+        var smtpApiKey = new SmtpApiKey
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Name = keyName,
+            KeyHash = keyHash,
+            Scopes = JsonSerializer.Serialize(scopes),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        await _apiKeyRepository.CreateAsync(smtpApiKey, cancellationToken);
+
+        return Ok(new CreatedSmtpApiKeyDto(
+            smtpApiKey.Id,
+            smtpApiKey.Name,
+            apiKey,
+            scopes,
+            smtpApiKey.CreatedAt
+        ));
+    }
 }

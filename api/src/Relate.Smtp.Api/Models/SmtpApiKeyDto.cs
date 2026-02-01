@@ -65,3 +65,12 @@ public record SmtpCredentialsDto(
     SmtpConnectionInfoDto ConnectionInfo,
     IReadOnlyList<SmtpApiKeyDto> Keys
 );
+
+/// <summary>
+/// Request to create an API key from a mobile device during OIDC bootstrap.
+/// </summary>
+public record CreateMobileApiKeyRequest
+{
+    public required string DeviceName { get; init; }
+    public required string Platform { get; init; } // ios, android, windows, macos, web
+}
