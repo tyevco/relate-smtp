@@ -1,8 +1,22 @@
-// Define __DEV__ before importing react-native dependent modules
-global.__DEV__ = true
+// Jest setup for React Native with Expo
 
-// Skip @testing-library/jest-native for now - it has react-native dependencies
-// that don't work well in node environment for pure unit tests
+// Mock react-native-css-interop (NativeWind's runtime)
+jest.mock('react-native-css-interop', () => ({
+  cssInterop: jest.fn((component) => component),
+  remapProps: jest.fn((component) => component),
+  useColorScheme: jest.fn(() => ({ colorScheme: 'light', setColorScheme: jest.fn(), toggleColorScheme: jest.fn() })),
+  useUnstableNativeVariable: jest.fn(() => undefined),
+  vars: jest.fn(() => ({})),
+  createInteropElement: jest.fn((component) => component),
+}))
+
+// Mock nativewind
+jest.mock('nativewind', () => ({
+  styled: (component) => component,
+  useColorScheme: () => ({ colorScheme: 'light', setColorScheme: jest.fn() }),
+  cssInterop: jest.fn((component) => component),
+  remapProps: jest.fn((component) => component),
+}))
 
 // Mock expo-secure-store
 jest.mock('expo-secure-store', () => ({
@@ -63,16 +77,32 @@ jest.mock('expo-linking', () => ({
 // Mock expo-crypto
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn().mockReturnValue('test-uuid'),
-  getRandomBytesAsync: jest.fn().mockResolvedValue(new Uint8Array(16)),
+  getRandomBytes: jest.fn().mockReturnValue(new Uint8Array(32).fill(65)),
+  getRandomBytesAsync: jest.fn().mockResolvedValue(new Uint8Array(32).fill(65)),
+  digestStringAsync: jest.fn().mockResolvedValue('mock_hash_base64'),
+  CryptoDigestAlgorithm: {
+    SHA256: 'SHA-256',
+  },
+  CryptoEncoding: {
+    BASE64: 'base64',
+  },
 }))
 
 // Mock expo-auth-session
 jest.mock('expo-auth-session', () => ({
   useAuthRequest: jest.fn().mockReturnValue([null, null, jest.fn()]),
   makeRedirectUri: jest.fn().mockReturnValue('app://redirect'),
+  fetchDiscoveryAsync: jest.fn(),
+  exchangeCodeAsync: jest.fn(),
+  AuthRequest: jest.fn().mockImplementation(() => ({
+    promptAsync: jest.fn(),
+  })),
   ResponseType: {
     Code: 'code',
     Token: 'token',
+  },
+  CodeChallengeMethod: {
+    S256: 'S256',
   },
 }))
 
@@ -80,12 +110,6 @@ jest.mock('expo-auth-session', () => ({
 jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn().mockResolvedValue({ type: 'success' }),
   maybeCompleteAuthSession: jest.fn(),
-}))
-
-// Mock nativewind
-jest.mock('nativewind', () => ({
-  styled: (component) => component,
-  useColorScheme: () => ({ colorScheme: 'light', setColorScheme: jest.fn() }),
 }))
 
 // Mock @microsoft/signalr
@@ -118,30 +142,53 @@ jest.mock('@microsoft/signalr', () => ({
   },
 }))
 
-// Mock fetch globally
-global.fetch = jest.fn().mockImplementation(() =>
-  Promise.resolve({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({}),
-    text: () => Promise.resolve(''),
+// Mock lucide-react-native icons
+jest.mock('lucide-react-native', () => {
+  const { View } = require('react-native')
+  return new Proxy({}, {
+    get: () => View,
   })
-)
+})
+
+// Mock fetch globally if not already mocked
+if (!global.fetch) {
+  global.fetch = jest.fn().mockImplementation(() =>
+    Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({}),
+      text: () => Promise.resolve(''),
+    })
+  )
+}
 
 // Silence console warnings in tests
 const originalWarn = console.warn
+const originalError = console.error
 beforeAll(() => {
   console.warn = (...args) => {
     if (
       args[0]?.includes?.('Animated') ||
-      args[0]?.includes?.('NativeEventEmitter')
+      args[0]?.includes?.('NativeEventEmitter') ||
+      args[0]?.includes?.('componentWillReceiveProps') ||
+      args[0]?.includes?.('componentWillMount')
     ) {
       return
     }
     originalWarn.apply(console, args)
   }
+  console.error = (...args) => {
+    if (
+      args[0]?.includes?.('Warning: ReactDOM.render') ||
+      args[0]?.includes?.('Warning: An update to')
+    ) {
+      return
+    }
+    originalError.apply(console, args)
+  }
 })
 
 afterAll(() => {
   console.warn = originalWarn
+  console.error = originalError
 })
