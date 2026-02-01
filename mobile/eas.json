@@ -6,7 +6,7 @@
   "build": {
     "base": {
       "cache": {
-        "key": "v2-sdk52"
+        "key": "v3-sdk54"
       }
     },
     "development": {
