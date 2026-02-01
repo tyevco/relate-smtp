@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Relate Mail",
-    "slug": "relate-smtp-mobile",
+    "slug": "relatemail",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -35,6 +35,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "0ccacfab-114c-40d4-b1dd-09d338aea661"
+      }
+    },
+    "owner": "fourrobots"
   }
 }

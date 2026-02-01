@@ -89,10 +89,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check EAS configuration
+        id: eas-check
+        run: |
+          if grep -q '"projectId"' app.json; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning::EAS project not configured. Run 'eas init' locally to configure."
+          fi
+
       - name: Build Android app
+        if: steps.eas-check.outputs.configured == 'true'
         run: |
           PROFILE="${{ github.event.inputs.profile || 'preview' }}"
           eas build --platform android --profile $PROFILE --non-interactive
+
+      - name: Skip build (not configured)
+        if: steps.eas-check.outputs.configured != 'true'
+        run: |
+          echo "::notice::Skipping EAS build - project not configured. Run 'eas init' locally to enable builds."
 
       - name: Upload build artifact info
         run: |
@@ -131,10 +147,26 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check EAS configuration
+        id: eas-check
+        run: |
+          if grep -q '"projectId"' app.json; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "::warning::EAS project not configured. Run 'eas init' locally to configure."
+          fi
+
       - name: Build iOS app
+        if: steps.eas-check.outputs.configured == 'true'
         run: |
           PROFILE="${{ github.event.inputs.profile || 'preview' }}"
           eas build --platform ios --profile $PROFILE --non-interactive
+
+      - name: Skip build (not configured)
+        if: steps.eas-check.outputs.configured != 'true'
+        run: |
+          echo "::notice::Skipping EAS build - project not configured. Run 'eas init' locally to enable builds."
 
       - name: Upload build artifact info
         run: |
