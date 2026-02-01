@@ -4,7 +4,13 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "cache": {
+        "key": "v2-sdk52"
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
@@ -15,6 +21,7 @@
       }
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "ios": {
         "simulator": false
@@ -27,6 +34,7 @@
       }
     },
     "production": {
+      "extends": "base",
       "distribution": "store",
       "ios": {
         "autoIncrement": true
