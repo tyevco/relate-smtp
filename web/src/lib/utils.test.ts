@@ -7,7 +7,8 @@ describe('cn (className merge utility)', () => {
   })
 
   it('handles conditional class names', () => {
-    expect(cn('base', false && 'skip', 'always')).toBe('base always')
+    const shouldSkip = false
+    expect(cn('base', shouldSkip && 'skip', 'always')).toBe('base always')
   })
 
   it('handles undefined and null values', () => {

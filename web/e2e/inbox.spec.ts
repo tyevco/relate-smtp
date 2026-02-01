@@ -93,7 +93,7 @@ test.describe('Inbox', () => {
     const prevButton = page.getByRole('button', { name: /prev/i })
 
     const hasNextButton = await nextButton.isVisible().catch(() => false)
-    const hasPrevButton = await prevButton.isVisible().catch(() => false)
+    const _hasPrevButton = await prevButton.isVisible().catch(() => false)
 
     if (hasNextButton) {
       // Check if pagination exists

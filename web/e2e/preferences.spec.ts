@@ -14,7 +14,7 @@ test.describe('Preferences', () => {
   test('shows theme preference section', async ({ page }) => {
     // Look for theme options
     const themeSection = page.getByText(/theme/i)
-    const hasThemeSection = await themeSection.first().isVisible().catch(() => false)
+    const _hasThemeSection = await themeSection.first().isVisible().catch(() => false)
 
     // Either shows preferences or auth required
     const content = page.locator('body')
@@ -28,8 +28,8 @@ test.describe('Preferences', () => {
     const systemOption = page.getByText(/system/i)
 
     const hasLight = await lightOption.first().isVisible().catch(() => false)
-    const hasDark = await darkOption.first().isVisible().catch(() => false)
-    const hasSystem = await systemOption.first().isVisible().catch(() => false)
+    const _hasDark = await darkOption.first().isVisible().catch(() => false)
+    const _hasSystem = await systemOption.first().isVisible().catch(() => false)
 
     expect(typeof hasLight).toBe('boolean')
   })
@@ -63,8 +63,8 @@ test.describe('Preferences', () => {
     const spaciousOption = page.getByText(/spacious/i)
 
     const hasCompact = await compactOption.first().isVisible().catch(() => false)
-    const hasComfortable = await comfortableOption.first().isVisible().catch(() => false)
-    const hasSpaciousOption = await spaciousOption.first().isVisible().catch(() => false)
+    const _hasComfortable = await comfortableOption.first().isVisible().catch(() => false)
+    const _hasSpaciousOption = await spaciousOption.first().isVisible().catch(() => false)
 
     expect(typeof hasCompact).toBe('boolean')
   })
@@ -95,7 +95,7 @@ test.describe('Preferences', () => {
     const notificationToggle = page.getByLabel(/desktop.*notification/i) || page.getByRole('switch')
 
     if (await notificationToggle.first().isVisible()) {
-      const isChecked = await notificationToggle.first().isChecked().catch(() => null)
+      const _isChecked = await notificationToggle.first().isChecked().catch(() => null)
       await notificationToggle.first().click()
       await page.waitForTimeout(500)
 
@@ -118,7 +118,7 @@ test.describe('Preferences', () => {
     const weeklyOption = page.getByText(/weekly/i)
 
     const hasDaily = await dailyOption.first().isVisible().catch(() => false)
-    const hasWeekly = await weeklyOption.first().isVisible().catch(() => false)
+    const _hasWeekly = await weeklyOption.first().isVisible().catch(() => false)
 
     expect(typeof hasDaily).toBe('boolean')
   })

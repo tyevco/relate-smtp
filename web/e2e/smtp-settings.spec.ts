@@ -18,7 +18,7 @@ test.describe('SMTP Settings', () => {
     await expect(content).toBeVisible()
 
     // Should show SMTP server details
-    const hasServerInfo =
+    const _hasServerInfo =
       (await page.getByText(/smtp.*server/i).isVisible().catch(() => false)) ||
       (await page.getByText(/server/i).isVisible().catch(() => false)) ||
       (await page.getByText(/port/i).isVisible().catch(() => false))
@@ -29,7 +29,7 @@ test.describe('SMTP Settings', () => {
 
   test('shows API keys section', async ({ page }) => {
     // Look for API keys section
-    const apiKeysSection =
+    const _apiKeysSection =
       page.getByText(/api key/i) ||
       page.getByText(/credential/i) ||
       page.getByRole('heading', { name: /key/i })
@@ -62,8 +62,8 @@ test.describe('SMTP Settings', () => {
       const dialog = page.getByRole('dialog')
       const form = page.locator('form')
 
-      const hasDialog = await dialog.isVisible().catch(() => false)
-      const hasForm = await form.isVisible().catch(() => false)
+      const _hasDialog = await dialog.isVisible().catch(() => false)
+      const _hasForm = await form.isVisible().catch(() => false)
 
       // Either shows dialog or stays on page
       expect(true).toBe(true)
@@ -102,8 +102,8 @@ test.describe('SMTP Settings', () => {
       const imapScope = page.getByLabel(/imap/i)
 
       const hasSmtp = await smtpScope.isVisible().catch(() => false)
-      const hasPop3 = await pop3Scope.isVisible().catch(() => false)
-      const hasImap = await imapScope.isVisible().catch(() => false)
+      const _hasPop3 = await pop3Scope.isVisible().catch(() => false)
+      const _hasImap = await imapScope.isVisible().catch(() => false)
 
       expect(typeof hasSmtp).toBe('boolean')
     } else {
@@ -113,10 +113,10 @@ test.describe('SMTP Settings', () => {
 
   test('shows existing API keys in a list', async ({ page }) => {
     // Look for list of API keys
-    const keysList = page.locator('table') || page.locator('[role="list"]')
+    const _keysList = page.locator('table') || page.locator('[role="list"]')
 
     const hasTable = await page.locator('table').isVisible().catch(() => false)
-    const hasList = await page.locator('[role="list"]').isVisible().catch(() => false)
+    const _hasList = await page.locator('[role="list"]').isVisible().catch(() => false)
 
     // May not have keys if not authenticated
     expect(typeof hasTable).toBe('boolean')
