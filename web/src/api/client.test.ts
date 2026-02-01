@@ -322,7 +322,7 @@ describe('api convenience methods', () => {
       }
       sessionStorage.setItem('oidc.user:https://auth.example.com', JSON.stringify(mockToken))
 
-      const headers = await api.getHeaders()
+      const headers = await api.getHeaders() as Record<string, string>
       expect(headers['Authorization']).toBe('Bearer header-test-token')
     })
   })
