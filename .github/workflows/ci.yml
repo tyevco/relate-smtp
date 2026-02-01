@@ -169,6 +169,77 @@ jobs:
       - name: Build
         run: npm run build
 
+  # Web frontend unit tests
+  web-tests:
+    name: Web Frontend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Unit Tests
+        run: npm run test:run
+
+      - name: Run Tests with Coverage
+        run: npm run test:coverage
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-coverage-report
+          path: web/coverage/
+
+  # Web frontend E2E tests
+  web-e2e:
+    name: Web E2E Tests
+    runs-on: ubuntu-latest
+    needs: [web-tests]
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: npm run test:e2e -- --project=chromium
+
+      - name: Upload E2E Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-e2e-results
+          path: web/playwright-report/
+
   # Mobile app validation
   mobile:
     name: Mobile App
@@ -189,13 +260,48 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Type check
         run: npx tsc --noEmit
 
       - name: Run ESLint
         run: npm run lint || true
+
+  # Mobile app unit tests
+  mobile-tests:
+    name: Mobile App Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Unit Tests
+        run: npm test -- --ci
+
+      - name: Run Tests with Coverage
+        run: npm run test:coverage -- --ci
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-coverage-report
+          path: mobile/coverage/
 
   # Docker build validation (no push)
   docker-validate:
@@ -234,7 +340,7 @@ jobs:
 
   summary:
     name: CI Summary
-    needs: [backend-build, unit-tests, integration-tests, e2e-tests, web, mobile]
+    needs: [backend-build, unit-tests, integration-tests, e2e-tests, web, web-tests, web-e2e, mobile, mobile-tests]
     runs-on: ubuntu-latest
     if: always()
 
@@ -250,9 +356,16 @@ jobs:
           echo "| Web Frontend | ${{ needs.web.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Mobile App | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "### Backend Test Results" >> $GITHUB_STEP_SUMMARY
           echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E & Protocol Tests | ${{ needs.e2e-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Frontend Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Web Unit Tests | ${{ needs.web-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web E2E Tests | ${{ needs.web-e2e.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mobile Unit Tests | ${{ needs.mobile-tests.result }} |" >> $GITHUB_STEP_SUMMARY
