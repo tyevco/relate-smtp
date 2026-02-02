@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
+import { getConfig } from '@/config'
 import { useSmtpCredentials, useCreateSmtpApiKey, useRevokeSmtpApiKey } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,8 +24,8 @@ function SmtpSettingsPage() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    const authority = import.meta.env.VITE_OIDC_AUTHORITY
-    if (authority && !auth.isLoading && !auth.isAuthenticated) {
+    const config = getConfig()
+    if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
       window.location.href = '/login'
     }
   }, [auth.isAuthenticated, auth.isLoading])

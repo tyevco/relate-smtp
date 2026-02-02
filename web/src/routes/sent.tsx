@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useAuth } from 'react-oidc-context'
+import { getConfig } from '@/config'
 import { useSentEmails, useSentFromAddresses } from '../api/hooks'
 import { EmailList } from '../components/mail/email-list'
 import { Mail, Filter } from 'lucide-react'
@@ -9,12 +11,21 @@ export const Route = createFileRoute('/sent')({
 })
 
 function SentMailPage() {
+  const auth = useAuth()
   const navigate = useNavigate()
   const [selectedFromAddress, setSelectedFromAddress] = useState<string | undefined>()
   const [page, setPage] = useState(1)
 
   const { data: addresses } = useSentFromAddresses()
   const { data: emails, isLoading } = useSentEmails(selectedFromAddress, page, 20)
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    const config = getConfig()
+    if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
+      window.location.href = '/login'
+    }
+  }, [auth.isAuthenticated, auth.isLoading])
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">

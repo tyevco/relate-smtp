@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
+import { getConfig } from '@/config'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEmails, useEmail, useMarkEmailRead, useDeleteEmail, useSearchEmails, type EmailSearchFilters } from '@/api/hooks'
 import { EmailList } from '@/components/mail/email-list'
@@ -90,8 +91,8 @@ function InboxPage() {
 
   // Redirect to login if not authenticated (after all hooks are called)
   useEffect(() => {
-    const authority = import.meta.env.VITE_OIDC_AUTHORITY
-    if (authority && !auth.isLoading && !auth.isAuthenticated) {
+    const config = getConfig()
+    if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
       console.log('🔐 Index: Not authenticated, redirecting to login')
       window.location.href = '/login'
     }

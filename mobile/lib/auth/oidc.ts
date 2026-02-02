@@ -21,6 +21,21 @@ export interface OidcResult {
 }
 
 /**
+ * Parse JSON response with better error handling
+ */
+async function parseJsonResponse<T>(response: Response, url: string): Promise<T> {
+  const contentType = response.headers.get("content-type");
+  if (!contentType?.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(
+      `Server returned non-JSON response (${contentType || "unknown"}). ` +
+      `Expected JSON from ${url}. Response: ${text.slice(0, 100)}...`
+    );
+  }
+  return response.json();
+}
+
+/**
  * Discover server capabilities and OIDC configuration
  */
 export async function discoverServer(
@@ -28,22 +43,39 @@ export async function discoverServer(
 ): Promise<{ discovery: ServerDiscovery; oidcConfig?: OidcConfig }> {
   // Normalize URL
   const baseUrl = serverUrl.replace(/\/$/, "");
+  const discoveryUrl = `${baseUrl}/api/discovery`;
 
   // Fetch server discovery
-  const discoveryResponse = await fetch(`${baseUrl}/api/discovery`);
-  if (!discoveryResponse.ok) {
+  let discoveryResponse: Response;
+  try {
+    discoveryResponse = await fetch(discoveryUrl);
+  } catch (err) {
     throw new Error(
-      `Failed to discover server: ${discoveryResponse.statusText}`
+      `Cannot connect to server at ${baseUrl}. Please check the URL and your network connection.`
     );
   }
-  const discovery: ServerDiscovery = await discoveryResponse.json();
+
+  if (!discoveryResponse.ok) {
+    throw new Error(
+      `Server returned ${discoveryResponse.status}: ${discoveryResponse.statusText}. ` +
+      `Make sure ${baseUrl} is a valid Relate server.`
+    );
+  }
+
+  const discovery = await parseJsonResponse<ServerDiscovery>(
+    discoveryResponse,
+    discoveryUrl
+  );
 
   // If OIDC is enabled, fetch the config
   let oidcConfig: OidcConfig | undefined;
   if (discovery.oidcEnabled) {
-    const configResponse = await fetch(`${baseUrl}/config/config.json`);
+    const configUrl = `${baseUrl}/config/config.json`;
+    const configResponse = await fetch(configUrl);
     if (configResponse.ok) {
-      const config = await configResponse.json();
+      const config = await parseJsonResponse<{
+        oidc?: { authority?: string; clientId?: string; scopes?: string[] };
+      }>(configResponse, configUrl);
       oidcConfig = {
         authority: config.oidc?.authority,
         clientId: config.oidc?.clientId,

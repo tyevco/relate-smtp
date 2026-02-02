@@ -38,6 +38,29 @@ jest.mock('expo-crypto', () => ({
   },
 }))
 
+// Helper to create mock Response with headers
+const createMockResponse = (options: {
+  ok: boolean;
+  status?: number;
+  statusText?: string;
+  json?: () => Promise<unknown>;
+  contentType?: string;
+}) => ({
+  ok: options.ok,
+  status: options.status ?? (options.ok ? 200 : 404),
+  statusText: options.statusText ?? (options.ok ? 'OK' : 'Not Found'),
+  json: options.json ?? (() => Promise.resolve({})),
+  text: () => Promise.resolve(''),
+  headers: {
+    get: (name: string) => {
+      if (name.toLowerCase() === 'content-type') {
+        return options.contentType ?? 'application/json';
+      }
+      return null;
+    },
+  },
+})
+
 // Mock fetch globally
 const mockFetch = jest.fn()
 global.fetch = mockFetch
@@ -63,10 +86,12 @@ describe('OIDC Module', () => {
         features: ['smtp', 'pop3', 'imap'],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockDiscovery),
-      })
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({
+          ok: true,
+          json: () => Promise.resolve(mockDiscovery),
+        })
+      )
 
       const result = await discoverServer('https://api.example.com')
 
@@ -91,14 +116,18 @@ describe('OIDC Module', () => {
       }
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockDiscovery),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockConfig),
-        })
+        .mockResolvedValueOnce(
+          createMockResponse({
+            ok: true,
+            json: () => Promise.resolve(mockDiscovery),
+          })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({
+            ok: true,
+            json: () => Promise.resolve(mockConfig),
+          })
+        )
 
       const result = await discoverServer('https://api.example.com')
 
@@ -124,14 +153,18 @@ describe('OIDC Module', () => {
       }
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockDiscovery),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockConfig),
-        })
+        .mockResolvedValueOnce(
+          createMockResponse({
+            ok: true,
+            json: () => Promise.resolve(mockDiscovery),
+          })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({
+            ok: true,
+            json: () => Promise.resolve(mockConfig),
+          })
+        )
 
       const result = await discoverServer('https://api.example.com')
 
@@ -145,10 +178,12 @@ describe('OIDC Module', () => {
         features: [],
       }
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockDiscovery),
-      })
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({
+          ok: true,
+          json: () => Promise.resolve(mockDiscovery),
+        })
+      )
 
       await discoverServer('https://api.example.com/')
 
@@ -156,13 +191,16 @@ describe('OIDC Module', () => {
     })
 
     it('throws error when discovery fails', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Not Found',
-      })
+      mockFetch.mockResolvedValueOnce(
+        createMockResponse({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+        })
+      )
 
       await expect(discoverServer('https://api.example.com')).rejects.toThrow(
-        'Failed to discover server: Not Found'
+        'Server returned 404: Not Found'
       )
     })
 
@@ -174,14 +212,18 @@ describe('OIDC Module', () => {
       }
 
       mockFetch
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve(mockDiscovery),
-        })
-        .mockResolvedValueOnce({
-          ok: false,
-          statusText: 'Not Found',
-        })
+        .mockResolvedValueOnce(
+          createMockResponse({
+            ok: true,
+            json: () => Promise.resolve(mockDiscovery),
+          })
+        )
+        .mockResolvedValueOnce(
+          createMockResponse({
+            ok: false,
+            statusText: 'Not Found',
+          })
+        )
 
       const result = await discoverServer('https://api.example.com')
 
