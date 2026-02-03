@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Relate SMTP is a full-stack application that provides SMTP, POP3, and IMAP email servers with a web-based management interface. The system consists of five main components:
+Relate Mail is a full-stack application that provides SMTP, POP3, and IMAP email servers with a web-based management interface. The system consists of five main components:
 
 1. **API** (.NET 10.0 ASP.NET Core) - REST API for managing emails and users
 2. **SMTP Server** (.NET 10.0 Worker Service) - Custom SMTP server for receiving emails
@@ -165,7 +165,7 @@ docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
 ### Backend Environment Variables
 
 - `ConnectionStrings__DefaultConnection` - PostgreSQL database connection string
-  - Format: `host=localhost;port=5432;database=relate-smtp;user id=myuser;password=mypass`
+  - Format: `host=localhost;port=5432;database=relate-mail;user id=myuser;password=mypass`
 - `Oidc__Authority` - OIDC provider URL (optional, enables JWT auth)
 - `Oidc__Audience` - OIDC audience claim (optional)
 - `Cors__AllowedOrigins__0` - CORS origins (can add multiple with __1, __2, etc.)
@@ -273,7 +273,7 @@ Database stores:
 - SMTP API keys (BCrypt-hashed) for per-user authentication
 
 **Connection String Format:**
-- `host=localhost;port=5432;database=relate-smtp;user id=myuser;password=mypass`
+- `host=localhost;port=5432;database=relate-mail;user id=myuser;password=mypass`
 
 ## Email Client Setup
 

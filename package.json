@@ -1,5 +1,5 @@
 {
-  "name": "relate-smtp-frontend",
+  "name": "relate-mail-frontend",
   "private": true,
   "workspaces": [
     "packages/*",

@@ -36,7 +36,7 @@ function RootComponent() {
               <div className="flex items-center gap-4 lg:gap-6">
                 <Link to="/" className="flex items-center gap-2 font-semibold">
                   <Mail className="h-5 w-5" />
-                  <span className="hidden sm:inline">Relate SMTP</span>
+                  <span className="hidden sm:inline">Relate Mail</span>
                 </Link>
 
                 {/* Desktop Navigation */}

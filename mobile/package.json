@@ -1,5 +1,5 @@
 {
-  "name": "relate-smtp-mobile",
+  "name": "relate-mail-mobile",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {

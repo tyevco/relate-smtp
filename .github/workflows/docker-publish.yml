@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: tyevco/relate-smtp
+  IMAGE_PREFIX: tyevco/relate-mail
 
 jobs:
   build-and-push:

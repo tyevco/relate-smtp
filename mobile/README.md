@@ -1,6 +1,6 @@
 # Relate Mail Mobile App
 
-React Native mobile application for Relate SMTP, built with Expo.
+React Native mobile application for Relate Mail, built with Expo.
 
 ## Prerequisites
 

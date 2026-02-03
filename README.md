@@ -1,4 +1,4 @@
-# Relate SMTP
+# Relate Mail
 
 A full-stack email server and management system with SMTP, POP3, IMAP, and REST API access.
 
@@ -38,10 +38,10 @@ All images are published to GitHub Container Registry:
 
 | Image | Purpose | Ports |
 |-------|---------|-------|
-| `ghcr.io/tyevco/relate-smtp-api` | REST API + Web UI | 8080 |
-| `ghcr.io/tyevco/relate-smtp-smtp` | SMTP Server | 587, 465 |
-| `ghcr.io/tyevco/relate-smtp-pop3` | POP3 Server | 110, 995 |
-| `ghcr.io/tyevco/relate-smtp-imap` | IMAP Server | 143, 993 |
+| `ghcr.io/tyevco/relate-mail-api` | REST API + Web UI | 8080 |
+| `ghcr.io/tyevco/relate-mail-smtp` | SMTP Server | 587, 465 |
+| `ghcr.io/tyevco/relate-mail-pop3` | POP3 Server | 110, 995 |
+| `ghcr.io/tyevco/relate-mail-imap` | IMAP Server | 143, 993 |
 
 ## Architecture
 
@@ -127,7 +127,7 @@ dotnet ef database update \
 
 ```bash
 # Set environment variables
-export GITHUB_REPOSITORY="tyevco/relate-smtp"
+export GITHUB_REPOSITORY="tyevco/relate-mail"
 export IMAGE_TAG="latest"  # or specific version like "v1.0.0"
 
 # Start services
@@ -153,7 +153,7 @@ docker compose up -d --build
 
 **Database (PostgreSQL):**
 ```bash
-ConnectionStrings__DefaultConnection=host=postgres;port=5432;database=relate-smtp;user id=postgres;password=postgres
+ConnectionStrings__DefaultConnection=host=postgres;port=5432;database=relate-mail;user id=postgres;password=postgres
 ```
 
 **OIDC Authentication (optional):**
@@ -299,7 +299,7 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # Wait for GitHub Actions to build and publish
-# View progress at: https://github.com/tyevco/relate-smtp/actions
+# View progress at: https://github.com/tyevco/relate-mail/actions
 ```
 
 ### Image Tags Created
@@ -348,10 +348,10 @@ docker compose logs -f imap
 
 ```bash
 # Backup PostgreSQL database
-docker exec postgres pg_dump -U postgres relate-smtp > backup.sql
+docker exec postgres pg_dump -U postgres relate-mail > backup.sql
 
 # Restore
-docker exec -i postgres psql -U postgres relate-smtp < backup.sql
+docker exec -i postgres psql -U postgres relate-mail < backup.sql
 ```
 
 ### Health Checks
@@ -406,7 +406,7 @@ Verify PostgreSQL connection:
 
 ```bash
 # Test connection
-docker exec postgres psql -U postgres -d relate-smtp -c "SELECT 1;"
+docker exec postgres psql -U postgres -d relate-mail -c "SELECT 1;"
 
 # Check logs
 docker logs postgres
@@ -453,7 +453,7 @@ docker compose logs postgres
 ## Project Structure
 
 ```
-relate-smtp/
+relate-mail/
 ├── api/                          # Backend (.NET 10.0)
 │   ├── src/
 │   │   ├── Relate.Smtp.Api/     # REST API (serves bundled web frontend)
@@ -514,9 +514,9 @@ relate-smtp/
 
 ## Support
 
-- **Issues**: https://github.com/tyevco/relate-smtp/issues
-- **Packages**: https://github.com/tyevco/relate-smtp/pkgs
-- **Actions**: https://github.com/tyevco/relate-smtp/actions
+- **Issues**: https://github.com/tyevco/relate-mail/issues
+- **Packages**: https://github.com/tyevco/relate-mail/pkgs
+- **Actions**: https://github.com/tyevco/relate-mail/actions
 
 ## Contributing
 

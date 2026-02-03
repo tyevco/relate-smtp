@@ -63,8 +63,8 @@ jest.mock('react-native-reanimated', () => {
 // Mock expo-constants
 jest.mock('expo-constants', () => ({
   expoConfig: {
-    name: 'relate-smtp-mobile',
-    slug: 'relate-smtp-mobile',
+    name: 'relate-mail-mobile',
+    slug: 'relate-mail-mobile',
   },
 }))
 

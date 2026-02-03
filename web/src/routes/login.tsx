@@ -42,7 +42,7 @@ function Login() {
             </div>
             <div>
               <CardTitle className="text-4xl font-bold">
-                Relate SMTP
+                Relate Mail
               </CardTitle>
               <CardDescription className="mt-3 text-base">
                 Please sign in to continue

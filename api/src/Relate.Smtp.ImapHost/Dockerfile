@@ -22,8 +22,8 @@ COPY --from=build /app .
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate IMAP Server"
 LABEL org.opencontainers.image.description="IMAP4rev2 server for retrieving emails"
-LABEL org.opencontainers.image.vendor="Relate SMTP"
-LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-smtp"
+LABEL org.opencontainers.image.vendor="Relate Mail"
+LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-mail"
 
 # IMAP ports: 143 (plain), 993 (SSL/TLS)
 EXPOSE 143 993

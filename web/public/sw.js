@@ -30,7 +30,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Relate SMTP', options)
+    self.registration.showNotification(data.title || 'Relate Mail', options)
   );
 });
 
