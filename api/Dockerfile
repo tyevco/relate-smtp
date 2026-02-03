@@ -23,10 +23,11 @@ RUN dotnet restore api/src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj
 # Copy backend and web sources
 COPY api api/
 COPY web web/
+COPY packages packages/
+COPY package.json package-lock.json ./
 
-# Build web frontend first
-WORKDIR /src/web
-RUN npm ci && npm run build
+# Build web frontend from monorepo root
+RUN npm ci && npm run build:web
 
 # Build backend (API publish will copy web/dist to wwwroot)
 WORKDIR /src/api

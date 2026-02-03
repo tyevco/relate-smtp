@@ -63,7 +63,14 @@ else
         .AddApiKeyAuthentication();
 }
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder(
+        JwtBearerDefaults.AuthenticationScheme,
+        ApiKeyAuthenticationExtensions.ApiKeyScheme)
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Configure CORS
 builder.Services.AddCors(options =>

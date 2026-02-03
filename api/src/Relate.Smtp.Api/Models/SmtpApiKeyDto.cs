@@ -7,8 +7,9 @@ public static class ApiKeyScopes
     public const string Imap = "imap";
     public const string ApiRead = "api:read";
     public const string ApiWrite = "api:write";
+    public const string App = "app";
 
-    public static readonly string[] AllScopes = { Smtp, Pop3, Imap, ApiRead, ApiWrite };
+    public static readonly string[] AllScopes = { Smtp, Pop3, Imap, ApiRead, ApiWrite, App };
 
     public static bool IsValidScope(string scope)
     {

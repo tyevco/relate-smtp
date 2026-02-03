@@ -108,11 +108,9 @@ describe('OIDC Module', () => {
         features: ['smtp', 'pop3', 'imap'],
       }
       const mockConfig = {
-        oidc: {
-          authority: 'https://auth.example.com',
-          clientId: 'client-123',
-          scopes: ['openid', 'profile', 'email'],
-        },
+        oidcAuthority: 'https://auth.example.com',
+        oidcClientId: 'client-123',
+        oidcScope: 'openid profile email',
       }
 
       mockFetch
@@ -146,10 +144,8 @@ describe('OIDC Module', () => {
         features: [],
       }
       const mockConfig = {
-        oidc: {
-          authority: 'https://auth.example.com',
-          clientId: 'client-123',
-        },
+        oidcAuthority: 'https://auth.example.com',
+        oidcClientId: 'client-123',
       }
 
       mockFetch

@@ -166,8 +166,8 @@ public class SmtpCredentialsController : ControllerBase
 
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
-        // Mobile apps get api:read and api:write scopes by default
-        var scopes = new List<string> { ApiKeyScopes.ApiRead, ApiKeyScopes.ApiWrite };
+        // Mobile apps get the app scope for first-party client access
+        var scopes = new List<string> { ApiKeyScopes.App };
 
         // Generate a descriptive name for the key
         var keyName = $"Mobile App - {request.DeviceName} ({platform})";

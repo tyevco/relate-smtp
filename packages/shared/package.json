@@ -1,0 +1,31 @@
+{
+  "name": "@relate/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./api/types": "./src/api/types.ts",
+    "./components/ui": "./src/components/ui/index.ts",
+    "./components/mail": "./src/components/mail/index.ts",
+    "./lib/utils": "./src/lib/utils.ts",
+    "./styles/theme.css": "./src/styles/theme.css"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.563.0",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~5.9.3"
+  }
+}

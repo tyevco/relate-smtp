@@ -14,6 +14,7 @@ export class ApiError extends Error {
 interface ApiClientConfig {
   baseUrl: string;
   apiKey?: string;
+  jwtToken?: string;
 }
 
 /**
@@ -28,11 +29,24 @@ function createApiRequest(config: ApiClientConfig) {
       "Content-Type": "application/json",
     };
 
-    if (config.apiKey) {
-      headers["Authorization"] = `Bearer ${config.apiKey}`;
+    if (config.jwtToken) {
+      // JWT tokens use Bearer prefix
+      headers["Authorization"] = `Bearer ${config.jwtToken}`;
+    } else if (config.apiKey) {
+      // API keys use ApiKey prefix to avoid JWT handler intercepting
+      headers["Authorization"] = `ApiKey ${config.apiKey}`;
     }
 
-    const response = await fetch(`${config.baseUrl}/api${endpoint}`, {
+    const url = `${config.baseUrl}/api${endpoint}`;
+    const method = options.method || "GET";
+
+    console.log(`[API] ${method} ${url}`);
+    console.log(`[API] Auth: ${config.jwtToken ? "JWT" : config.apiKey ? "ApiKey" : "none"}, length: ${(config.jwtToken || config.apiKey)?.length || 0}`);
+    if (options.body) {
+      console.log("[API] Request body:", options.body);
+    }
+
+    const response = await fetch(url, {
       ...options,
       headers: {
         ...headers,
@@ -40,8 +54,11 @@ function createApiRequest(config: ApiClientConfig) {
       },
     });
 
+    console.log(`[API] Response: ${response.status} ${response.statusText}`);
+
     if (!response.ok) {
       const message = await response.text();
+      console.error(`[API] Error response body:`, message);
       throw new ApiError(response.status, message || response.statusText);
     }
 
@@ -49,7 +66,9 @@ function createApiRequest(config: ApiClientConfig) {
       return undefined as T;
     }
 
-    return response.json();
+    const json = await response.json();
+    console.log("[API] Response body:", JSON.stringify(json).slice(0, 200));
+    return json;
   };
 }
 
@@ -93,11 +112,16 @@ export async function getActiveApiClient() {
     (a) => a.id === state.activeAccountId
   );
 
+  console.log("[API] getActiveApiClient - activeAccountId:", state.activeAccountId);
+  console.log("[API] getActiveApiClient - found account:", !!activeAccount);
+
   if (!activeAccount) {
     throw new Error("No active account");
   }
 
   const apiKey = await getApiKey(activeAccount.id);
+  console.log("[API] getActiveApiClient - got API key:", !!apiKey, "length:", apiKey?.length || 0);
+
   if (!apiKey) {
     throw new Error("API key not found for account");
   }
@@ -140,7 +164,7 @@ export async function getApiClientForAccount(accountId: string) {
 export function createTempApiClient(serverUrl: string, jwtToken: string) {
   return createApiClient({
     baseUrl: serverUrl,
-    apiKey: jwtToken, // JWT is sent as Bearer token same as API key
+    jwtToken,
   });
 }
 

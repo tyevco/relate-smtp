@@ -58,6 +58,12 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             keyEntity = await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "api:write", Context.RequestAborted);
         }
 
+        // If not found with api:write, try app (first-party mobile/desktop clients)
+        if (keyEntity == null)
+        {
+            keyEntity = await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "app", Context.RequestAborted);
+        }
+
         if (keyEntity == null)
         {
             return AuthenticateResult.Fail("Invalid API key or missing required scope");

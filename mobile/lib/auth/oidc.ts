@@ -1,6 +1,5 @@
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import * as Crypto from "expo-crypto";
 import { Platform } from "react-native";
 import type { OidcConfig, ServerDiscovery } from "../api/types";
 
@@ -12,6 +11,9 @@ const redirectUri = AuthSession.makeRedirectUri({
   scheme: "relate-mail",
   path: "auth/callback",
 });
+
+// Debug: log the redirect URI at module load
+console.log("[OIDC] Redirect URI:", redirectUri);
 
 export interface OidcResult {
   accessToken: string;
@@ -74,13 +76,18 @@ export async function discoverServer(
     const configResponse = await fetch(configUrl);
     if (configResponse.ok) {
       const config = await parseJsonResponse<{
-        oidc?: { authority?: string; clientId?: string; scopes?: string[] };
+        oidcAuthority?: string;
+        oidcClientId?: string;
+        oidcScope?: string;
       }>(configResponse, configUrl);
-      oidcConfig = {
-        authority: config.oidc?.authority,
-        clientId: config.oidc?.clientId,
-        scopes: config.oidc?.scopes || ["openid", "profile", "email"],
-      };
+      // Only set oidcConfig if required fields are present
+      if (config.oidcAuthority && config.oidcClientId) {
+        oidcConfig = {
+          authority: config.oidcAuthority,
+          clientId: config.oidcClientId,
+          scopes: config.oidcScope?.split(" ") || ["openid", "profile", "email"],
+        };
+      }
     }
   }
 
@@ -93,20 +100,31 @@ export async function discoverServer(
 export async function performOidcAuth(
   oidcConfig: OidcConfig
 ): Promise<OidcResult> {
+  console.log("[OIDC] Starting auth with config:", {
+    authority: oidcConfig.authority,
+    clientId: oidcConfig.clientId,
+    scopes: oidcConfig.scopes,
+    redirectUri,
+  });
+
+  // Validate required config
+  if (!oidcConfig.authority) {
+    throw new Error("OIDC authority URL is not configured on the server");
+  }
+  if (!oidcConfig.clientId) {
+    throw new Error("OIDC client ID is not configured on the server");
+  }
+
   // Discover OIDC endpoints
+  console.log("[OIDC] Fetching discovery from:", oidcConfig.authority);
   const discovery = await AuthSession.fetchDiscoveryAsync(oidcConfig.authority);
+  console.log("[OIDC] Discovery result:", discovery);
 
-  // Generate PKCE code verifier and challenge
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-  // Create auth request
+  // Create auth request with PKCE (AuthSession handles verifier/challenge internally)
   const authRequest = new AuthSession.AuthRequest({
     clientId: oidcConfig.clientId,
     scopes: oidcConfig.scopes,
     redirectUri,
-    codeChallenge,
-    codeChallengeMethod: AuthSession.CodeChallengeMethod.S256,
     usePKCE: true,
   });
 
@@ -121,14 +139,14 @@ export async function performOidcAuth(
     throw new Error("No authorization code received");
   }
 
-  // Exchange code for tokens
+  // Exchange code for tokens using the AuthRequest's internal codeVerifier
   const tokenResult = await AuthSession.exchangeCodeAsync(
     {
       clientId: oidcConfig.clientId,
       code: result.params.code,
       redirectUri,
       extraParams: {
-        code_verifier: codeVerifier,
+        code_verifier: authRequest.codeVerifier!,
       },
     },
     discovery
@@ -140,35 +158,6 @@ export async function performOidcAuth(
     refreshToken: tokenResult.refreshToken ?? undefined,
     expiresIn: tokenResult.expiresIn ?? undefined,
   };
-}
-
-/**
- * Generate a random code verifier for PKCE
- */
-function generateCodeVerifier(): string {
-  const randomBytes = Crypto.getRandomBytes(32);
-  return base64UrlEncode(randomBytes);
-}
-
-/**
- * Generate code challenge from verifier using SHA-256
- */
-async function generateCodeChallenge(verifier: string): Promise<string> {
-  const digest = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    verifier,
-    { encoding: Crypto.CryptoEncoding.BASE64 }
-  );
-  // Convert base64 to base64url
-  return digest.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-/**
- * Base64 URL encode
- */
-function base64UrlEncode(bytes: Uint8Array): string {
-  const base64 = btoa(String.fromCharCode(...bytes));
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 /**

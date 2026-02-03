@@ -1,0 +1,21 @@
+{
+  "name": "relate-smtp-frontend",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "web",
+    "desktop"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w web",
+    "dev:desktop": "npm run tauri:dev -w desktop",
+    "build:web": "npm run build -w web",
+    "build:desktop": "npm run tauri:build -w desktop",
+    "build:shared": "npm run build -w @relate/shared",
+    "lint": "npm run lint -w web",
+    "test": "npm run test -w web"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
