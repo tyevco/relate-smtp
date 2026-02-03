@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { getCurrentWindow, LogicalSize, LogicalPosition } from '@tauri-apps/api/window'
 import { invoke } from '@tauri-apps/api/core'
 
 interface AppSettings {
@@ -21,18 +21,10 @@ export function useWindowState() {
       try {
         const settings: AppSettings = await invoke('get_settings')
         if (settings.window_width && settings.window_height) {
-          await window.setSize({
-            type: 'Logical',
-            width: settings.window_width,
-            height: settings.window_height,
-          })
+          await window.setSize(new LogicalSize(settings.window_width, settings.window_height))
         }
         if (settings.window_x !== null && settings.window_y !== null) {
-          await window.setPosition({
-            type: 'Logical',
-            x: settings.window_x,
-            y: settings.window_y,
-          })
+          await window.setPosition(new LogicalPosition(settings.window_x, settings.window_y))
         }
       } catch {
         // Use default window state
