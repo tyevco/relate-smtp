@@ -47,7 +47,8 @@ export function PopoverTrigger({ asChild, children }: PopoverTriggerProps) {
     return React.cloneElement(children, {
       onClick: (e: React.MouseEvent) => {
         setOpen(true)
-        ;(children.props as Record<string, unknown>).onClick?.(e)
+        const onClick = (children.props as Record<string, unknown>).onClick
+        if (typeof onClick === "function") onClick(e)
       },
     } as React.HTMLAttributes<HTMLElement>)
   }
