@@ -43,6 +43,19 @@ fn get_settings_path(app: &AppHandle) -> Result<PathBuf, SettingsError> {
     Ok(app_dir.join("settings.json"))
 }
 
+/// Synchronous version for use in non-async contexts (e.g., window close handler)
+pub fn get_settings_sync(app: &AppHandle) -> Result<AppSettings, SettingsError> {
+    let path = get_settings_path(app)?;
+
+    if !path.exists() {
+        return Ok(AppSettings::default());
+    }
+
+    let contents = fs::read_to_string(&path).map_err(|e| SettingsError::IoError(e.to_string()))?;
+
+    serde_json::from_str(&contents).map_err(|e| SettingsError::SerializationError(e.to_string()))
+}
+
 #[tauri::command]
 pub async fn get_settings(app: AppHandle) -> Result<AppSettings, SettingsError> {
     let path = get_settings_path(&app)?;

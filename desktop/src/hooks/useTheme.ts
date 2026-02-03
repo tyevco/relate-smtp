@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { invoke } from '@tauri-apps/api/core'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -6,8 +7,19 @@ export function useTheme() {
   const [theme, setTheme] = useState<Theme>('system')
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
 
+  // Load saved theme preference on mount
   useEffect(() => {
-    // Check system preference
+    invoke<{ theme: string }>('get_settings')
+      .then((settings) => {
+        const saved = settings.theme as Theme
+        if (saved === 'light' || saved === 'dark' || saved === 'system') {
+          setTheme(saved)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
     const updateResolvedTheme = () => {
@@ -20,7 +32,6 @@ export function useTheme() {
 
     updateResolvedTheme()
 
-    // Listen for system theme changes
     const handler = () => updateResolvedTheme()
     mediaQuery.addEventListener('change', handler)
 
@@ -28,7 +39,6 @@ export function useTheme() {
   }, [theme])
 
   useEffect(() => {
-    // Apply theme to document
     const root = document.documentElement
     if (resolvedTheme === 'dark') {
       root.classList.add('dark')

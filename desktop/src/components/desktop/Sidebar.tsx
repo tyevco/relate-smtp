@@ -1,9 +1,9 @@
 import { Button } from '@relate/shared/components/ui'
-import { Inbox, Send, Settings, LogOut } from 'lucide-react'
+import { Inbox, Send, KeyRound, Settings, LogOut } from 'lucide-react'
 import { useSetAtom } from 'jotai'
 import { logoutAtom } from '@/stores/auth'
 
-type View = 'inbox' | 'sent' | 'settings'
+type View = 'inbox' | 'sent' | 'smtp-settings' | 'settings'
 
 interface SidebarProps {
   currentView: View
@@ -40,14 +40,22 @@ export function Sidebar({ currentView, onNavigate }: SidebarProps) {
         </div>
       </nav>
 
-      <div className="p-2 border-t">
+      <div className="p-2 border-t space-y-1">
+        <Button
+          variant={currentView === 'smtp-settings' ? 'secondary' : 'ghost'}
+          className="w-full justify-start"
+          onClick={() => onNavigate('smtp-settings')}
+        >
+          <KeyRound className="h-4 w-4 mr-2" />
+          SMTP Settings
+        </Button>
         <Button
           variant={currentView === 'settings' ? 'secondary' : 'ghost'}
           className="w-full justify-start"
           onClick={() => onNavigate('settings')}
         >
           <Settings className="h-4 w-4 mr-2" />
-          Settings
+          Preferences
         </Button>
         <Button
           variant="ghost"
