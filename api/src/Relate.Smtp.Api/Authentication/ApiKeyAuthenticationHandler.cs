@@ -13,15 +13,18 @@ public class ApiKeyAuthenticationOptions : AuthenticationSchemeOptions
 public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
 {
     private readonly ISmtpApiKeyRepository _apiKeyRepository;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public ApiKeyAuthenticationHandler(
         IOptionsMonitor<ApiKeyAuthenticationOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISmtpApiKeyRepository apiKeyRepository)
+        ISmtpApiKeyRepository apiKeyRepository,
+        IServiceScopeFactory serviceScopeFactory)
         : base(options, logger, encoder)
     {
         _apiKeyRepository = apiKeyRepository;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -69,16 +72,19 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             return AuthenticateResult.Fail("Invalid API key or missing required scope");
         }
 
-        // Update LastUsedAt (background task to avoid blocking)
+        // Update LastUsedAt (background task with its own DI scope to avoid disposed DbContext)
+        var keyId = keyEntity.Id;
         _ = Task.Run(async () =>
         {
             try
             {
-                await _apiKeyRepository.UpdateLastUsedAsync(keyEntity.Id, DateTimeOffset.UtcNow, CancellationToken.None);
+                using var scope = _serviceScopeFactory.CreateScope();
+                var repo = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
+                await repo.UpdateLastUsedAsync(keyId, DateTimeOffset.UtcNow, CancellationToken.None);
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to update LastUsedAt for API key {KeyId}", keyEntity.Id);
+                Logger.LogError(ex, "Failed to update LastUsedAt for API key {KeyId}", keyId);
             }
         });
 

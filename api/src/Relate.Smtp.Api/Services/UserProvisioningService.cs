@@ -26,6 +26,24 @@ public class UserProvisioningService
             ?? principal.FindFirstValue("sub")
             ?? throw new InvalidOperationException("User subject claim not found");
 
+        // API key authentication sets the subject to the user's GUID directly.
+        // Look up by ID first to avoid requiring OIDC-specific claims.
+        if (Guid.TryParse(subject, out var userId))
+        {
+            var userById = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (userById != null)
+            {
+                userById.LastLoginAt = DateTimeOffset.UtcNow;
+                await _userRepository.UpdateAsync(userById, cancellationToken);
+
+                var userAddresses = new List<string> { userById.Email };
+                userAddresses.AddRange(userById.AdditionalAddresses.Select(a => a.Address));
+                await _emailRepository.LinkEmailsToUserAsync(userById.Id, userAddresses, cancellationToken);
+
+                return userById;
+            }
+        }
+
         var issuer = principal.FindFirstValue("iss")
             ?? throw new InvalidOperationException("User issuer claim not found");
 

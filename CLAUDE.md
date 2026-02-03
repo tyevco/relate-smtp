@@ -4,301 +4,149 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Relate Mail is a full-stack application that provides SMTP, POP3, and IMAP email servers with a web-based management interface. The system consists of five main components:
+Relate Mail is a full-stack email platform with SMTP, POP3, and IMAP servers, a REST API, and clients for web, mobile, and desktop. All services share a PostgreSQL database.
 
-1. **API** (.NET 10.0 ASP.NET Core) - REST API for managing emails and users
-2. **SMTP Server** (.NET 10.0 Worker Service) - Custom SMTP server for receiving emails
-3. **POP3 Server** (.NET 10.0 Worker Service) - Custom POP3 server for retrieving emails
-4. **IMAP Server** (.NET 10.0 Worker Service) - Custom IMAP4rev2 server for retrieving emails
-5. **Web Frontend** (React + TypeScript + Vite) - Email management UI (bundled with API)
+## Monorepo Structure
 
-All services share a database for email and user data persistence. Uses PostgreSQL database for production-grade performance and concurrency.
+npm workspaces at root coordinate the frontend packages:
 
-## Architecture
-
-### Backend (.NET 10.0)
-
-The backend follows Clean Architecture principles with three layers:
-
-- **Relate.Smtp.Core** - Domain entities and interfaces (Entities/, Interfaces/)
-  - Core business objects: `User`, `Email`, `EmailAttachment`, `EmailRecipient`, `UserEmailAddress`, `SmtpApiKey`
-  - Repository interfaces: `IEmailRepository`, `IUserRepository`, `ISmtpApiKeyRepository`
-
-- **Relate.Smtp.Infrastructure** - Data access and persistence
-  - Entity Framework Core with PostgreSQL
-  - Repository implementations in Repositories/
-  - Database context in Data/AppDbContext.cs
-  - Entity configurations in Data/Configurations/
-  - BCrypt.Net-Next for password hashing
-
-- **Relate.Smtp.Api** - Web API (port 8080 in containers, 5000 in dev)
-  - Controllers: `EmailsController`, `ProfileController`, `SmtpCredentialsController`
-  - Services: `UserProvisioningService`, `SmtpCredentialService`
-  - JWT/OIDC authentication (optional, falls back to dev mode)
-  - CORS configured for frontend origins
-
-- **Relate.Smtp.SmtpHost** - SMTP server (ports 587, 465)
-  - Hosted service running SmtpServer library
-  - Custom handlers: `CustomMessageStore`, `CustomUserAuthenticator`
-  - Authenticates users and stores incoming emails in database
-
-- **Relate.Smtp.Pop3Host** - POP3 server (ports 110, 995)
-  - Custom POP3 protocol implementation (RFC 1939)
-  - TCP server with BackgroundService pattern
-  - Custom handlers: `Pop3UserAuthenticator`, `Pop3CommandHandler`, `Pop3MessageManager`
-  - Authenticates users with API keys and retrieves emails from database
-  - Supports all standard POP3 commands (USER, PASS, STAT, LIST, RETR, DELE, UIDL, TOP, etc.)
-
-- **Relate.Smtp.ImapHost** - IMAP server (ports 143, 993)
-  - Custom IMAP4rev2 protocol implementation (RFC 9051)
-  - TCP server with BackgroundService pattern
-  - Custom handlers: `ImapUserAuthenticator`, `ImapCommandHandler`, `ImapMessageManager`
-  - Authenticates users with API keys (requires 'imap' scope)
-  - Supports IMAP4rev2 commands:
-    - Any State: CAPABILITY, NOOP, LOGOUT, ENABLE
-    - Not Authenticated: LOGIN
-    - Authenticated: SELECT, EXAMINE, LIST, STATUS
-    - Selected: FETCH, STORE, SEARCH, EXPUNGE, CLOSE, UNSELECT, UID
-  - Full flag support: \Seen, \Answered, \Flagged, \Deleted, \Draft
-  - 30-minute session timeout, per-connection state tracking
-
-### Frontend (React + TypeScript)
-
-- **Routing**: TanStack Router with file-based routing (routes/)
-  - Route tree auto-generated in routeTree.gen.ts (do not edit manually)
-
-- **State Management**:
-  - TanStack Query for server state
-  - Jotai for client state
-  - react-oidc-context for authentication (optional)
-
-- **API Client**: Custom fetch wrapper in src/api/client.ts
-  - Base URL from VITE_API_URL env var (defaults to '/api')
-  - React hooks in src/api/hooks.ts
-
-- **UI Components**:
-  - Tailwind CSS with CVA for component variants
-  - Lucide React icons
-  - Custom components in src/components/
+- **`api/`** - .NET 10.0 backend (6 projects in `src/`, tests in `tests/`)
+- **`web/`** - React + TypeScript + Vite web frontend
+- **`mobile/`** - React Native (Expo 54) mobile app
+- **`desktop/`** - Tauri 2 desktop app (Rust + TypeScript)
+- **`packages/shared/`** - Shared npm package (`@relate/shared`) with API types, UI components, utilities
+- **`docker/`** - Docker Compose files for local and GHCR deployment
 
 ## Development Commands
+
+### Root (monorepo)
+
+```bash
+npm install                    # Install all workspace dependencies
+npm run build:shared           # Build @relate/shared (prerequisite for other builds)
+npm run dev:web                # Run web dev server
+npm run dev:desktop            # Run desktop with Tauri
+npm run build:web              # Production web build
+npm run build:desktop          # Production desktop build
+```
 
 ### Backend (.NET)
 
 ```bash
-# Navigate to api directory
 cd api
+dotnet build                   # Build all projects
+dotnet test --filter "Category=Unit"         # Fast unit tests
+dotnet test --filter "Category=Integration"  # DB tests (Testcontainers)
+dotnet test --filter "Category=E2E"          # Full stack protocol tests
 
-# Restore dependencies
-dotnet restore
-
-# Build solution
-dotnet build
-
-# Run API server (development)
-cd src/Relate.Smtp.Api
-dotnet run
-# Listens on http://localhost:5000 by default
-
-# Run SMTP server (development)
-cd src/Relate.Smtp.SmtpHost
-dotnet run
-
-# Run POP3 server (development)
-cd src/Relate.Smtp.Pop3Host
-dotnet run
-
-# Run IMAP server (development)
-cd src/Relate.Smtp.ImapHost
-dotnet run
+# Run individual servers (each in its own terminal)
+dotnet run --project src/Relate.Smtp.Api         # API on http://localhost:5000
+dotnet run --project src/Relate.Smtp.SmtpHost    # SMTP on ports 587, 465
+dotnet run --project src/Relate.Smtp.Pop3Host    # POP3 on ports 110, 995
+dotnet run --project src/Relate.Smtp.ImapHost    # IMAP on ports 143, 993
 
 # Database migrations (from api/ directory)
-# Database migrations
 dotnet ef migrations add MigrationName --project src/Relate.Smtp.Infrastructure --startup-project src/Relate.Smtp.Api
 dotnet ef database update --project src/Relate.Smtp.Infrastructure --startup-project src/Relate.Smtp.Api
-
-# Note: Ensure your appsettings.json has the correct connection string before running migrations
 ```
 
-### Frontend (Web)
+### Web Frontend
 
 ```bash
-# Navigate to web directory
 cd web
-
-# Install dependencies
-npm install
-
-# Run development server (Vite)
-npm run dev
-# Runs on http://localhost:5173
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint code
-npm run lint
+npm run dev              # Vite dev server (proxies /api to localhost:5000)
+npm run build            # Production build (tsc + vite)
+npm run lint             # ESLint
+npm run test:run         # Vitest unit tests (single run)
+npm run test             # Vitest watch mode
+npm run test:coverage    # Coverage report (thresholds: 50%/45% branches)
+npm run test:e2e         # Playwright E2E (requires running dev server)
 ```
 
-### Docker Compose
+### Mobile
 
 ```bash
-# Production build (from root directory)
-docker compose -f docker/docker-compose.yml up
-
-# Development with override
-docker compose -f docker/docker-compose.yml -f docker/docker-compose.dev.yml up
-
-# Services:
-# - postgres: PostgreSQL database (port 5432 in dev)
-# - api: http://localhost:8080 (includes web frontend)
-# - smtp: ports 587, 465
-# - pop3: ports 110, 995
-# - imap: ports 143, 993
+cd mobile
+npm start                # Expo dev server
+npm test                 # Jest unit tests
+npm run test:coverage    # Coverage (thresholds: 50%/40% branches)
+npm run test:e2e:ios     # Detox E2E on iOS simulator
+npm run test:e2e:android # Detox E2E on Android emulator
 ```
+
+### Docker
+
+```bash
+cd docker
+docker compose up --build                                        # Local build
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up  # Dev mode (exposes ports)
+docker compose -f docker-compose.ghcr.yml up                     # Pre-built GHCR images
+```
+
+## Backend Architecture (.NET 10.0, Clean Architecture)
+
+```
+api/src/
+  Relate.Smtp.Core/            # Domain entities + repository interfaces (no dependencies)
+  Relate.Smtp.Infrastructure/  # EF Core DbContext, repository implementations, migrations
+  Relate.Smtp.Api/             # REST API, controllers, JWT/OIDC + API key auth, SignalR hub
+  Relate.Smtp.SmtpHost/        # SMTP server (SmtpServer library 11.1.0)
+  Relate.Smtp.Pop3Host/        # Custom POP3 server (RFC 1939)
+  Relate.Smtp.ImapHost/        # Custom IMAP4rev2 server (RFC 9051)
+```
+
+**Key patterns:**
+- Repository interfaces in Core, implementations in Infrastructure
+- `Infrastructure/DependencyInjection.cs` registers all data services
+- All protocol hosts (SMTP/POP3/IMAP) share the same API key authentication with BCrypt hashing and 30s in-memory cache
+- API key scopes: `smtp`, `pop3`, `imap`, `api:read`, `api:write`, `app`
+- API supports dual auth: OIDC/JWT (first-party) + API key (third-party/mobile/desktop)
+- `ApiKeyAuthenticationHandler` handles Bearer/ApiKey token validation
+- SignalR hub at `/hubs/email` for real-time notifications; SMTP/POP3/IMAP hosts notify via HTTP
+- Auto-migration on startup in development mode
+- Test categories use `[Trait("Category", "Unit|Integration|E2E")]`; E2E uses `FullStackFixture` with Testcontainers
+
+## Frontend Architecture (React + TypeScript)
+
+**Web (`web/src/`):**
+- TanStack Router with file-based routing in `src/routes/` — `routeTree.gen.ts` is auto-generated, do not edit
+- TanStack Query for server state, Jotai for client state
+- API client in `src/api/client.ts` — fetch wrapper that extracts OIDC tokens from sessionStorage
+- Tailwind CSS 4.1 with CVA for component variants, Lucide React icons, Radix UI primitives
+- Path alias: `@/` maps to `src/`
+- Vite dev server proxies `/api` to `http://localhost:5000`
+- MSW (Mock Service Worker) used for API mocking in tests
+
+**Mobile (`mobile/app/`):**
+- Expo Router with file-based routing, group routes: `(auth)`, `(main)/(tabs)`, `(main)/emails`
+- Zustand for state, TanStack Query for server state
+- Expo Secure Store for API key persistence, Expo Auth Session for OIDC
+
+**Desktop (`desktop/`):**
+- Tauri 2 with React frontend, Rust backend in `src-tauri/`
+- Shell, notification, and window state plugins
+
+**Shared (`packages/shared/`):**
+- Exports: `@relate/shared` (index), `@relate/shared/api/types`, `@relate/shared/components/ui`, `@relate/shared/components/mail`, `@relate/shared/lib/utils`, `@relate/shared/styles/theme.css`
+
+## Authentication
+
+OIDC is optional. If `Oidc__Authority` (backend) or `VITE_OIDC_AUTHORITY` (frontend) is not set, the system runs in development mode without authentication.
 
 ## Configuration
 
-### Backend Environment Variables
+Backend uses `appsettings.json` + environment variable overrides. Key settings:
+- `ConnectionStrings__DefaultConnection` — PostgreSQL connection string
+- `Oidc__Authority` / `Oidc__Audience` — OIDC provider (optional)
+- `Smtp__Enabled`, `Pop3__Enabled`, `Imap__Enabled` — toggle protocols
+- `{Protocol}__ServerName`, `{Protocol}__Port`, `{Protocol}__SecurePort` — server binding
 
-- `ConnectionStrings__DefaultConnection` - PostgreSQL database connection string
-  - Format: `host=localhost;port=5432;database=relate-mail;user id=myuser;password=mypass`
-- `Oidc__Authority` - OIDC provider URL (optional, enables JWT auth)
-- `Oidc__Audience` - OIDC audience claim (optional)
-- `Cors__AllowedOrigins__0` - CORS origins (can add multiple with __1, __2, etc.)
-- `Smtp__ServerName` - SMTP server hostname
-- `Smtp__Port` - SMTP listening port (default: 587)
-- `Smtp__SecurePort` - SMTP secure port (default: 465)
-- `Smtp__RequireAuthentication` - Whether SMTP requires auth
-- `Pop3__ServerName` - POP3 server hostname
-- `Pop3__Port` - POP3 listening port (default: 110)
-- `Pop3__SecurePort` - POP3S secure port (default: 995)
-- `Pop3__RequireAuthentication` - Whether POP3 requires auth
-- `Pop3__SessionTimeout` - POP3 session timeout (default: 10 minutes)
-- `Pop3__CertificatePath` - Path to SSL/TLS certificate for POP3S (optional)
-- `Pop3__CertificatePassword` - Certificate password (optional)
-- `Imap__ServerName` - IMAP server hostname
-- `Imap__Port` - IMAP listening port (default: 143)
-- `Imap__SecurePort` - IMAPS secure port (default: 993)
-- `Imap__RequireAuthentication` - Whether IMAP requires auth
-- `Imap__SessionTimeout` - IMAP session timeout (default: 30 minutes)
-- `Imap__CertificatePath` - Path to SSL/TLS certificate for IMAPS (optional)
-- `Imap__CertificatePassword` - Certificate password (optional)
-- `Smtp__Enabled` - Enable/disable SMTP protocol (default: true)
-- `Pop3__Enabled` - Enable/disable POP3 protocol (default: true)
-- `Imap__Enabled` - Enable/disable IMAP protocol (default: true)
+Frontend uses `VITE_API_URL` (defaults to `/api`), `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`.
 
-### Frontend Environment Variables (.env)
+## CI/CD
 
-- `VITE_API_URL` - Backend API URL (defaults to '/api')
-- `VITE_OIDC_AUTHORITY` - OIDC provider URL (optional)
-- `VITE_OIDC_CLIENT_ID` - OIDC client ID (optional)
-
-## Key Patterns
-
-### Authentication
-
-Both frontend and backend support optional OIDC/JWT authentication. If `Oidc__Authority` (backend) or `VITE_OIDC_AUTHORITY` (frontend) is not configured, the system operates in development mode without authentication.
-
-### Database Access
-
-- All database operations go through repository interfaces
-- EF Core handles PostgreSQL persistence
-- In development, API auto-migrates database on startup (Program.cs:77-82)
-
-### SMTP Server
-
-- Built on SmtpServer library (11.1.0)
-- **Per-User API Keys**: Users generate API keys via the web UI (SMTP Settings page)
-- **Authentication**: Custom authenticator validates email + API key against BCrypt-hashed keys in database
-- **Security**: API keys are hashed with BCrypt (work factor 11), shown only once during generation
-- Custom message store parses MIME messages and persists to database
-- Runs as a hosted service within a .NET Worker Service
-- In-memory authentication cache (30s TTL) reduces database load
-- **Email Linking**: Recipients are automatically linked to user accounts via:
-  - **On arrival**: When emails arrive, recipients are immediately linked if matching users exist
-  - **On login**: When users log in, any unlinked emails are retroactively linked
-  - Checks both primary email and additional email addresses registered by users
-
-### POP3 Server
-
-- Custom implementation of RFC 1939 (POP3 protocol)
-- **Authentication**: Reuses SMTP API keys - same email + API key credentials work for both protocols
-- **Security**: BCrypt-hashed keys with 30-second authentication cache (same as SMTP)
-- **Protocol Support**: All standard POP3 commands implemented:
-  - Authorization: USER, PASS, QUIT
-  - Transaction: STAT, LIST, RETR, DELE, NOOP, RSET, UIDL, TOP
-  - Update: Applies deletions on QUIT
-- **Message Retrieval**: Builds RFC 822 messages from database using MimeKit
-- **Session Management**: 10-minute timeout, per-connection state tracking
-- **SSL/TLS**: Supports POP3S on port 995 with certificate configuration
-- Runs as a BackgroundService with custom TCP server
-- Same API keys work for both SMTP (sending) and POP3 (retrieving)
-
-### IMAP Server
-
-- Custom implementation of RFC 9051 (IMAP4rev2 protocol)
-- **Authentication**: Reuses SMTP API keys with 'imap' scope - same credentials work across protocols
-- **Security**: BCrypt-hashed keys with 30-second authentication cache (same as SMTP/POP3)
-- **Protocol Support**: IMAP4rev2 commands implemented:
-  - Any State: CAPABILITY, NOOP, LOGOUT, ENABLE
-  - Not Authenticated: LOGIN
-  - Authenticated: SELECT, EXAMINE, LIST, STATUS
-  - Selected: FETCH, STORE, SEARCH, EXPUNGE, CLOSE, UNSELECT
-  - UID-prefixed: UID FETCH, UID STORE, UID SEARCH
-- **Capabilities**: IMAP4rev2, AUTH=PLAIN, LITERAL+, ENABLE, UNSELECT, UIDPLUS, CHILDREN
-- **Flag Support**: \Seen, \Answered, \Flagged, \Deleted, \Draft (persistent)
-- **Message Retrieval**: Builds RFC 822 messages from database using MimeKit
-- **Session Management**: 30-minute timeout, per-connection state tracking
-- **SSL/TLS**: Supports IMAPS on port 993 with certificate configuration
-- Runs as a BackgroundService with custom TCP server
-- Same API keys work for SMTP, POP3, and IMAP (with appropriate scopes)
-
-### Frontend Routing
-
-- TanStack Router generates type-safe routes
-- Route files in src/routes/ define route components
-- Run dev server to regenerate routeTree.gen.ts after route changes
-
-## Database
-
-Uses PostgreSQL for production-grade performance and concurrency.
-
-Database stores:
-- Users and their email addresses
-- Received emails with recipients, attachments, and content
-- SMTP API keys (BCrypt-hashed) for per-user authentication
-
-**Connection String Format:**
-- `host=localhost;port=5432;database=relate-mail;user id=myuser;password=mypass`
-
-## Email Client Setup
-
-Users configure email clients to send and receive emails through the server:
-
-1. Log into the web application
-2. Navigate to "SMTP Settings" page
-3. Generate an API key with a descriptive name (e.g., "Work Laptop", "iPhone")
-4. Select the required scopes: `smtp`, `pop3`, `imap`, `api:read`, `api:write`
-5. Copy the generated API key (shown only once)
-6. Configure email client:
-   - **Outgoing Mail (SMTP)**:
-     - Server: Value from connection info (e.g., localhost, smtp.example.com)
-     - Port: 587 (STARTTLS) or 465 (SSL/TLS)
-     - Username: User's email address
-     - Password: Generated API key
-   - **Incoming Mail (POP3)**:
-     - Server: Value from connection info (e.g., localhost, pop3.example.com)
-     - Port: 110 (plain) or 995 (SSL/TLS)
-     - Username: User's email address
-     - Password: Same generated API key
-   - **Incoming Mail (IMAP)** (recommended):
-     - Server: Value from connection info (e.g., localhost, imap.example.com)
-     - Port: 143 (plain) or 993 (SSL/TLS)
-     - Username: User's email address
-     - Password: Same generated API key
-
-Users can create multiple API keys for different devices and revoke them individually via the web UI. The same API key works for SMTP (sending), POP3 (retrieving), and IMAP (retrieving) protocols when the appropriate scopes are selected.
+GitHub Actions workflows in `.github/workflows/`:
+- **ci.yml** — Backend build/test (unit, integration, E2E), web build/lint/test, mobile lint/test, desktop lint, Docker build validation
+- **docker-publish.yml** — Multi-platform (amd64/arm64) image publishing to GHCR on push to main/tags
+- **mobile-build.yml** — Mobile lint/test + EAS builds
+- **desktop-build.yml** — Desktop builds for Windows (NSIS/MSI), macOS (DMG), Linux (AppImage/Deb)
