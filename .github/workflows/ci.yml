@@ -297,6 +297,31 @@ jobs:
           name: mobile-coverage-report
           path: mobile/coverage/
 
+  # Desktop app validation
+  desktop:
+    name: Desktop App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint -w desktop
+
+      - name: Type check
+        run: npx tsc --noEmit -p desktop/tsconfig.json
+
   # Docker build validation (no push)
   docker-validate:
     name: Docker Build Validation
@@ -334,7 +359,7 @@ jobs:
 
   summary:
     name: CI Summary
-    needs: [backend-build, unit-tests, integration-tests, e2e-tests, web, web-tests, web-e2e, mobile, mobile-tests]
+    needs: [backend-build, unit-tests, integration-tests, e2e-tests, web, web-tests, web-e2e, mobile, mobile-tests, desktop]
     runs-on: ubuntu-latest
     if: always()
 
@@ -349,6 +374,7 @@ jobs:
           echo "| Backend Build | ${{ needs.backend-build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Web Frontend | ${{ needs.web.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Mobile App | ${{ needs.mobile.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Desktop App | ${{ needs.desktop.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Backend Test Results" >> $GITHUB_STEP_SUMMARY
           echo "| Test Suite | Status |" >> $GITHUB_STEP_SUMMARY
