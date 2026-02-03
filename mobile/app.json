@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.relate.mail",
+      "bundleIdentifier": "dev.fourrobots.relatemail",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1e293b"
       },
-      "package": "com.relate.mail"
+      "package": "dev.fourrobots.relatemail"
     },
     "web": {
       "bundler": "metro",

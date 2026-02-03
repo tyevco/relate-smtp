@@ -22,7 +22,7 @@ services:
       retries: 5
 
   api:
-    image: ghcr.io/${GITHUB_REPOSITORY:-tyevco/relate-mail}-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY:-four-robots/relate-mail}-api:${IMAGE_TAG:-latest}
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=relate_mail;Username=postgres;Password=postgres
       - Oidc__Authority=${OIDC_AUTHORITY:-}
@@ -37,7 +37,7 @@ services:
         condition: service_healthy
 
   smtp:
-    image: ghcr.io/${GITHUB_REPOSITORY:-tyevco/relate-mail}-smtp:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY:-four-robots/relate-mail}-smtp:${IMAGE_TAG:-latest}
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=relate_mail;Username=postgres;Password=postgres
       - Smtp__ServerName=${SMTP_SERVER_NAME:-localhost}
@@ -55,7 +55,7 @@ services:
         condition: service_healthy
 
   pop3:
-    image: ghcr.io/${GITHUB_REPOSITORY:-tyevco/relate-mail}-pop3:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY:-four-robots/relate-mail}-pop3:${IMAGE_TAG:-latest}
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=relate_mail;Username=postgres;Password=postgres
       - Pop3__ServerName=${POP3_SERVER_NAME:-localhost}
@@ -73,7 +73,7 @@ services:
         condition: service_healthy
 
   imap:
-    image: ghcr.io/${GITHUB_REPOSITORY:-tyevco/relate-mail}-imap:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GITHUB_REPOSITORY:-four-robots/relate-mail}-imap:${IMAGE_TAG:-latest}
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=relate_mail;Username=postgres;Password=postgres
       - Imap__ServerName=${IMAP_SERVER_NAME:-localhost}

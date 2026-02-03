@@ -23,7 +23,7 @@ COPY --from=build /app .
 LABEL org.opencontainers.image.title="Relate IMAP Server"
 LABEL org.opencontainers.image.description="IMAP4rev2 server for retrieving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
-LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-mail"
+LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
 # IMAP ports: 143 (plain), 993 (SSL/TLS)
 EXPOSE 143 993

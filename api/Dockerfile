@@ -45,7 +45,7 @@ COPY --from=build /app/api .
 LABEL org.opencontainers.image.title="Relate Mail API"
 LABEL org.opencontainers.image.description="REST API for Relate Mail email management"
 LABEL org.opencontainers.image.vendor="Relate Mail"
-LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-mail"
+LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
 EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
@@ -60,7 +60,7 @@ COPY --from=build /app/smtp .
 LABEL org.opencontainers.image.title="Relate Mail SMTP Server"
 LABEL org.opencontainers.image.description="SMTP server for receiving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
-LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-mail"
+LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
 EXPOSE 587 465
 ENTRYPOINT ["dotnet", "Relate.Smtp.SmtpHost.dll"]
@@ -74,7 +74,7 @@ COPY --from=build /app/pop3 .
 LABEL org.opencontainers.image.title="Relate Mail POP3 Server"
 LABEL org.opencontainers.image.description="POP3 server for retrieving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
-LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-mail"
+LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
 EXPOSE 110 995
 ENTRYPOINT ["dotnet", "Relate.Smtp.Pop3Host.dll"]
@@ -88,7 +88,7 @@ COPY --from=build /app/imap .
 LABEL org.opencontainers.image.title="Relate Mail IMAP Server"
 LABEL org.opencontainers.image.description="IMAP server for retrieving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
-LABEL org.opencontainers.image.source="https://github.com/tyevco/relate-mail"
+LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
 EXPOSE 143 993
 ENTRYPOINT ["dotnet", "Relate.Smtp.ImapHost.dll"]

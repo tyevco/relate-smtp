@@ -38,10 +38,10 @@ All images are published to GitHub Container Registry:
 
 | Image | Purpose | Ports |
 |-------|---------|-------|
-| `ghcr.io/tyevco/relate-mail-api` | REST API + Web UI | 8080 |
-| `ghcr.io/tyevco/relate-mail-smtp` | SMTP Server | 587, 465 |
-| `ghcr.io/tyevco/relate-mail-pop3` | POP3 Server | 110, 995 |
-| `ghcr.io/tyevco/relate-mail-imap` | IMAP Server | 143, 993 |
+| `ghcr.io/four-robots/relate-mail-api` | REST API + Web UI | 8080 |
+| `ghcr.io/four-robots/relate-mail-smtp` | SMTP Server | 587, 465 |
+| `ghcr.io/four-robots/relate-mail-pop3` | POP3 Server | 110, 995 |
+| `ghcr.io/four-robots/relate-mail-imap` | IMAP Server | 143, 993 |
 
 ## Architecture
 
@@ -127,7 +127,7 @@ dotnet ef database update \
 
 ```bash
 # Set environment variables
-export GITHUB_REPOSITORY="tyevco/relate-mail"
+export GITHUB_REPOSITORY="four-robots/relate-mail"
 export IMAGE_TAG="latest"  # or specific version like "v1.0.0"
 
 # Start services
@@ -299,7 +299,7 @@ git tag v1.0.0
 git push origin v1.0.0
 
 # Wait for GitHub Actions to build and publish
-# View progress at: https://github.com/tyevco/relate-mail/actions
+# View progress at: https://github.com/four-robots/relate-mail/actions
 ```
 
 ### Image Tags Created
@@ -514,9 +514,9 @@ relate-mail/
 
 ## Support
 
-- **Issues**: https://github.com/tyevco/relate-mail/issues
-- **Packages**: https://github.com/tyevco/relate-mail/pkgs
-- **Actions**: https://github.com/tyevco/relate-mail/actions
+- **Issues**: https://github.com/four-robots/relate-mail/issues
+- **Packages**: https://github.com/four-robots/relate-mail/pkgs
+- **Actions**: https://github.com/four-robots/relate-mail/actions
 
 ## Contributing
 

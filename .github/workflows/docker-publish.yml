@@ -10,7 +10,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: tyevco/relate-mail
+  IMAGE_PREFIX: four-robots/relate-mail
 
 jobs:
   build-and-push:
