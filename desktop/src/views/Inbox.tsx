@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useEmails, useEmail, useMarkEmailRead, useDeleteEmail, useSearchEmails, type EmailSearchFilters } from '@/api/hooks'
 import { EmailList, EmailDetailView, SearchBar } from '@relate/shared/components/mail'
 import { Button, Badge } from '@relate/shared/components/ui'
@@ -10,7 +10,6 @@ export function Inbox() {
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
   const [searchFilters, setSearchFilters] = useState<EmailSearchFilters>({})
   const isSearching = !!searchFilters.query
-  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const { data: emailsData, isLoading, refetch } = useEmails(page)
   const { data: searchData, isLoading: isSearchLoading, refetch: refetchSearch } = useSearchEmails(searchFilters, page)
