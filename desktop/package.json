@@ -12,7 +12,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@relate/shared": "workspace:*",
+    "@relate/shared": "*",
     "@tauri-apps/api": "^2.5.0",
     "@tauri-apps/plugin-shell": "^2.2.0",
     "@tauri-apps/plugin-notification": "^2.2.1",
