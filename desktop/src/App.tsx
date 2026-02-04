@@ -8,6 +8,7 @@ import { SmtpSettings } from './views/SmtpSettings'
 import { Login } from './views/Login'
 import { useTheme } from './hooks/useTheme'
 import { usePolling } from './hooks/usePolling'
+import { useSignalR } from './hooks/useSignalR'
 import { useWindowState } from './hooks/useWindowState'
 
 type View = 'inbox' | 'sent' | 'smtp-settings' | 'settings'
@@ -19,7 +20,10 @@ function App() {
   // Initialize theme (follows system by default)
   useTheme()
 
-  // Background polling for new emails (only when authenticated)
+  // Real-time notifications via SignalR (primary)
+  useSignalR(auth.isAuthenticated ? auth.serverUrl : null, auth.apiKey)
+
+  // Background polling as fallback for reconnection gaps
   usePolling(auth.isAuthenticated)
 
   // Persist window size and position

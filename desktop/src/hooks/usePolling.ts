@@ -5,7 +5,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from '@tauri
 import { apiGet } from '../api/client'
 import type { EmailListResponse } from '@relate/shared/api/types'
 
-const POLL_INTERVAL = 60_000 // 1 minute
+const POLL_INTERVAL = 300_000 // 5 minutes (SignalR is primary, polling is fallback)
 
 export function usePolling(enabled = true) {
   const queryClient = useQueryClient()
