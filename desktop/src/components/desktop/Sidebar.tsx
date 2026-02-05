@@ -35,26 +35,26 @@ export function Sidebar({ currentView, onNavigate, onAddAccount }: SidebarProps)
         <nav className="flex-1 p-2 space-y-1">
           <Button
             variant={currentView === 'inbox' ? 'secondary' : 'ghost'}
-            className="w-full justify-start gap-2"
+            className="w-full justify-start"
             onClick={() => onNavigate('inbox')}
           >
-            <Inbox className="h-4 w-4" />
+            <Inbox className="h-4 w-4 mr-2" />
             Inbox
           </Button>
           <Button
             variant={currentView === 'sent' ? 'secondary' : 'ghost'}
-            className="w-full justify-start gap-2"
+            className="w-full justify-start"
             onClick={() => onNavigate('sent')}
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-4 w-4 mr-2" />
             Sent
           </Button>
           <Button
             variant={currentView === 'smtp-settings' ? 'secondary' : 'ghost'}
-            className="w-full justify-start gap-2"
+            className="w-full justify-start"
             onClick={() => onNavigate('smtp-settings')}
           >
-            <KeyRound className="h-4 w-4" />
+            <KeyRound className="h-4 w-4 mr-2" />
             SMTP Settings
           </Button>
         </nav>

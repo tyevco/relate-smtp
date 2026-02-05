@@ -120,7 +120,13 @@ fn delete_api_key_for_account(account_id: &str) -> Result<(), AuthError> {
 pub async fn load_accounts(
     state: State<'_, AppState>,
 ) -> Result<AccountsData, AuthError> {
-    let data = load_accounts_data()?;
+    let mut data = load_accounts_data()?;
+
+    // Auto-select first account if none is active but accounts exist
+    if data.active_account_id.is_none() && !data.accounts.is_empty() {
+        data.active_account_id = Some(data.accounts[0].id.clone());
+        save_accounts_data(&data)?;
+    }
 
     // If there's an active account, update AppState
     if let Some(active_id) = &data.active_account_id {
