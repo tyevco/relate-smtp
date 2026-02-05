@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using MimeKit;
 using SmtpServer;
 using SmtpServer.Protocol;
@@ -6,6 +7,7 @@ using SmtpServer.Storage;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Services;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,8 +30,13 @@ public class CustomMessageStore : MessageStore
         ReadOnlySequence<byte> buffer,
         CancellationToken cancellationToken)
     {
+        using var activity = TelemetryConfiguration.SmtpActivitySource.StartActivity("smtp.message.save");
+        var stopwatch = Stopwatch.StartNew();
+
         try
         {
+            activity?.SetTag("smtp.buffer_size", buffer.Length);
+
             using var stream = new MemoryStream();
             foreach (var segment in buffer)
             {
@@ -37,7 +44,9 @@ public class CustomMessageStore : MessageStore
             }
             stream.Position = 0;
 
+            using var parseActivity = TelemetryConfiguration.SmtpActivitySource.StartActivity("smtp.message.parse");
             var message = await MimeMessage.LoadAsync(stream, cancellationToken);
+            parseActivity?.SetTag("smtp.size_bytes", buffer.Length);
 
             using var scope = _serviceProvider.CreateScope();
             var emailRepository = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
@@ -111,6 +120,13 @@ public class CustomMessageStore : MessageStore
 
             await emailRepository.AddAsync(email, cancellationToken);
 
+            // Set activity tags after email is fully processed
+            activity?.SetTag("smtp.from", email.FromAddress);
+            activity?.SetTag("smtp.recipients_count", email.Recipients.Count);
+            activity?.SetTag("smtp.message_id", email.MessageId);
+            activity?.SetTag("smtp.thread_id", email.ThreadId?.ToString());
+            activity?.SetTag("smtp.has_attachments", email.Attachments.Count > 0);
+
             _logger.LogInformation("Email saved: {MessageId} from {From} to {Recipients}",
                 email.MessageId,
                 email.FromAddress,
@@ -120,18 +136,32 @@ public class CustomMessageStore : MessageStore
             var notificationService = scope.ServiceProvider.GetService<IEmailNotificationService>();
             if (notificationService != null)
             {
+                using var notifyActivity = TelemetryConfiguration.SmtpActivitySource.StartActivity("smtp.notify.users");
+
                 var recipientUserIds = email.Recipients
                     .Where(r => r.UserId.HasValue)
                     .Select(r => r.UserId!.Value)
-                    .Distinct();
+                    .Distinct()
+                    .ToList();
+
+                notifyActivity?.SetTag("smtp.recipient_count", recipientUserIds.Count);
 
                 await notificationService.NotifyMultipleUsersNewEmailAsync(recipientUserIds, email, cancellationToken);
             }
+
+            // Record metrics
+            stopwatch.Stop();
+            ProtocolMetrics.SmtpMessagesReceived.Add(1);
+            ProtocolMetrics.SmtpBytesReceived.Add(buffer.Length);
+            ProtocolMetrics.SmtpMessageProcessingDuration.Record(stopwatch.ElapsedMilliseconds);
 
             return SmtpResponse.Ok;
         }
         catch (Exception ex)
         {
+            activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+            activity?.AddTag("exception.type", ex.GetType().FullName);
+            activity?.AddTag("exception.message", ex.Message);
             _logger.LogError(ex, "Failed to save email");
             return SmtpResponse.TransactionFailed;
         }

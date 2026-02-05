@@ -5,6 +5,7 @@ using MimeKit;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Data;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.ImapHost.Protocol;
 using System.Security.Cryptography;
 using System.Text;
@@ -66,6 +67,7 @@ public class ImapMessageManager
         }
 
         _logger.LogInformation("Loaded {Count} messages for user {UserId}", messages.Count, userId);
+
         return messages;
     }
 
@@ -93,7 +95,13 @@ public class ImapMessageManager
         }
 
         // Build RFC 822 message
-        return BuildRfc822Message(email);
+        var message = BuildRfc822Message(email);
+
+        // Record metrics
+        ProtocolMetrics.ImapMessagesRetrieved.Add(1);
+        ProtocolMetrics.ImapBytesSent.Add(message.Length);
+
+        return message;
     }
 
     public async Task MarkAsSeenAsync(Guid emailId, Guid userId, CancellationToken ct)

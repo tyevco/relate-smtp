@@ -2,6 +2,7 @@ using SmtpServer;
 using SmtpServer.Authentication;
 using SmtpServer.Storage;
 using Relate.Smtp.SmtpHost.Handlers;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Microsoft.Extensions.Options;
 
 namespace Relate.Smtp.SmtpHost;
@@ -55,6 +56,16 @@ public class SmtpServerHostedService : BackgroundService
 
         _smtpServer = new SmtpServer.SmtpServer(smtpServerOptions, serviceProvider);
 
+        // Subscribe to session events for connection metrics (if metrics are available)
+        _smtpServer.SessionCreated += (_, _) =>
+        {
+            try { ProtocolMetrics.SmtpActiveConnections.Add(1); } catch { /* ignore */ }
+        };
+        _smtpServer.SessionCompleted += (_, _) =>
+        {
+            try { ProtocolMetrics.SmtpActiveConnections.Add(-1); } catch { /* ignore */ }
+        };
+
         _logger.LogInformation("Starting SMTP server on port {Port}", _options.Port);
 
         try
@@ -90,4 +101,5 @@ public class SmtpServerHostedService : BackgroundService
         var logger = _serviceProvider.GetRequiredService<ILogger<CustomUserAuthenticator>>();
         return new CustomUserAuthenticator(_serviceProvider, logger);
     }
+
 }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.ImapHost.Protocol;
 using System.Text;
 
@@ -81,6 +82,13 @@ public class ImapCommandHandler
         StreamWriter writer,
         CancellationToken ct)
     {
+        using var activity = TelemetryConfiguration.ImapActivitySource.StartActivity($"imap.command.{command.Name.ToLowerInvariant()}");
+        activity?.SetTag("imap.session_id", session.ConnectionId);
+        activity?.SetTag("imap.command", command.Name);
+        activity?.SetTag("imap.state", session.State.ToString());
+
+        ProtocolMetrics.ImapCommands.Add(1, new KeyValuePair<string, object?>("command", command.Name));
+
         try
         {
             // Commands available in any state
@@ -119,6 +127,9 @@ public class ImapCommandHandler
         }
         catch (Exception ex)
         {
+            activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+            activity?.AddTag("exception.type", ex.GetType().FullName);
+            activity?.AddTag("exception.message", ex.Message);
             _logger.LogError(ex, "Command execution error: {Command}", command.Name);
             await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "Internal server error"));
         }
@@ -282,11 +293,17 @@ public class ImapCommandHandler
         }
 
         // Load messages
+        using var selectActivity = TelemetryConfiguration.ImapActivitySource.StartActivity("imap.mailbox.select");
+        selectActivity?.SetTag("imap.mailbox", mailboxName);
+        selectActivity?.SetTag("imap.read_only", readOnly);
+
         session.Messages = await _messageManager.LoadMessagesAsync(session.UserId!.Value, ct);
         session.SelectedMailbox = "INBOX";
         session.SelectedReadOnly = readOnly;
         session.DeletedUids.Clear();
         session.State = ImapState.Selected;
+
+        selectActivity?.SetTag("imap.message_count", session.Messages.Count);
 
         // Send mailbox status
         await writer.WriteLineAsync(ImapResponse.Flags(@"\Seen \Answered \Flagged \Deleted \Draft"));

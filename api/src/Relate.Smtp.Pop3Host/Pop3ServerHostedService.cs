@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Relate.Smtp.Infrastructure.Telemetry;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -86,6 +87,8 @@ public class Pop3ServerHostedService : BackgroundService
 
     private async Task HandleClientAsync(TcpClient client, bool useSsl, CancellationToken ct)
     {
+        ProtocolMetrics.Pop3ActiveSessions.Add(1);
+
         using var scope = _serviceProvider.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<Handlers.Pop3CommandHandler>();
 
@@ -123,6 +126,7 @@ public class Pop3ServerHostedService : BackgroundService
         }
         finally
         {
+            ProtocolMetrics.Pop3ActiveSessions.Add(-1);
             client.Close();
         }
     }

@@ -1,46 +1,47 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <IsPackable>false</IsPackable>
-    <!-- This is a shared library, not a test project -->
-    <IsTestProject>false</IsTestProject>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>false</IsPackable>
+		<!-- This is a shared library, not a test project -->
+		<IsTestProject>false</IsTestProject>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <!-- Test Framework - xUnit v3 -->
-    <PackageReference Include="xunit.v3" Version="1.0.0" />
+	<ItemGroup>
+		<!-- Test Framework - xUnit v3 -->
+		<PackageReference Include="xunit.v3" Version="3.2.2" />
 
-    <!-- Testcontainers -->
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.3.0" />
+		<!-- Testcontainers -->
+		<PackageReference Include="Testcontainers.PostgreSql" Version="4.10.0" />
 
-    <!-- Mocking & Assertions -->
-    <PackageReference Include="Moq" Version="4.20.72" />
-    <PackageReference Include="Shouldly" Version="4.2.1" />
+		<!-- Mocking & Assertions -->
+		<PackageReference Include="Moq" Version="4.20.72" />
+		<PackageReference Include="Shouldly" Version="4.3.0" />
 
-    <!-- Test Data Generation -->
-    <PackageReference Include="Bogus" Version="35.6.1" />
+		<!-- Test Data Generation -->
+		<PackageReference Include="Bogus" Version="35.6.5" />
 
-    <!-- ASP.NET Core Testing -->
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
+		<!-- ASP.NET Core Testing -->
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
 
-    <!-- EF Core (explicit version to avoid conflicts) -->
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
+		<!-- EF Core (explicit version to avoid conflicts) -->
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
 
-    <!-- Protocol Testing -->
-    <PackageReference Include="MailKit" Version="4.14.0" />
-  </ItemGroup>
+		<!-- Protocol Testing -->
+		<PackageReference Include="MailKit" Version="4.14.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Relate.Smtp.Core\Relate.Smtp.Core.csproj" />
-    <ProjectReference Include="..\..\src\Relate.Smtp.Infrastructure\Relate.Smtp.Infrastructure.csproj" />
-    <ProjectReference Include="..\..\src\Relate.Smtp.Api\Relate.Smtp.Api.csproj" />
-    <ProjectReference Include="..\..\src\Relate.Smtp.SmtpHost\Relate.Smtp.SmtpHost.csproj" />
-    <ProjectReference Include="..\..\src\Relate.Smtp.Pop3Host\Relate.Smtp.Pop3Host.csproj" />
-    <ProjectReference Include="..\..\src\Relate.Smtp.ImapHost\Relate.Smtp.ImapHost.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Relate.Smtp.Core\Relate.Smtp.Core.csproj" />
+		<ProjectReference Include="..\..\src\Relate.Smtp.Infrastructure\Relate.Smtp.Infrastructure.csproj" />
+		<ProjectReference Include="..\..\src\Relate.Smtp.Api\Relate.Smtp.Api.csproj" />
+		<ProjectReference Include="..\..\src\Relate.Smtp.SmtpHost\Relate.Smtp.SmtpHost.csproj" />
+		<ProjectReference Include="..\..\src\Relate.Smtp.Pop3Host\Relate.Smtp.Pop3Host.csproj" />
+		<ProjectReference Include="..\..\src\Relate.Smtp.ImapHost\Relate.Smtp.ImapHost.csproj" />
+	</ItemGroup>
 
 </Project>

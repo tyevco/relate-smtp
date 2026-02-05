@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.Pop3Host.Protocol;
 using System.Text;
 
@@ -84,6 +85,12 @@ public class Pop3CommandHandler
         StreamWriter writer,
         CancellationToken ct)
     {
+        using var activity = TelemetryConfiguration.Pop3ActivitySource.StartActivity($"pop3.command.{command.Name.ToLowerInvariant()}");
+        activity?.SetTag("pop3.session_id", session.ConnectionId);
+        activity?.SetTag("pop3.command", command.Name);
+
+        ProtocolMetrics.Pop3Commands.Add(1, new KeyValuePair<string, object?>("command", command.Name));
+
         try
         {
             return command.Name switch
@@ -104,6 +111,9 @@ public class Pop3CommandHandler
         }
         catch (Exception ex)
         {
+            activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
+            activity?.AddTag("exception.type", ex.GetType().FullName);
+            activity?.AddTag("exception.message", ex.Message);
             _logger.LogError(ex, "Command execution error: {Command}", command.Name);
             return Pop3Response.Error("Internal server error");
         }

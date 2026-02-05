@@ -1,4 +1,5 @@
 using Relate.Smtp.Infrastructure;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.Pop3Host;
 using Relate.Smtp.Pop3Host.Handlers;
 
@@ -20,6 +21,9 @@ builder.Services.AddScoped<Pop3MessageManager>();
 
 // Register hosted service
 builder.Services.AddHostedService<Pop3ServerHostedService>();
+
+// Add OpenTelemetry
+builder.Services.AddRelateTelemetry(builder.Configuration, "relate-mail-pop3");
 
 var host = builder.Build();
 host.Run();

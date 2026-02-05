@@ -1,4 +1,5 @@
 using Relate.Smtp.Infrastructure;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.ImapHost;
 using Relate.Smtp.ImapHost.Handlers;
 
@@ -20,6 +21,9 @@ builder.Services.AddScoped<ImapMessageManager>();
 
 // Register hosted service
 builder.Services.AddHostedService<ImapServerHostedService>();
+
+// Add OpenTelemetry
+builder.Services.AddRelateTelemetry(builder.Configuration, "relate-mail-imap");
 
 var host = builder.Build();
 host.Run();

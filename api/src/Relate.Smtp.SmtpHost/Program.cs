@@ -1,5 +1,6 @@
 using Relate.Smtp.Infrastructure;
 using Relate.Smtp.Infrastructure.Services;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.SmtpHost;
 using Relate.Smtp.SmtpHost.Services;
 
@@ -24,6 +25,9 @@ builder.Services.Configure<SmtpServerOptions>(
 
 // Add SMTP server hosted service
 builder.Services.AddHostedService<SmtpServerHostedService>();
+
+// Add OpenTelemetry
+builder.Services.AddRelateTelemetry(builder.Configuration, "relate-mail-smtp");
 
 var host = builder.Build();
 host.Run();

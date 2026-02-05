@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Relate.Smtp.Api.Authentication;
 using Relate.Smtp.Api.Hubs;
 using Relate.Smtp.Api.Services;
 using Relate.Smtp.Infrastructure;
 using Relate.Smtp.Infrastructure.Data;
 using Relate.Smtp.Infrastructure.Services;
+using Relate.Smtp.Infrastructure.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -90,6 +93,24 @@ builder.Services.AddCors(options =>
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+
+// Add OpenTelemetry
+builder.Services.AddRelateTelemetry(
+    builder.Configuration,
+    "relate-mail-api",
+    configureTracing: tracing =>
+    {
+        tracing.AddAspNetCoreInstrumentation(options =>
+        {
+            options.RecordException = true;
+        });
+        tracing.AddHttpClientInstrumentation();
+    },
+    configureMetrics: metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddHttpClientInstrumentation();
+    });
 
 var app = builder.Build();
 

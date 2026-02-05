@@ -5,6 +5,7 @@ using MimeKit;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Data;
+using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.Pop3Host.Protocol;
 using System.Text;
 
@@ -23,6 +24,9 @@ public class Pop3MessageManager
 
     public async Task<List<Pop3Message>> LoadMessagesAsync(Guid userId, CancellationToken ct)
     {
+        using var activity = TelemetryConfiguration.Pop3ActivitySource.StartActivity("pop3.messages.load");
+        activity?.SetTag("pop3.user_id", userId.ToString());
+
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
@@ -43,6 +47,7 @@ public class Pop3MessageManager
             });
         }
 
+        activity?.SetTag("pop3.message_count", messages.Count);
         _logger.LogInformation("Loaded {Count} messages for user {UserId}", messages.Count, userId);
         return messages;
     }
@@ -66,7 +71,13 @@ public class Pop3MessageManager
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, true), ct);
 
         // Build RFC 822 message
-        return BuildRfc822Message(email);
+        var message = BuildRfc822Message(email);
+
+        // Record metrics
+        ProtocolMetrics.Pop3MessagesRetrieved.Add(1);
+        ProtocolMetrics.Pop3BytesSent.Add(message.Length);
+
+        return message;
     }
 
     public async Task<string> RetrieveTopAsync(Guid emailId, int lines, CancellationToken ct)

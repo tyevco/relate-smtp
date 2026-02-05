@@ -3,6 +3,7 @@ using SmtpServer.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Relate.Smtp.Core.Interfaces;
+using Relate.Smtp.Infrastructure.Telemetry;
 using System.Collections.Concurrent;
 
 namespace Relate.Smtp.SmtpHost.Handlers;
@@ -26,6 +27,11 @@ public class CustomUserAuthenticator : IUserAuthenticator
         string password,
         CancellationToken cancellationToken)
     {
+        using var activity = TelemetryConfiguration.SmtpActivitySource.StartActivity("smtp.auth.validate");
+        activity?.SetTag("smtp.auth.user", user);
+
+        ProtocolMetrics.SmtpAuthAttempts.Add(1);
+
         var normalizedEmail = user.ToLowerInvariant();
         var cacheKey = $"{normalizedEmail}:{password}";
 
@@ -35,6 +41,13 @@ public class CustomUserAuthenticator : IUserAuthenticator
             if (DateTimeOffset.UtcNow < cached.ExpiresAt)
             {
                 _logger.LogDebug("SMTP authentication cache hit for: {User}", user);
+                activity?.SetTag("smtp.auth.cache_hit", true);
+                activity?.SetTag("smtp.auth.success", cached.IsAuthenticated);
+
+                if (!cached.IsAuthenticated)
+                {
+                    ProtocolMetrics.SmtpAuthFailures.Add(1);
+                }
 
                 // Update LastUsedAt in background
                 _ = Task.Run(async () =>
@@ -50,6 +63,8 @@ public class CustomUserAuthenticator : IUserAuthenticator
             _authCache.TryRemove(cacheKey, out _);
         }
 
+        activity?.SetTag("smtp.auth.cache_hit", false);
+
         // Perform authentication
         using var authScope = _serviceProvider.CreateScope();
         var userRepository = authScope.ServiceProvider.GetRequiredService<IUserRepository>();
@@ -60,6 +75,9 @@ public class CustomUserAuthenticator : IUserAuthenticator
         if (dbUser == null)
         {
             _logger.LogWarning("SMTP authentication failed: User not found: {User}", user);
+            activity?.SetTag("smtp.auth.success", false);
+            activity?.SetTag("smtp.auth.failure_reason", "user_not_found");
+            ProtocolMetrics.SmtpAuthFailures.Add(1);
             CacheResult(cacheKey, Guid.Empty, false);
             return false;
         }
@@ -73,11 +91,16 @@ public class CustomUserAuthenticator : IUserAuthenticator
                 if (!apiKeyRepository.HasScope(apiKey, "smtp"))
                 {
                     _logger.LogWarning("SMTP authentication failed for {User} - API key {KeyName} lacks 'smtp' scope", user, apiKey.Name);
+                    activity?.SetTag("smtp.auth.success", false);
+                    activity?.SetTag("smtp.auth.failure_reason", "missing_scope");
+                    ProtocolMetrics.SmtpAuthFailures.Add(1);
                     CacheResult(cacheKey, Guid.Empty, false);
                     return false;
                 }
 
                 _logger.LogInformation("SMTP user authenticated: {User} using key: {KeyName}", user, apiKey.Name);
+                activity?.SetTag("smtp.auth.success", true);
+                activity?.SetTag("smtp.auth.key_name", apiKey.Name);
 
                 // Store authenticated user info in session context for later use
                 context.Properties["AuthenticatedUserId"] = dbUser.Id;
@@ -92,6 +115,9 @@ public class CustomUserAuthenticator : IUserAuthenticator
         }
 
         _logger.LogWarning("SMTP authentication failed: Invalid API key for user: {User}", user);
+        activity?.SetTag("smtp.auth.success", false);
+        activity?.SetTag("smtp.auth.failure_reason", "invalid_key");
+        ProtocolMetrics.SmtpAuthFailures.Add(1);
         CacheResult(cacheKey, Guid.Empty, false);
         return false;
     }
