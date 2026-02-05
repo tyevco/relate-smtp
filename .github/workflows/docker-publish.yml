@@ -6,6 +6,11 @@ on:
       - main
     tags:
       - 'v*'
+    paths:
+      - 'api/**'
+      - 'web/**'
+      - 'docker/**'
+      - '.github/workflows/docker-publish.yml'
   workflow_dispatch:
 
 env:
