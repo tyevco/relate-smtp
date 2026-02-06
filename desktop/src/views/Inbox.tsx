@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useEmails, useEmail, useMarkEmailRead, useDeleteEmail, useSearchEmails, type EmailSearchFilters } from '@/api/hooks'
 import { EmailList, EmailDetailView, SearchBar } from '@relate/shared/components/mail'
 import { Button, Badge } from '@relate/shared/components/ui'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useShortcuts } from '@/hooks/useShortcuts'
 
@@ -102,11 +103,13 @@ export function Inbox() {
               Loading...
             </div>
           ) : (
-            <EmailList
-              emails={currentData?.items || []}
-              selectedId={selectedEmailId || undefined}
-              onSelect={handleSelectEmail}
-            />
+            <ErrorBoundary>
+              <EmailList
+                emails={currentData?.items || []}
+                selectedId={selectedEmailId || undefined}
+                onSelect={handleSelectEmail}
+              />
+            </ErrorBoundary>
           )}
         </div>
 
@@ -141,11 +144,13 @@ export function Inbox() {
       <div className={`flex-1 ${selectedEmailId ? 'flex' : 'hidden lg:flex'}`}>
         {selectedEmail ? (
           <div className="flex-1 overflow-hidden">
-            <EmailDetailView
-              email={selectedEmail}
-              onBack={handleBack}
-              onDelete={handleDelete}
-            />
+            <ErrorBoundary>
+              <EmailDetailView
+                email={selectedEmail}
+                onBack={handleBack}
+                onDelete={handleDelete}
+              />
+            </ErrorBoundary>
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">

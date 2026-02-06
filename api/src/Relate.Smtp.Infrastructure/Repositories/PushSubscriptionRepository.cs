@@ -19,39 +19,39 @@ public class PushSubscriptionRepository : IPushSubscriptionRepository
         return await _context.PushSubscriptions
             .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.CreatedAt)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<PushSubscription?> GetByEndpointAsync(string endpoint, CancellationToken cancellationToken = default)
     {
         return await _context.PushSubscriptions
-            .FirstOrDefaultAsync(s => s.Endpoint == endpoint, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Endpoint == endpoint, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<PushSubscription> AddAsync(PushSubscription subscription, CancellationToken cancellationToken = default)
     {
         _context.PushSubscriptions.Add(subscription);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return subscription;
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var subscription = await _context.PushSubscriptions.FindAsync(new object[] { id }, cancellationToken);
+        var subscription = await _context.PushSubscriptions.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (subscription != null)
         {
             _context.PushSubscriptions.Remove(subscription);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
     public async Task UpdateLastUsedAtAsync(Guid id, DateTimeOffset lastUsedAt, CancellationToken cancellationToken = default)
     {
-        var subscription = await _context.PushSubscriptions.FindAsync(new object[] { id }, cancellationToken);
+        var subscription = await _context.PushSubscriptions.FindAsync(new object[] { id }, cancellationToken).ConfigureAwait(false);
         if (subscription != null)
         {
             subscription.LastUsedAt = lastUsedAt;
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 }

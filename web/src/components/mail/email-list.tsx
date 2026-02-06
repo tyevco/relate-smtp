@@ -20,10 +20,13 @@ export function EmailList({ emails, selectedId, onSelect }: EmailListProps) {
   }
 
   return (
-    <div className="divide-y">
+    <div className="divide-y" role="listbox" aria-label="Email list">
       {emails.map((email) => (
         <button
           key={email.id}
+          role="option"
+          aria-selected={selectedId === email.id}
+          aria-label={`Email from ${email.fromDisplayName || email.fromAddress}: ${email.subject || 'No subject'}`}
           onClick={() => onSelect(email.id)}
           className={cn(
             'w-full text-left p-3 sm:p-4 hover:bg-accent transition-colors min-h-[44px]',

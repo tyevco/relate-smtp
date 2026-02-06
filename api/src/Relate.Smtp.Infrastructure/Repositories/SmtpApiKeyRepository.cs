@@ -20,33 +20,33 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
         return await _context.SmtpApiKeys
             .Where(k => k.UserId == userId && k.RevokedAt == null)
             .OrderByDescending(k => k.CreatedAt)
-            .ToListAsync(ct);
+            .ToListAsync(ct).ConfigureAwait(false);
     }
 
     public async Task<SmtpApiKey> CreateAsync(SmtpApiKey key, CancellationToken ct = default)
     {
         _context.SmtpApiKeys.Add(key);
-        await _context.SaveChangesAsync(ct);
+        await _context.SaveChangesAsync(ct).ConfigureAwait(false);
         return key;
     }
 
     public async Task RevokeAsync(Guid keyId, CancellationToken ct = default)
     {
-        var key = await _context.SmtpApiKeys.FindAsync([keyId], ct);
+        var key = await _context.SmtpApiKeys.FindAsync([keyId], ct).ConfigureAwait(false);
         if (key != null)
         {
             key.RevokedAt = DateTimeOffset.UtcNow;
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesAsync(ct).ConfigureAwait(false);
         }
     }
 
     public async Task UpdateLastUsedAsync(Guid keyId, DateTimeOffset lastUsed, CancellationToken ct = default)
     {
-        var key = await _context.SmtpApiKeys.FindAsync([keyId], ct);
+        var key = await _context.SmtpApiKeys.FindAsync([keyId], ct).ConfigureAwait(false);
         if (key != null)
         {
             key.LastUsedAt = lastUsed;
-            await _context.SaveChangesAsync(ct);
+            await _context.SaveChangesAsync(ct).ConfigureAwait(false);
         }
     }
 
@@ -59,7 +59,7 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
         var candidates = await _context.SmtpApiKeys
             .Include(k => k.User)
             .Where(k => k.RevokedAt == null && k.KeyPrefix == prefix)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         // BCrypt verify only the matching candidates
         foreach (var key in candidates)
@@ -81,7 +81,7 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
             var legacyKeys = await _context.SmtpApiKeys
                 .Include(k => k.User)
                 .Where(k => k.RevokedAt == null && k.KeyPrefix == null)
-                .ToListAsync(cancellationToken);
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var key in legacyKeys)
             {

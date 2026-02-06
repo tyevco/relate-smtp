@@ -26,8 +26,9 @@ public class ImapSession
     // Enabled capabilities
     public HashSet<string> EnabledCapabilities { get; set; } = [];
 
-    // UIDVALIDITY for the mailbox (stays constant)
-    public uint UidValidity { get; set; } = 1;
+    // UIDVALIDITY for the mailbox - use startup timestamp for RFC 9051 compliance
+    private static readonly uint DefaultUidValidity = (uint)(DateTimeOffset.UtcNow.ToUnixTimeSeconds() % uint.MaxValue);
+    public uint UidValidity { get; set; } = DefaultUidValidity;
 
     public bool IsTimedOut(TimeSpan timeout) =>
         DateTime.UtcNow - LastActivityAt > timeout;

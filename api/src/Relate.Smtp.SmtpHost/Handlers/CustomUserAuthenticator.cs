@@ -89,7 +89,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
 
         if (dbUser == null)
         {
-            _logger.LogWarning("SMTP authentication failed: User not found: {User}", user);
+            _logger.LogWarning("SMTP authentication failed for: {User}", user);
             activity?.SetTag("smtp.auth.success", false);
             activity?.SetTag("smtp.auth.failure_reason", "user_not_found");
             ProtocolMetrics.SmtpAuthFailures.Add(1);
@@ -129,7 +129,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
             }
         }
 
-        _logger.LogWarning("SMTP authentication failed: Invalid API key for user: {User}", user);
+        _logger.LogWarning("SMTP authentication failed for: {User}", user);
         activity?.SetTag("smtp.auth.success", false);
         activity?.SetTag("smtp.auth.failure_reason", "invalid_key");
         ProtocolMetrics.SmtpAuthFailures.Add(1);

@@ -8,6 +8,7 @@ import { EmailList } from '@/components/mail/email-list'
 import { EmailDetailView } from '@/components/mail/email-detail'
 import { SearchBar } from '@/components/mail/search-bar'
 import { ExportDialog } from '@/components/mail/export-dialog'
+import { ErrorBoundary } from '@/components/error-boundary'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
@@ -158,11 +159,13 @@ function InboxPage() {
                 Loading...
               </div>
             ) : (
-              <EmailList
-                emails={currentData?.items || []}
-                selectedId={selectedEmailId || undefined}
-                onSelect={handleSelectEmail}
-              />
+              <ErrorBoundary>
+                <EmailList
+                  emails={currentData?.items || []}
+                  selectedId={selectedEmailId || undefined}
+                  onSelect={handleSelectEmail}
+                />
+              </ErrorBoundary>
             )}
           </div>
 
@@ -199,11 +202,13 @@ function InboxPage() {
         <div className={`flex-1 ${selectedEmailId ? '' : 'hidden lg:block'}`}>
           {selectedEmail ? (
             <div className="border rounded-lg bg-card h-[calc(100vh-10rem)] sm:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] overflow-hidden">
-              <EmailDetailView
-                email={selectedEmail}
-                onBack={handleBack}
-                onDelete={handleDelete}
-              />
+              <ErrorBoundary>
+                <EmailDetailView
+                  email={selectedEmail}
+                  onBack={handleBack}
+                  onDelete={handleDelete}
+                />
+              </ErrorBoundary>
             </div>
           ) : (
             <div className="border rounded-lg bg-card h-[calc(100vh-10rem)] sm:h-[calc(100vh-9rem)] lg:h-[calc(100vh-8rem)] flex items-center justify-center text-muted-foreground text-sm">

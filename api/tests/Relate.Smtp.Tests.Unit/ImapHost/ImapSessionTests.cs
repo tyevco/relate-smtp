@@ -63,13 +63,24 @@ public class ImapSessionTests
     }
 
     [Fact]
-    public void NewSession_HasDefaultUidValidity()
+    public void NewSession_HasNonZeroUidValidity()
     {
         // Act
         var session = new ImapSession();
 
+        // Assert - UIDVALIDITY should be a non-zero timestamp-based value
+        session.UidValidity.ShouldBeGreaterThan(0u);
+    }
+
+    [Fact]
+    public void MultipleSessions_HaveSameUidValidity()
+    {
+        // Act - Sessions created in the same app instance should share UIDVALIDITY
+        var session1 = new ImapSession();
+        var session2 = new ImapSession();
+
         // Assert
-        session.UidValidity.ShouldBe(1u);
+        session1.UidValidity.ShouldBe(session2.UidValidity);
     }
 
     [Fact]

@@ -18,7 +18,7 @@ public class EmailRepository : IEmailRepository
     public async Task<Email?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Emails
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<Email?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -26,7 +26,7 @@ public class EmailRepository : IEmailRepository
         return await _context.Emails
             .Include(e => e.Recipients)
             .Include(e => e.Attachments)
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<Email?> GetByIdWithUserAccessAsync(Guid emailId, Guid userId, CancellationToken cancellationToken = default)
@@ -36,13 +36,13 @@ public class EmailRepository : IEmailRepository
             .Include(e => e.Attachments)
             .Where(e => e.Id == emailId)
             .Where(e => e.SentByUserId == userId || e.Recipients.Any(r => r.UserId == userId))
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<Email?> GetByMessageIdAsync(string messageId, CancellationToken cancellationToken = default)
     {
         return await _context.Emails
-            .FirstOrDefaultAsync(e => e.MessageId == messageId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.MessageId == messageId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<Email>> GetByThreadIdAsync(Guid threadId, Guid userId, CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ public class EmailRepository : IEmailRepository
             .Where(e => (e.ThreadId == threadId || e.Id == threadId) &&
                         e.Recipients.Any(r => r.UserId == userId))
             .OrderBy(e => e.ReceivedAt)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<Email>> GetByUserIdAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default)
@@ -64,21 +64,21 @@ public class EmailRepository : IEmailRepository
             .OrderByDescending(e => e.ReceivedAt)
             .Skip(skip)
             .Take(take)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> GetCountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.Emails
             .Where(e => e.Recipients.Any(r => r.UserId == userId))
-            .CountAsync(cancellationToken);
+            .CountAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> GetUnreadCountByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.EmailRecipients
             .Where(r => r.UserId == userId && !r.IsRead)
-            .CountAsync(cancellationToken);
+            .CountAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<Email>> SearchByUserIdAsync(
@@ -94,7 +94,7 @@ public class EmailRepository : IEmailRepository
             .OrderByDescending(e => e.ReceivedAt)
             .Skip(skip)
             .Take(take)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> GetSearchCountByUserIdAsync(
@@ -103,7 +103,7 @@ public class EmailRepository : IEmailRepository
         CancellationToken cancellationToken = default)
     {
         var query = BuildSearchQuery(userId, filters);
-        return await query.CountAsync(cancellationToken);
+        return await query.CountAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private IQueryable<Email> BuildSearchQuery(Guid userId, EmailSearchFilters filters)
@@ -161,23 +161,23 @@ public class EmailRepository : IEmailRepository
     public async Task<Email> AddAsync(Email email, CancellationToken cancellationToken = default)
     {
         _context.Emails.Add(email);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return email;
     }
 
     public async Task UpdateAsync(Email email, CancellationToken cancellationToken = default)
     {
         _context.Emails.Update(email);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var email = await _context.Emails.FindAsync([id], cancellationToken);
+        var email = await _context.Emails.FindAsync([id], cancellationToken).ConfigureAwait(false);
         if (email != null)
         {
             _context.Emails.Remove(email);
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -187,14 +187,14 @@ public class EmailRepository : IEmailRepository
 
         var recipients = await _context.EmailRecipients
             .Where(r => r.UserId == null && addresses.Contains(r.Address.ToLower()))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var recipient in recipients)
         {
             recipient.UserId = userId;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<Email>> GetSentByUserIdAsync(
@@ -209,7 +209,7 @@ public class EmailRepository : IEmailRepository
             .OrderByDescending(e => e.ReceivedAt)
             .Skip(skip)
             .Take(take)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> GetSentCountByUserIdAsync(
@@ -218,7 +218,7 @@ public class EmailRepository : IEmailRepository
     {
         return await _context.Emails
             .Where(e => e.SentByUserId == userId)
-            .CountAsync(cancellationToken);
+            .CountAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<Email>> GetSentByUserIdAndFromAddressAsync(
@@ -234,7 +234,7 @@ public class EmailRepository : IEmailRepository
             .OrderByDescending(e => e.ReceivedAt)
             .Skip(skip)
             .Take(take)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> GetSentCountByUserIdAndFromAddressAsync(
@@ -244,7 +244,7 @@ public class EmailRepository : IEmailRepository
     {
         return await _context.Emails
             .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == fromAddress.ToLower())
-            .CountAsync(cancellationToken);
+            .CountAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<IReadOnlyList<string>> GetDistinctSentFromAddressesByUserIdAsync(
@@ -256,7 +256,7 @@ public class EmailRepository : IEmailRepository
             .Select(e => e.FromAddress)
             .Distinct()
             .OrderBy(a => a)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> BulkMarkReadAsync(
@@ -268,7 +268,7 @@ public class EmailRepository : IEmailRepository
         var emailIdList = emailIds.ToList();
         return await _context.EmailRecipients
             .Where(r => emailIdList.Contains(r.EmailId) && r.UserId == userId)
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, isRead), cancellationToken);
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, isRead), cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<int> BulkDeleteAsync(
@@ -280,7 +280,7 @@ public class EmailRepository : IEmailRepository
         return await _context.Emails
             .Where(e => emailIdList.Contains(e.Id))
             .Where(e => e.Recipients.Any(r => r.UserId == userId) || e.SentByUserId == userId)
-            .ExecuteDeleteAsync(cancellationToken);
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async IAsyncEnumerable<Email> StreamByUserIdAsync(

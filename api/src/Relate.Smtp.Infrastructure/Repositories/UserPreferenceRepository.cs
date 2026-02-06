@@ -17,7 +17,7 @@ public class UserPreferenceRepository : IUserPreferenceRepository
     public async Task<UserPreference?> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.UserPreferences
-            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(p => p.UserId == userId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<UserPreference> UpsertAsync(UserPreference preference, CancellationToken cancellationToken = default)
@@ -46,7 +46,7 @@ public class UserPreferenceRepository : IUserPreferenceRepository
             preference = existing;
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return preference;
     }
 }
