@@ -278,6 +278,7 @@ jobs:
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
+        working-directory: web
 
       - name: Build web app
         run: npm run build:web
