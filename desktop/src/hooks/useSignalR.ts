@@ -20,17 +20,22 @@ export function useSignalR(serverUrl: string | null, apiKey: string | null) {
   const setupDoneRef = useRef(false)
 
   useEffect(() => {
-    if (!serverUrl || !apiKey) {
+    // Capture values at start to prevent stale closure issues
+    const currentServerUrl = serverUrl
+    const currentApiKey = apiKey
+
+    if (!currentServerUrl || !currentApiKey) {
       return
     }
 
-    let cancelled = false
+    let isCancelled = false
 
     async function setup() {
       try {
-        await connect(serverUrl!, apiKey!)
+        await connect(currentServerUrl, currentApiKey)
 
-        if (cancelled) {
+        // Check if effect was cancelled during the async connect
+        if (isCancelled) {
           await disconnect()
           return
         }
@@ -78,7 +83,7 @@ export function useSignalR(serverUrl: string | null, apiKey: string | null) {
     setup()
 
     return () => {
-      cancelled = true
+      isCancelled = true
       if (setupDoneRef.current) {
         disconnect()
         setupDoneRef.current = false

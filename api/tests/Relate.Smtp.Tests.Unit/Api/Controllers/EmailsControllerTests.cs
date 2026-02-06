@@ -417,19 +417,16 @@ public class EmailsControllerTests
         var emailIds = emails.Select(e => e.Id).ToList();
         var request = new BulkEmailOperationRequest { EmailIds = emailIds, IsRead = true };
 
-        foreach (var email in emails)
-        {
-            _emailRepositoryMock
-                .Setup(r => r.GetByIdWithDetailsAsync(email.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(email);
-        }
+        _emailRepositoryMock
+            .Setup(r => r.BulkMarkReadAsync(_testUser.Id, It.IsAny<IEnumerable<Guid>>(), true, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(3);
 
         // Act
         var result = await _controller.BulkMarkRead(request);
 
         // Assert
         result.ShouldBeOfType<NoContentResult>();
-        _emailRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Email>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+        _emailRepositoryMock.Verify(r => r.BulkMarkReadAsync(_testUser.Id, It.IsAny<IEnumerable<Guid>>(), true, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

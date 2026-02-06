@@ -258,4 +258,57 @@ public class EmailRepository : IEmailRepository
             .OrderBy(a => a)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<int> BulkMarkReadAsync(
+        Guid userId,
+        IEnumerable<Guid> emailIds,
+        bool isRead,
+        CancellationToken cancellationToken = default)
+    {
+        var emailIdList = emailIds.ToList();
+        return await _context.EmailRecipients
+            .Where(r => emailIdList.Contains(r.EmailId) && r.UserId == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, isRead), cancellationToken);
+    }
+
+    public async Task<int> BulkDeleteAsync(
+        Guid userId,
+        IEnumerable<Guid> emailIds,
+        CancellationToken cancellationToken = default)
+    {
+        var emailIdList = emailIds.ToList();
+        return await _context.Emails
+            .Where(e => emailIdList.Contains(e.Id))
+            .Where(e => e.Recipients.Any(r => r.UserId == userId) || e.SentByUserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    public async IAsyncEnumerable<Email> StreamByUserIdAsync(
+        Guid userId,
+        DateTimeOffset? fromDate = null,
+        DateTimeOffset? toDate = null,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var query = _context.Emails
+            .Include(e => e.Recipients)
+            .Include(e => e.Attachments)
+            .Where(e => e.Recipients.Any(r => r.UserId == userId))
+            .OrderByDescending(e => e.ReceivedAt)
+            .AsQueryable();
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(e => e.ReceivedAt >= fromDate.Value);
+        }
+
+        if (toDate.HasValue)
+        {
+            query = query.Where(e => e.ReceivedAt <= toDate.Value);
+        }
+
+        await foreach (var email in query.AsAsyncEnumerable().WithCancellation(cancellationToken))
+        {
+            yield return email;
+        }
+    }
 }

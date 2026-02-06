@@ -2,9 +2,11 @@ using SmtpServer;
 using SmtpServer.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Caching.Memory;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Telemetry;
-using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Relate.Smtp.SmtpHost.Handlers;
 
@@ -12,13 +14,24 @@ public class CustomUserAuthenticator : IUserAuthenticator
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CustomUserAuthenticator> _logger;
-    private readonly ConcurrentDictionary<string, CacheEntry> _authCache = new();
+    private static readonly MemoryCache _authCache = new(new MemoryCacheOptions
+    {
+        SizeLimit = 10000,
+        ExpirationScanFrequency = TimeSpan.FromMinutes(1)
+    });
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
     public CustomUserAuthenticator(IServiceProvider serviceProvider, ILogger<CustomUserAuthenticator> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+    }
+
+    private static string GenerateCacheKey(string email, string password)
+    {
+        var input = $"{email.ToLowerInvariant()}:{password}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToBase64String(hash);
     }
 
     public async Task<bool> AuthenticateAsync(
@@ -33,34 +46,29 @@ public class CustomUserAuthenticator : IUserAuthenticator
         ProtocolMetrics.SmtpAuthAttempts.Add(1);
 
         var normalizedEmail = user.ToLowerInvariant();
-        var cacheKey = $"{normalizedEmail}:{password}";
+        var cacheKey = GenerateCacheKey(normalizedEmail, password);
 
         // Check cache first
-        if (_authCache.TryGetValue(cacheKey, out var cached))
+        if (_authCache.TryGetValue(cacheKey, out CacheEntry? cached) && cached != null)
         {
-            if (DateTimeOffset.UtcNow < cached.ExpiresAt)
+            _logger.LogDebug("SMTP authentication cache hit for: {User}", user);
+            activity?.SetTag("smtp.auth.cache_hit", true);
+            activity?.SetTag("smtp.auth.success", cached.IsAuthenticated);
+
+            if (!cached.IsAuthenticated)
             {
-                _logger.LogDebug("SMTP authentication cache hit for: {User}", user);
-                activity?.SetTag("smtp.auth.cache_hit", true);
-                activity?.SetTag("smtp.auth.success", cached.IsAuthenticated);
-
-                if (!cached.IsAuthenticated)
-                {
-                    ProtocolMetrics.SmtpAuthFailures.Add(1);
-                }
-
-                // Update LastUsedAt in background
-                _ = Task.Run(async () =>
-                {
-                    using var scope = _serviceProvider.CreateScope();
-                    var apiKeyRepo = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
-                    await apiKeyRepo.UpdateLastUsedAsync(cached.KeyId, DateTimeOffset.UtcNow, CancellationToken.None);
-                }, CancellationToken.None);
-
-                return cached.IsAuthenticated;
+                ProtocolMetrics.SmtpAuthFailures.Add(1);
             }
 
-            _authCache.TryRemove(cacheKey, out _);
+            // Update LastUsedAt in background
+            _ = Task.Run(async () =>
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var apiKeyRepo = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
+                await apiKeyRepo.UpdateLastUsedAsync(cached.KeyId, DateTimeOffset.UtcNow, CancellationToken.None);
+            }, CancellationToken.None);
+
+            return cached.IsAuthenticated;
         }
 
         activity?.SetTag("smtp.auth.cache_hit", false);
@@ -122,37 +130,24 @@ public class CustomUserAuthenticator : IUserAuthenticator
         return false;
     }
 
-    private void CacheResult(string cacheKey, Guid keyId, bool isAuthenticated)
+    private static void CacheResult(string cacheKey, Guid keyId, bool isAuthenticated)
     {
         var entry = new CacheEntry
         {
             KeyId = keyId,
-            IsAuthenticated = isAuthenticated,
-            ExpiresAt = DateTimeOffset.UtcNow.Add(CacheDuration)
+            IsAuthenticated = isAuthenticated
         };
 
-        _authCache.TryAdd(cacheKey, entry);
+        var options = new MemoryCacheEntryOptions()
+            .SetSize(1)
+            .SetAbsoluteExpiration(CacheDuration);
 
-        // Clean up expired entries periodically
-        if (_authCache.Count > 1000)
-        {
-            var now = DateTimeOffset.UtcNow;
-            var expiredKeys = _authCache
-                .Where(kvp => kvp.Value.ExpiresAt < now)
-                .Select(kvp => kvp.Key)
-                .ToList();
-
-            foreach (var key in expiredKeys)
-            {
-                _authCache.TryRemove(key, out _);
-            }
-        }
+        _authCache.Set(cacheKey, entry, options);
     }
 
     private class CacheEntry
     {
         public Guid KeyId { get; set; }
         public bool IsAuthenticated { get; set; }
-        public DateTimeOffset ExpiresAt { get; set; }
     }
 }

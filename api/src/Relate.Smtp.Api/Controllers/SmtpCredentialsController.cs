@@ -18,6 +18,12 @@ public class SmtpCredentialsController : ControllerBase
     private readonly UserProvisioningService _userProvisioningService;
     private readonly IConfiguration _configuration;
 
+    private static int ParsePort(string? value, int defaultValue) =>
+        int.TryParse(value, out var port) ? port : defaultValue;
+
+    private static bool ParseBool(string? value, bool defaultValue) =>
+        bool.TryParse(value, out var result) ? result : defaultValue;
+
     public SmtpCredentialsController(
         ISmtpApiKeyRepository apiKeyRepository,
         SmtpCredentialService credentialService,
@@ -38,17 +44,17 @@ public class SmtpCredentialsController : ControllerBase
 
         var connectionInfo = new SmtpConnectionInfoDto(
             SmtpServer: _configuration["Smtp:ServerName"] ?? "localhost",
-            SmtpPort: int.Parse(_configuration["Smtp:Port"] ?? "587"),
-            SmtpSecurePort: int.Parse(_configuration["Smtp:SecurePort"] ?? "465"),
-            SmtpEnabled: bool.Parse(_configuration["Smtp:Enabled"] ?? "true"),
+            SmtpPort: ParsePort(_configuration["Smtp:Port"], 587),
+            SmtpSecurePort: ParsePort(_configuration["Smtp:SecurePort"], 465),
+            SmtpEnabled: ParseBool(_configuration["Smtp:Enabled"], true),
             Pop3Server: _configuration["Pop3:ServerName"] ?? "localhost",
-            Pop3Port: int.Parse(_configuration["Pop3:Port"] ?? "110"),
-            Pop3SecurePort: int.Parse(_configuration["Pop3:SecurePort"] ?? "995"),
-            Pop3Enabled: bool.Parse(_configuration["Pop3:Enabled"] ?? "true"),
+            Pop3Port: ParsePort(_configuration["Pop3:Port"], 110),
+            Pop3SecurePort: ParsePort(_configuration["Pop3:SecurePort"], 995),
+            Pop3Enabled: ParseBool(_configuration["Pop3:Enabled"], true),
             ImapServer: _configuration["Imap:ServerName"] ?? "localhost",
-            ImapPort: int.Parse(_configuration["Imap:Port"] ?? "143"),
-            ImapSecurePort: int.Parse(_configuration["Imap:SecurePort"] ?? "993"),
-            ImapEnabled: bool.Parse(_configuration["Imap:Enabled"] ?? "true"),
+            ImapPort: ParsePort(_configuration["Imap:Port"], 143),
+            ImapSecurePort: ParsePort(_configuration["Imap:SecurePort"], 993),
+            ImapEnabled: ParseBool(_configuration["Imap:Enabled"], true),
             Username: user.Email,
             ActiveKeyCount: keys.Count
         );

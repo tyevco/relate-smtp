@@ -30,4 +30,15 @@ public interface IEmailRepository
     Task<IReadOnlyList<Email>> GetSentByUserIdAndFromAddressAsync(Guid userId, string fromAddress, int skip, int take, CancellationToken cancellationToken = default);
     Task<int> GetSentCountByUserIdAndFromAddressAsync(Guid userId, string fromAddress, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetDistinctSentFromAddressesByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    // Bulk operations
+    Task<int> BulkMarkReadAsync(Guid userId, IEnumerable<Guid> emailIds, bool isRead, CancellationToken cancellationToken = default);
+    Task<int> BulkDeleteAsync(Guid userId, IEnumerable<Guid> emailIds, CancellationToken cancellationToken = default);
+
+    // Streaming operations
+    IAsyncEnumerable<Email> StreamByUserIdAsync(
+        Guid userId,
+        DateTimeOffset? fromDate = null,
+        DateTimeOffset? toDate = null,
+        CancellationToken cancellationToken = default);
 }

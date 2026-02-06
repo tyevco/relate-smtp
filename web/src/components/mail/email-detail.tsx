@@ -59,7 +59,7 @@ export function EmailDetailView({ email, onBack, onDelete }: EmailDetailViewProp
         <div className="flex items-start gap-3 sm:gap-4 mb-4">
           <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-base sm:text-lg font-semibold text-primary">
-              {(email.fromDisplayName || email.fromAddress)[0].toUpperCase()}
+              {(email.fromDisplayName || email.fromAddress || '?')[0].toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
@@ -133,7 +133,7 @@ export function EmailDetail({ email }: EmailDetailProps) {
         <div className="flex items-start gap-3 sm:gap-4 mb-4">
           <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center">
             <span className="text-base sm:text-lg font-semibold text-primary">
-              {(email.fromDisplayName || email.fromAddress)[0].toUpperCase()}
+              {(email.fromDisplayName || email.fromAddress || '?')[0].toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
