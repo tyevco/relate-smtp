@@ -2,12 +2,36 @@
 import { test as base } from '@playwright/test'
 
 const MOCK_OIDC_AUTHORITY = 'https://mock-oidc.example.com'
+const MOCK_OIDC_CLIENT_ID = 'mock-client-id'
+
+// Mock OIDC user session that oidc-client-ts expects
+const mockOidcUser = {
+  id_token: 'mock-id-token',
+  access_token: 'mock-access-token',
+  token_type: 'Bearer',
+  scope: 'openid profile email',
+  profile: {
+    sub: 'mock-user-id',
+    name: 'Test User',
+    email: 'test@example.com',
+  },
+  expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+}
 
 /**
  * Extended test fixture that mocks API endpoints for E2E testing without a backend
  */
 export const test = base.extend({
   page: async ({ page }, use) => {
+    // Inject mock auth tokens into sessionStorage before any navigation
+    await page.addInitScript(
+      ({ authority, clientId, user }) => {
+        const storageKey = `oidc.user:${authority}:${clientId}`
+        sessionStorage.setItem(storageKey, JSON.stringify(user))
+      },
+      { authority: MOCK_OIDC_AUTHORITY, clientId: MOCK_OIDC_CLIENT_ID, user: mockOidcUser }
+    )
+
     // Mock the config endpoint with a fake OIDC authority
     await page.route('**/config/config.json', async (route) => {
       await route.fulfill({
