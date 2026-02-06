@@ -268,36 +268,23 @@ public class EmailsController : ControllerBase
     }
 
     [HttpGet("export/mbox")]
-    public async Task<IActionResult> ExportAsMbox(
+    public async Task ExportAsMbox(
         [FromQuery] DateTimeOffset? fromDate = null,
         [FromQuery] DateTimeOffset? toDate = null,
         CancellationToken cancellationToken = default)
     {
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
-        // Get all emails for user (fetch large batch to get all emails)
-        var allEmails = await _emailRepository.GetByUserIdAsync(user.Id, 1, 10000, cancellationToken);
-        var emails = allEmails.AsEnumerable();
+        Response.ContentType = "application/mbox";
+        Response.Headers.ContentDisposition = $"attachment; filename=\"emails_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mbox\"";
 
-        if (fromDate.HasValue)
-        {
-            emails = emails.Where(e => e.ReceivedAt >= fromDate.Value);
-        }
-        if (toDate.HasValue)
-        {
-            emails = emails.Where(e => e.ReceivedAt <= toDate.Value);
-        }
+        await using var writer = new StreamWriter(Response.Body, Encoding.UTF8, leaveOpen: true);
 
-        var emailList = emails.ToList();
-
-        // Build MBOX format
-        var mboxBuilder = new StringBuilder();
-
-        foreach (var email in emailList)
+        await foreach (var email in _emailRepository.StreamByUserIdAsync(user.Id, fromDate, toDate, cancellationToken))
         {
             // MBOX format starts with "From " line
             var fromLine = $"From {email.FromAddress} {email.ReceivedAt:ddd MMM dd HH:mm:ss yyyy}";
-            mboxBuilder.AppendLine(fromLine);
+            await writer.WriteLineAsync(fromLine);
 
             // Reconstruct MIME message
             var message = new MimeMessage();
@@ -351,15 +338,13 @@ public class EmailsController : ControllerBase
             // Escape "From " at the beginning of lines (MBOX format requirement)
             messageContent = messageContent.Replace("\nFrom ", "\n>From ");
 
-            mboxBuilder.Append(messageContent);
-            mboxBuilder.AppendLine();
-            mboxBuilder.AppendLine();
+            await writer.WriteAsync(messageContent);
+            await writer.WriteLineAsync();
+            await writer.WriteLineAsync();
+
+            // Flush periodically to avoid buffering too much
+            await writer.FlushAsync(cancellationToken);
         }
-
-        var mboxContent = Encoding.UTF8.GetBytes(mboxBuilder.ToString());
-        var fileName = $"emails_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mbox";
-
-        return File(mboxContent, "application/mbox", fileName);
     }
 
     [HttpGet("threads/{threadId:guid}")]
@@ -378,16 +363,7 @@ public class EmailsController : ControllerBase
     {
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
-        foreach (var emailId in request.EmailIds)
-        {
-            var email = await _emailRepository.GetByIdWithDetailsAsync(emailId, cancellationToken);
-            if (email != null && email.Recipients.Any(r => r.UserId == user.Id))
-            {
-                var recipient = email.Recipients.First(r => r.UserId == user.Id);
-                recipient.IsRead = request.IsRead ?? true;
-                await _emailRepository.UpdateAsync(email, cancellationToken);
-            }
-        }
+        await _emailRepository.BulkMarkReadAsync(user.Id, request.EmailIds, request.IsRead ?? true, cancellationToken);
 
         return NoContent();
     }
@@ -397,14 +373,12 @@ public class EmailsController : ControllerBase
     {
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
+        await _emailRepository.BulkDeleteAsync(user.Id, request.EmailIds, cancellationToken);
+
+        // Notify about deleted emails
         foreach (var emailId in request.EmailIds)
         {
-            var email = await _emailRepository.GetByIdAsync(emailId, cancellationToken);
-            if (email != null)
-            {
-                await _emailRepository.DeleteAsync(emailId, cancellationToken);
-                await _notificationService.NotifyEmailDeletedAsync(user.Id, emailId, cancellationToken);
-            }
+            await _notificationService.NotifyEmailDeletedAsync(user.Id, emailId, cancellationToken);
         }
 
         // Update unread count

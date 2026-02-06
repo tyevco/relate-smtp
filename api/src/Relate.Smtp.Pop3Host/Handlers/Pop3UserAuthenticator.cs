@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Caching.Memory;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Telemetry;
-using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Relate.Smtp.Pop3Host.Handlers;
 
@@ -10,13 +12,24 @@ public class Pop3UserAuthenticator
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<Pop3UserAuthenticator> _logger;
-    private readonly ConcurrentDictionary<string, CacheEntry> _authCache = new();
+    private static readonly MemoryCache _authCache = new(new MemoryCacheOptions
+    {
+        SizeLimit = 10000,
+        ExpirationScanFrequency = TimeSpan.FromMinutes(1)
+    });
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
     public Pop3UserAuthenticator(IServiceProvider serviceProvider, ILogger<Pop3UserAuthenticator> logger)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+    }
+
+    private static string GenerateCacheKey(string email, string password)
+    {
+        var input = $"{email.ToLowerInvariant()}:{password}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
+        return Convert.ToBase64String(hash);
     }
 
     public async Task<(bool IsAuthenticated, Guid? UserId)> AuthenticateAsync(
@@ -30,11 +43,10 @@ public class Pop3UserAuthenticator
         ProtocolMetrics.Pop3AuthAttempts.Add(1);
 
         var normalizedEmail = username.ToLowerInvariant();
-        var cacheKey = $"{normalizedEmail}:{password}";
+        var cacheKey = GenerateCacheKey(normalizedEmail, password);
 
         // Check cache (30-second TTL)
-        if (_authCache.TryGetValue(cacheKey, out var cached) &&
-            DateTimeOffset.UtcNow < cached.ExpiresAt)
+        if (_authCache.TryGetValue(cacheKey, out CacheEntry? cached) && cached != null)
         {
             _logger.LogDebug("POP3 authentication cache hit for: {Email}", username);
             activity?.SetTag("pop3.auth.cache_hit", true);
@@ -100,26 +112,20 @@ public class Pop3UserAuthenticator
         return (false, null);
     }
 
-    private void CacheResult(string key, bool authenticated, Guid? userId, Guid keyId)
+    private static void CacheResult(string cacheKey, bool authenticated, Guid? userId, Guid keyId)
     {
-        _authCache[key] = new CacheEntry
+        var entry = new CacheEntry
         {
             IsAuthenticated = authenticated,
             UserId = userId,
-            KeyId = keyId,
-            ExpiresAt = DateTimeOffset.UtcNow.Add(CacheDuration)
+            KeyId = keyId
         };
 
-        // Cleanup if cache grows too large
-        if (_authCache.Count > 1000)
-        {
-            var expired = _authCache
-                .Where(x => DateTimeOffset.UtcNow >= x.Value.ExpiresAt)
-                .Select(x => x.Key)
-                .ToList();
-            foreach (var k in expired)
-                _authCache.TryRemove(k, out _);
-        }
+        var options = new MemoryCacheEntryOptions()
+            .SetSize(1)
+            .SetAbsoluteExpiration(CacheDuration);
+
+        _authCache.Set(cacheKey, entry, options);
     }
 
     private Task UpdateLastUsedAsync(Guid keyId)
@@ -145,6 +151,5 @@ public class Pop3UserAuthenticator
         public bool IsAuthenticated { get; init; }
         public Guid? UserId { get; init; }
         public Guid KeyId { get; init; }
-        public DateTimeOffset ExpiresAt { get; init; }
     }
 }
