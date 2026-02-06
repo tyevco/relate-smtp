@@ -92,7 +92,8 @@ export function getConnection(): signalR.HubConnection | null {
 // Handler tracking for cleanup
 interface TrackedHandler {
   event: string;
-  handler: (...args: unknown[]) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  handler: (...args: any[]) => void;
 }
 
 /**
