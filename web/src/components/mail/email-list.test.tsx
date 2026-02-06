@@ -70,11 +70,13 @@ describe('EmailList', () => {
     ]
     render(<EmailList emails={emails} selectedId="1" onSelect={() => {}} />)
 
-    const buttons = screen.getAllByRole('button')
-    const selectedButton = buttons[0]
-    const notSelectedButton = buttons[1]
-    expect(selectedButton).toHaveClass('bg-accent')
-    expect(notSelectedButton).not.toHaveClass('bg-accent')
+    const options = screen.getAllByRole('option')
+    const selectedOption = options[0]
+    const notSelectedOption = options[1]
+    expect(selectedOption).toHaveClass('bg-accent')
+    expect(notSelectedOption).not.toHaveClass('bg-accent')
+    expect(selectedOption).toHaveAttribute('aria-selected', 'true')
+    expect(notSelectedOption).toHaveAttribute('aria-selected', 'false')
   })
 
   it('applies unread styling for unread emails', () => {
@@ -83,8 +85,8 @@ describe('EmailList', () => {
     ]
     render(<EmailList emails={emails} onSelect={() => {}} />)
 
-    const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-primary/5')
+    const option = screen.getByRole('option')
+    expect(option).toHaveClass('bg-primary/5')
   })
 
   it('does not apply unread styling for read emails', () => {
@@ -93,8 +95,8 @@ describe('EmailList', () => {
     ]
     render(<EmailList emails={emails} onSelect={() => {}} />)
 
-    const button = screen.getByRole('button')
-    expect(button).not.toHaveClass('bg-primary/5')
+    const option = screen.getByRole('option')
+    expect(option).not.toHaveClass('bg-primary/5')
   })
 
   it('displays attachment indicator when email has attachments', () => {
@@ -164,7 +166,7 @@ describe('EmailList', () => {
     render(<EmailList emails={emails} onSelect={() => {}} />)
 
     // Both should be rendered, we check the container has both icons
-    const buttons = screen.getAllByRole('button')
-    expect(buttons).toHaveLength(2)
+    const options = screen.getAllByRole('option')
+    expect(options).toHaveLength(2)
   })
 })
