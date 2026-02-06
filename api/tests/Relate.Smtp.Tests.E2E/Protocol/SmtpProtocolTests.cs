@@ -1,8 +1,10 @@
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.EntityFrameworkCore;
 using MimeKit;
 using Relate.Smtp.Tests.Common.Factories;
 using Relate.Smtp.Tests.Common.Fixtures;
+using Relate.Smtp.Tests.Common.Helpers;
 using Shouldly;
 
 namespace Relate.Smtp.Tests.E2E.Protocol;
@@ -91,8 +93,12 @@ public class SmtpProtocolTests : IAsyncLifetime
         await client.SendAsync(message);
         await client.DisconnectAsync(true);
 
-        // Allow time for email to be processed
-        await Task.Delay(500);
+        // Wait for email to be processed
+        await TestHelpers.WaitForConditionAsync(async () =>
+        {
+            await using var ctx = _fixture.Postgres.CreateDbContext();
+            return await ctx.Emails.AnyAsync(e => e.Subject == "Test Email via SMTP");
+        }, timeoutMessage: "Email 'Test Email via SMTP' was not found in database");
 
         // Assert
         await using var verifyContext = _fixture.Postgres.CreateDbContext();
@@ -130,8 +136,12 @@ public class SmtpProtocolTests : IAsyncLifetime
         await client.SendAsync(message);
         await client.DisconnectAsync(true);
 
-        // Allow time for email to be processed
-        await Task.Delay(500);
+        // Wait for email to be processed
+        await TestHelpers.WaitForConditionAsync(async () =>
+        {
+            await using var ctx = _fixture.Postgres.CreateDbContext();
+            return await ctx.Emails.AnyAsync(e => e.Subject == "Email with Attachment");
+        }, timeoutMessage: "Email 'Email with Attachment' was not found in database");
 
         // Assert
         await using var verifyContext = _fixture.Postgres.CreateDbContext();
@@ -169,7 +179,13 @@ public class SmtpProtocolTests : IAsyncLifetime
         // Act
         await client.SendAsync(message);
         await client.DisconnectAsync(true);
-        await Task.Delay(500);
+
+        // Wait for email to be processed
+        await TestHelpers.WaitForConditionAsync(async () =>
+        {
+            await using var ctx = _fixture.Postgres.CreateDbContext();
+            return await ctx.EmailRecipients.AnyAsync(r => r.Address == recipient.Email);
+        }, timeoutMessage: $"Email recipient '{recipient.Email}' was not found in database");
 
         // Assert
         await using var verifyContext = _fixture.Postgres.CreateDbContext();
@@ -201,7 +217,13 @@ public class SmtpProtocolTests : IAsyncLifetime
         // Act
         await client.SendAsync(message);
         await client.DisconnectAsync(true);
-        await Task.Delay(500);
+
+        // Wait for email to be processed
+        await TestHelpers.WaitForConditionAsync(async () =>
+        {
+            await using var ctx = _fixture.Postgres.CreateDbContext();
+            return await ctx.Emails.AnyAsync(e => e.Subject == "Tracking Test");
+        }, timeoutMessage: "Email 'Tracking Test' was not found in database");
 
         // Assert
         await using var verifyContext = _fixture.Postgres.CreateDbContext();

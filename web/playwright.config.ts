@@ -46,12 +46,10 @@ export default defineConfig({
     },
   ],
 
-  webServer: process.env.CI
-    ? undefined
-    : {
-        command: 'npm run dev',
-        url: 'http://localhost:5492',
-        reuseExistingServer: !process.env.CI,
-        timeout: 120000,
-      },
+  webServer: {
+    command: process.env.CI ? 'npx vite preview --port 5492' : 'npm run dev',
+    url: 'http://localhost:5492',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120000,
+  },
 })
