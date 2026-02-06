@@ -20,13 +20,13 @@ export function useSignalR(serverUrl: string | null, apiKey: string | null) {
   const setupDoneRef = useRef(false)
 
   useEffect(() => {
-    // Capture values at start to prevent stale closure issues
-    const currentServerUrl = serverUrl
-    const currentApiKey = apiKey
-
-    if (!currentServerUrl || !currentApiKey) {
+    if (!serverUrl || !apiKey) {
       return
     }
+
+    // Capture values after null check to ensure type narrowing
+    const currentServerUrl = serverUrl
+    const currentApiKey = apiKey
 
     let isCancelled = false
 
