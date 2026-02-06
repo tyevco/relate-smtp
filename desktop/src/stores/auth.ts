@@ -50,11 +50,8 @@ export const logoutAllAtom = atom(null, async (get, set) => {
 // New code should use addAccountAtom directly
 export const loginAtom = atom(
   null,
-  (
-    _get,
-    _set,
-    _params: { serverUrl: string; apiKey: string; userEmail: string }
-  ) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  (_get, _set, _params: { serverUrl: string; apiKey: string; userEmail: string }) => {
     // This is now a no-op - use addAccountAtom instead
     console.warn('loginAtom is deprecated, use addAccountAtom instead')
   }
