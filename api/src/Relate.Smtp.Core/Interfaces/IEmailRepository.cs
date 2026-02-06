@@ -7,6 +7,11 @@ public interface IEmailRepository
 {
     Task<Email?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Email?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Gets an email by ID only if the specified user has access (either as sender or recipient).
+    /// Returns null if email not found or user doesn't have access.
+    /// </summary>
+    Task<Email?> GetByIdWithUserAccessAsync(Guid emailId, Guid userId, CancellationToken cancellationToken = default);
     Task<Email?> GetByMessageIdAsync(string messageId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Email>> GetByThreadIdAsync(Guid threadId, Guid userId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Email>> GetByUserIdAsync(Guid userId, int skip, int take, CancellationToken cancellationToken = default);

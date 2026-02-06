@@ -18,6 +18,9 @@ public class SmtpApiKeyConfiguration : IEntityTypeConfiguration<SmtpApiKey>
             .HasMaxLength(128)
             .IsRequired();
 
+        builder.Property(k => k.KeyPrefix)
+            .HasMaxLength(12);
+
         builder.Property(k => k.Scopes)
             .HasMaxLength(500)
             .IsRequired()
@@ -25,6 +28,10 @@ public class SmtpApiKeyConfiguration : IEntityTypeConfiguration<SmtpApiKey>
 
         builder.HasIndex(k => k.UserId);
         builder.HasIndex(k => k.RevokedAt);
+
+        // Composite index for efficient API key lookup by prefix
+        builder.HasIndex(k => new { k.KeyPrefix, k.RevokedAt })
+            .HasFilter("\"RevokedAt\" IS NULL");
 
         builder.HasOne(k => k.User)
             .WithMany(u => u.SmtpApiKeys)

@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, useWindowDimensions } from "r
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
 import { WebView } from "react-native-webview";
+import DOMPurify from "dompurify";
 import {
   X,
   Trash2,
@@ -17,6 +18,21 @@ import { Loading } from "@/components/ui/loading";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatBytes } from "@/lib/utils";
+
+function sanitizeHtml(html: string | null | undefined): string {
+  if (!html) return "";
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      "p", "br", "b", "i", "u", "strong", "em", "a", "ul", "ol", "li", "img",
+      "table", "tr", "td", "th", "thead", "tbody", "tfoot", "div", "span",
+      "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "pre", "code",
+      "hr", "sub", "sup", "small", "mark", "del", "ins", "address",
+    ],
+    ALLOWED_ATTR: ["href", "src", "alt", "class", "style", "target", "rel", "width", "height"],
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input"],
+  });
+}
 
 export default function EmailDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -91,7 +107,7 @@ export default function EmailDetailScreen() {
             table { max-width: 100%; }
           </style>
         </head>
-        <body>${email.htmlBody}</body>
+        <body>${sanitizeHtml(email.htmlBody)}</body>
       </html>
     `
     : null;

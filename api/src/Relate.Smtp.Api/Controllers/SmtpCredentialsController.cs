@@ -99,6 +99,7 @@ public class SmtpCredentialsController : ControllerBase
 
         var apiKey = _credentialService.GenerateApiKey();
         var keyHash = _credentialService.HashPassword(apiKey);
+        var keyPrefix = _credentialService.ExtractKeyPrefix(apiKey);
 
         var smtpApiKey = new SmtpApiKey
         {
@@ -106,6 +107,7 @@ public class SmtpCredentialsController : ControllerBase
             UserId = user.Id,
             Name = request.Name,
             KeyHash = keyHash,
+            KeyPrefix = keyPrefix,
             Scopes = JsonSerializer.Serialize(scopes),
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -178,6 +180,7 @@ public class SmtpCredentialsController : ControllerBase
 
         var apiKey = _credentialService.GenerateApiKey();
         var keyHash = _credentialService.HashPassword(apiKey);
+        var keyPrefix = _credentialService.ExtractKeyPrefix(apiKey);
 
         var smtpApiKey = new SmtpApiKey
         {
@@ -185,6 +188,7 @@ public class SmtpCredentialsController : ControllerBase
             UserId = user.Id,
             Name = keyName,
             KeyHash = keyHash,
+            KeyPrefix = keyPrefix,
             Scopes = JsonSerializer.Serialize(scopes),
             CreatedAt = DateTimeOffset.UtcNow
         };

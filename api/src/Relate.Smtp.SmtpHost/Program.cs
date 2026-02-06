@@ -14,9 +14,16 @@ builder.Services.AddInfrastructure(connectionString);
 
 // Configure HTTP client for notification service
 var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
+var internalApiKey = builder.Configuration["Internal:ApiKey"];
+
 builder.Services.AddHttpClient<IEmailNotificationService, HttpEmailNotificationService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
+    if (!string.IsNullOrEmpty(internalApiKey))
+    {
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("ApiKey", internalApiKey);
+    }
 });
 
 // Configure SMTP server options

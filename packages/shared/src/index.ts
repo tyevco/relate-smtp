@@ -9,3 +9,4 @@ export * from './components/mail'
 
 // Utilities
 export { cn } from './lib/utils'
+export { sanitizeHtml } from './lib/sanitize'

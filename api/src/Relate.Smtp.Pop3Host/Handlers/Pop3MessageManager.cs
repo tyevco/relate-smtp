@@ -58,11 +58,11 @@ public class Pop3MessageManager
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var email = await emailRepo.GetByIdWithDetailsAsync(emailId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found: {EmailId}", emailId);
-            throw new InvalidOperationException("Email not found");
+            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
         // Mark as read for this user
@@ -80,16 +80,16 @@ public class Pop3MessageManager
         return message;
     }
 
-    public async Task<string> RetrieveTopAsync(Guid emailId, int lines, CancellationToken ct)
+    public async Task<string> RetrieveTopAsync(Guid emailId, Guid userId, int lines, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        var email = await emailRepo.GetByIdWithDetailsAsync(emailId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found: {EmailId}", emailId);
-            throw new InvalidOperationException("Email not found");
+            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
         // Build full message

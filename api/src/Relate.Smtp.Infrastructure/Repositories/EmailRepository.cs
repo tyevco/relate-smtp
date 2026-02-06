@@ -29,6 +29,16 @@ public class EmailRepository : IEmailRepository
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
+    public async Task<Email?> GetByIdWithUserAccessAsync(Guid emailId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Emails
+            .Include(e => e.Recipients)
+            .Include(e => e.Attachments)
+            .Where(e => e.Id == emailId)
+            .Where(e => e.SentByUserId == userId || e.Recipients.Any(r => r.UserId == userId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<Email?> GetByMessageIdAsync(string messageId, CancellationToken cancellationToken = default)
     {
         return await _context.Emails

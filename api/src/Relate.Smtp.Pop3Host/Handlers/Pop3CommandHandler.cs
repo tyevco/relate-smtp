@@ -360,7 +360,7 @@ public class Pop3CommandHandler
         if (message == null)
             return Pop3Response.Error("No such message");
 
-        var content = await _messageManager.RetrieveTopAsync(message.EmailId, lines, ct);
+        var content = await _messageManager.RetrieveTopAsync(message.EmailId, session.UserId!.Value, lines, ct);
 
         await writer.WriteLineAsync(Pop3Response.Success());
         await writer.WriteAsync(content);

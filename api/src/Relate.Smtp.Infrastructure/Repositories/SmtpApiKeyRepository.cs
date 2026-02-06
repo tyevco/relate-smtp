@@ -52,14 +52,17 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
 
     public async Task<SmtpApiKey?> GetByKeyWithScopeAsync(string rawKey, string requiredScope, CancellationToken cancellationToken = default)
     {
-        // Get all active keys for all users
-        var activeKeys = await _context.SmtpApiKeys
+        // Extract prefix for efficient lookup (first 12 characters)
+        var prefix = rawKey.Length >= 12 ? rawKey[..12] : rawKey;
+
+        // O(1) lookup by prefix instead of loading all keys
+        var candidates = await _context.SmtpApiKeys
             .Include(k => k.User)
-            .Where(k => k.RevokedAt == null)
+            .Where(k => k.RevokedAt == null && k.KeyPrefix == prefix)
             .ToListAsync(cancellationToken);
 
-        // Check each key's hash and scopes
-        foreach (var key in activeKeys)
+        // BCrypt verify only the matching candidates
+        foreach (var key in candidates)
         {
             if (BCrypt.Net.BCrypt.Verify(rawKey, key.KeyHash))
             {
@@ -69,6 +72,27 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
                     return key;
                 }
                 return null; // Key found but lacks scope
+            }
+        }
+
+        // Fallback for legacy keys without prefix (backward compatibility)
+        if (candidates.Count == 0)
+        {
+            var legacyKeys = await _context.SmtpApiKeys
+                .Include(k => k.User)
+                .Where(k => k.RevokedAt == null && k.KeyPrefix == null)
+                .ToListAsync(cancellationToken);
+
+            foreach (var key in legacyKeys)
+            {
+                if (BCrypt.Net.BCrypt.Verify(rawKey, key.KeyHash))
+                {
+                    if (HasScope(key, requiredScope))
+                    {
+                        return key;
+                    }
+                    return null;
+                }
             }
         }
 

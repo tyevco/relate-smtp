@@ -87,11 +87,11 @@ public class ImapMessageManager
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var email = await emailRepo.GetByIdWithDetailsAsync(emailId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found: {EmailId}", emailId);
-            throw new InvalidOperationException("Email not found");
+            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
         // Build RFC 822 message
@@ -114,16 +114,16 @@ public class ImapMessageManager
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, true), ct);
     }
 
-    public async Task<string> RetrieveHeadersAsync(Guid emailId, CancellationToken ct)
+    public async Task<string> RetrieveHeadersAsync(Guid emailId, Guid userId, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        var email = await emailRepo.GetByIdWithDetailsAsync(emailId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found: {EmailId}", emailId);
-            throw new InvalidOperationException("Email not found");
+            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
         // Build full message and extract headers
@@ -137,16 +137,16 @@ public class ImapMessageManager
         return fullMessage[..headerEnd];
     }
 
-    public async Task<string> RetrieveBodyPartAsync(Guid emailId, int lines, CancellationToken ct)
+    public async Task<string> RetrieveBodyPartAsync(Guid emailId, Guid userId, int lines, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        var email = await emailRepo.GetByIdWithDetailsAsync(emailId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found: {EmailId}", emailId);
-            throw new InvalidOperationException("Email not found");
+            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
         var fullMessage = BuildRfc822Message(email);

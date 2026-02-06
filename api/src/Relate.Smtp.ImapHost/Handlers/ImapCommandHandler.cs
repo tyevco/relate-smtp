@@ -533,7 +533,7 @@ public class ImapCommandHandler
         }
         else if (upperItems.Contains("BODY[HEADER]") || upperItems.Contains("BODY.PEEK[HEADER]"))
         {
-            var headers = await _messageManager.RetrieveHeadersAsync(msg.EmailId, ct);
+            var headers = await _messageManager.RetrieveHeadersAsync(msg.EmailId, userId, ct);
             parts.Add($"BODY[HEADER] {{{headers.Length}}}\r\n{headers}");
         }
 

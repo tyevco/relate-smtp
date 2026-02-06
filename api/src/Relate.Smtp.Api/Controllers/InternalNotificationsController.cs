@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Relate.Smtp.Api.Authentication;
+using Relate.Smtp.Api.Authorization;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Infrastructure.Services;
 
@@ -6,9 +9,12 @@ namespace Relate.Smtp.Api.Controllers;
 
 /// <summary>
 /// Internal API for triggering notifications from other services (e.g., SMTP Host).
+/// Requires API key authentication with 'internal' scope.
 /// </summary>
 [ApiController]
 [Route("api/internal/notifications")]
+[Authorize(AuthenticationSchemes = ApiKeyAuthenticationExtensions.ApiKeyScheme)]
+[RequireScope("internal")]
 public class InternalNotificationsController : ControllerBase
 {
     private readonly IEmailNotificationService _notificationService;
@@ -23,9 +29,6 @@ public class InternalNotificationsController : ControllerBase
         [FromBody] NewEmailNotificationRequest request,
         CancellationToken cancellationToken = default)
     {
-        // In production, you should add authentication/authorization here
-        // to ensure only internal services can call this endpoint
-
         // Create a minimal Email object for notification purposes
         var email = new Email
         {
