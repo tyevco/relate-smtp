@@ -21,7 +21,7 @@ test.describe('Inbox', () => {
 
     // Either shows emails or empty state
     const hasEmptyState = await page.getByText(/no emails/i).isVisible().catch(() => false)
-    const hasEmailList = await page.locator('[role="button"]').first().isVisible().catch(() => false)
+    const hasEmailList = await page.locator('[role="option"]').first().isVisible().catch(() => false)
 
     expect(hasEmptyState || hasEmailList).toBeTruthy()
   })
@@ -43,7 +43,7 @@ test.describe('Inbox', () => {
 
   test('can navigate to email detail', async ({ page }) => {
     // If there are any email items, click on one
-    const emailItems = page.locator('[role="button"]')
+    const emailItems = page.locator('[role="option"]')
     const count = await emailItems.count()
 
     if (count > 0) {
@@ -111,7 +111,7 @@ test.describe('Inbox - Email Interactions', () => {
   })
 
   test('can mark email as read/unread', async ({ page }) => {
-    const emailItems = page.locator('[role="button"]')
+    const emailItems = page.locator('[role="option"]')
     const count = await emailItems.count()
 
     if (count > 0) {
@@ -130,7 +130,7 @@ test.describe('Inbox - Email Interactions', () => {
   })
 
   test('can delete email', async ({ page }) => {
-    const emailItems = page.locator('[role="button"]')
+    const emailItems = page.locator('[role="option"]')
     const count = await emailItems.count()
 
     if (count > 0) {
