@@ -110,6 +110,25 @@ export const test = base.extend({
       })
     })
 
+    await page.route('**/api/smtp-credentials**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          smtpServer: 'smtp.example.com',
+          smtpPort: 587,
+          smtpSecurePort: 465,
+          pop3Server: 'pop3.example.com',
+          pop3Port: 110,
+          pop3SecurePort: 995,
+          imapServer: 'imap.example.com',
+          imapPort: 143,
+          imapSecurePort: 993,
+          username: 'test@example.com',
+        }),
+      })
+    })
+
     // Mock SignalR hub negotiation
     await page.route('**/hubs/email/negotiate**', async (route) => {
       await route.fulfill({
