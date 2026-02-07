@@ -30,6 +30,11 @@ docker/.env
 # Build outputs
 **/publish/
 **/out/
+*.tsbuildinfo
+
+# Tauri / Rust
+desktop/src-tauri/target/
+desktop/src-tauri/gen/
 
 # Test results
 **/TestResults/
@@ -38,6 +43,7 @@ docker/.env
 # OS
 .DS_Store
 Thumbs.db
+nul
 **/PublishProfiles/**
 
 appsettings.Production.json
