@@ -10,7 +10,7 @@ import './index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 1000 * 30, // 30 seconds - appropriate for email app requiring fresh data
       retry: 1,
     },
   },

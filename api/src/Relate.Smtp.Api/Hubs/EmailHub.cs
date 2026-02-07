@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 
 namespace Relate.Smtp.Api.Hubs;
 
@@ -8,6 +9,13 @@ namespace Relate.Smtp.Api.Hubs;
 /// </summary>
 public class EmailHub : Hub
 {
+    private readonly ILogger<EmailHub> _logger;
+
+    public EmailHub(ILogger<EmailHub> logger)
+    {
+        _logger = logger;
+    }
+
     public override async Task OnConnectedAsync()
     {
         // Get user ID from claims (set by JWT authentication)
@@ -18,6 +26,13 @@ public class EmailHub : Hub
         {
             // Add connection to user-specific group
             await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
+            _logger.LogDebug("User {UserId} connected to SignalR hub, ConnectionId: {ConnectionId}", userId, Context.ConnectionId);
+        }
+        else
+        {
+            _logger.LogWarning("SignalR connection {ConnectionId} established without user ID. User claims: {Claims}",
+                Context.ConnectionId,
+                Context.User?.Claims != null ? string.Join(", ", Context.User.Claims.Select(c => $"{c.Type}={c.Value}")) : "none");
         }
 
         await base.OnConnectedAsync();
@@ -31,6 +46,7 @@ public class EmailHub : Hub
         if (!string.IsNullOrEmpty(userId))
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
+            _logger.LogDebug("User {UserId} disconnected from SignalR hub, ConnectionId: {ConnectionId}", userId, Context.ConnectionId);
         }
 
         await base.OnDisconnectedAsync(exception);

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Relate.Smtp.Api.Models;
 using Relate.Smtp.Api.Services;
@@ -9,6 +10,7 @@ namespace Relate.Smtp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("api")]
 public class PushSubscriptionsController : ControllerBase
 {
     private readonly IPushSubscriptionRepository _subscriptionRepository;
@@ -42,8 +44,8 @@ public class PushSubscriptionsController : ControllerBase
     {
         var userId = GetUserId();
 
-        // Check if subscription already exists
-        var existing = await _subscriptionRepository.GetByEndpointAsync(request.Endpoint, cancellationToken);
+        // Check if subscription already exists for this user
+        var existing = await _subscriptionRepository.GetByEndpointAsync(request.Endpoint, userId, cancellationToken);
         if (existing != null)
         {
             return Ok(MapToDto(existing));

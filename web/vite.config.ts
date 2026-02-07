@@ -31,7 +31,7 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: proxyTarget,
           changeOrigin: true,
-          secure: false, // Allow self-signed certificates in dev
+          // In development, use NODE_TLS_REJECT_UNAUTHORIZED=0 if using self-signed certs
           configure: (proxy, _options) => {
             proxy.on('error', (err, _req, _res) => {
               console.log('❌ Proxy error:', err.message);
@@ -45,7 +45,6 @@ export default defineConfig(({ mode }) => {
         '/config/config.json': {
           target: proxyTarget,
           changeOrigin: true,
-          secure: false,
           rewrite: (path) => path.replace(/^\/config/, ''),
         },
       },

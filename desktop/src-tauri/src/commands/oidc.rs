@@ -366,7 +366,7 @@ async fn wait_for_callback(listener: &TcpListener) -> Result<(String, String), S
     let params = parse_query_params(query);
 
     let code = params.get("code").cloned();
-    let state = params.get("state").cloned().unwrap_or_default();
+    let state = params.get("state").cloned();
     let error = params.get("error").cloned();
 
     // Send response to browser
@@ -392,9 +392,10 @@ async fn wait_for_callback(listener: &TcpListener) -> Result<(String, String), S
     let _ = stream.write_all(response.as_bytes()).await;
     let _ = stream.flush().await;
 
-    match (code, error) {
-        (Some(code), _) => Ok((code, state)),
-        (None, Some(error)) => Err(format!("OIDC error: {}", error)),
+    match (code, state, error) {
+        (Some(code), Some(state), _) => Ok((code, state)),
+        (_, None, _) => Err("Missing state parameter - possible CSRF attack".to_string()),
+        (None, _, Some(error)) => Err(format!("OIDC error: {}", error)),
         _ => Err("No authorization code received".to_string()),
     }
 }

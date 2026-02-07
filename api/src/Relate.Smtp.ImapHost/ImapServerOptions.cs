@@ -10,5 +10,5 @@ public class ImapServerOptions
     public string? CertificatePassword { get; set; }
     public int MaxConnectionsPerUser { get; set; } = 5;
     public TimeSpan SessionTimeout { get; set; } = TimeSpan.FromMinutes(30);
-    public int MaxMessagesPerSession { get; set; } = 10000;
+    public int MaxMessagesPerSession { get; set; } = 2000;
 }

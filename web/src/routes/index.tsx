@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { getConfig } from '@/config'
@@ -47,11 +47,19 @@ function InboxPage() {
     }
   }, [currentData])
 
-  // Handle search
+  // Debounce timeout ref for search
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Handle search with debouncing to prevent race conditions
   const handleSearch = useCallback((query: string) => {
-    setSearchFilters({ query })
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
     setPage(1) // Reset to first page when searching
     setSelectedEmailId(null) // Clear selection
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchFilters({ query })
+    }, 300) // 300ms debounce delay
   }, [])
 
   const handleSelectEmail = useCallback((id: string) => {

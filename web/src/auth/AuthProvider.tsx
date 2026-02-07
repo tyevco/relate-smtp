@@ -47,6 +47,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   };
 
+  // Error handler for OIDC failures
+  const handleSigninError = (error: Error) => {
+    console.error('OIDC sign-in error:', error);
+    // Display user-friendly message based on error type
+    const message = error.message.includes('network')
+      ? 'Network error during authentication. Please check your connection.'
+      : error.message.includes('expired')
+      ? 'Your session has expired. Please sign in again.'
+      : 'Authentication failed. Please try again.';
+    console.error(message);
+  };
+
+  const oidcConfigWithHandlers = {
+    ...oidcConfig,
+    onSigninError: handleSigninError,
+  };
+
   // Debug: Log config in development
   if (import.meta.env.DEV) {
     console.log('🔐 OIDC Configuration:', {
@@ -57,5 +74,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   }
 
-  return <OidcAuthProvider {...oidcConfig}>{children}</OidcAuthProvider>;
+  return <OidcAuthProvider {...oidcConfigWithHandlers}>{children}</OidcAuthProvider>;
 }

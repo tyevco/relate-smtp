@@ -23,11 +23,11 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // Relax rules for existing codebase
+      // Relax rules for existing codebase - TODO: upgrade to error after fixing violations
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
-      // Downgrade react-hooks errors to warnings for now
+      // React hooks rules - warning until existing violations are fixed
       'react-hooks/exhaustive-deps': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
     },

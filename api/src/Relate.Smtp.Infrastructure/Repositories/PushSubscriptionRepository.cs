@@ -22,10 +22,10 @@ public class PushSubscriptionRepository : IPushSubscriptionRepository
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<PushSubscription?> GetByEndpointAsync(string endpoint, CancellationToken cancellationToken = default)
+    public async Task<PushSubscription?> GetByEndpointAsync(string endpoint, Guid userId, CancellationToken cancellationToken = default)
     {
         return await _context.PushSubscriptions
-            .FirstOrDefaultAsync(s => s.Endpoint == endpoint, cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(s => s.Endpoint == endpoint && s.UserId == userId, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<PushSubscription> AddAsync(PushSubscription subscription, CancellationToken cancellationToken = default)

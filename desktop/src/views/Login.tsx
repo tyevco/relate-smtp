@@ -113,6 +113,18 @@ export function Login({ onLoginComplete }: LoginProps) {
     }
     normalizedUrl = normalizedUrl.replace(/\/$/, '')
 
+    // Validate URL format
+    let parsedUrl: URL
+    try {
+      parsedUrl = new URL(normalizedUrl)
+      if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+        throw new Error('Invalid protocol')
+      }
+    } catch {
+      setError('Please enter a valid server URL (e.g., mail.example.com)')
+      return
+    }
+
     try {
       // Step 1: Discover server
       setStep('discovering')
@@ -125,6 +137,16 @@ export function Login({ onLoginComplete }: LoginProps) {
       }
 
       const { authority, client_id, scopes } = discovery.oidc_config
+
+      // Validate authority URL
+      try {
+        const authorityUrl = new URL(authority)
+        if (authorityUrl.protocol !== 'https:') {
+          throw new Error('OIDC authority must use HTTPS')
+        }
+      } catch {
+        throw new Error('Invalid OIDC configuration from server')
+      }
 
       // Step 2: OIDC authentication
       setStep('authenticating')

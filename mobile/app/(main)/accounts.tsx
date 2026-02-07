@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { ArrowLeft, Plus, Check, Trash2, Server } from "lucide-react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAccountStore, useAccounts, useActiveAccount } from "@/lib/auth/account-store";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,12 +10,17 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/utils";
 
 export default function AccountsScreen() {
+  const queryClient = useQueryClient();
   const accounts = useAccounts();
   const activeAccount = useActiveAccount();
   const setActiveAccount = useAccountStore((state) => state.setActiveAccount);
   const removeAccount = useAccountStore((state) => state.removeAccount);
 
   const handleSelectAccount = (accountId: string) => {
+    // Clear cache when switching accounts to avoid showing stale data
+    if (activeAccount?.id !== accountId) {
+      queryClient.clear();
+    }
     setActiveAccount(accountId);
     router.back();
   };

@@ -4,7 +4,7 @@ import { Button } from '@relate/shared/components/ui'
 import { Input } from '@relate/shared/components/ui'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@relate/shared/components/ui'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@relate/shared/components/ui'
-import { Trash2, Plus, Copy, Check, KeyRound } from 'lucide-react'
+import { Trash2, Plus, Copy, Check, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 export function SmtpSettings() {
@@ -17,6 +17,7 @@ export function SmtpSettings() {
   const [selectedScopes, setSelectedScopes] = useState<string[]>(['smtp', 'pop3', 'imap', 'api:read', 'api:write'])
   const [createdKey, setCreatedKey] = useState<{ apiKey: string; name: string; scopes: string[] } | null>(null)
   const [copiedKey, setCopiedKey] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   const scopeOptions = [
     { value: 'smtp', label: 'SMTP', description: 'Send emails via SMTP server' },
@@ -50,6 +51,7 @@ export function SmtpSettings() {
   const handleCloseKeyModal = () => {
     setCreatedKey(null)
     setCopiedKey(false)
+    setShowApiKey(false)
   }
 
   if (isLoading) {
@@ -316,10 +318,14 @@ export function SmtpSettings() {
               <label className="text-sm font-medium">API Key</label>
               <div className="mt-1 flex gap-2">
                 <Input
+                  type={showApiKey ? 'text' : 'password'}
                   value={createdKey?.apiKey || ''}
                   readOnly
                   className="font-mono text-sm"
                 />
+                <Button variant="outline" size="icon" onClick={() => setShowApiKey(!showApiKey)}>
+                  {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
                 <Button variant="outline" size="icon" onClick={handleCopyKey}>
                   {copiedKey ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
