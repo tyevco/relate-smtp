@@ -145,7 +145,7 @@ export function Login({ onLoginComplete }: LoginProps) {
         serverUrl: normalizedUrl,
         jwtToken: tokens.access_token,
         deviceName: 'Relate Mail Desktop',
-        platform: navigator.userAgent.includes('Mac') ? 'macos' : 'windows',
+        platform: navigator.userAgent.includes('Mac') ? 'macos' : navigator.userAgent.includes('Linux') ? 'linux' : 'windows',
       })
 
       // Step 4: Generate account ID and save account

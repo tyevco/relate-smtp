@@ -106,7 +106,7 @@ function InboxPage() {
     return () => {
       signalRConnection.disconnect()
     }
-  }, [queryClient])
+  }, [queryClient, auth.isAuthenticated])
 
   // Redirect to login if not authenticated (after all hooks are called)
   useEffect(() => {

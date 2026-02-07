@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useLabels, useAddLabelToEmail, useRemoveLabelFromEmail } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { LabelBadge } from './label-badge'
@@ -21,7 +21,7 @@ export function LabelSelector({ emailId, currentLabels, onLabelChange }: LabelSe
   const removeLabel = useRemoveLabelFromEmail()
   const [open, setOpen] = useState(false)
 
-  const currentLabelIds = new Set(currentLabels.map((l) => l.id))
+  const currentLabelIds = useMemo(() => new Set(currentLabels.map((l) => l.id)), [currentLabels])
 
   const handleToggleLabel = async (labelId: string) => {
     if (currentLabelIds.has(labelId)) {

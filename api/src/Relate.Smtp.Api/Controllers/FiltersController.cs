@@ -134,6 +134,12 @@ public class FiltersController : ControllerBase
         [FromQuery] int limit = 10,
         CancellationToken cancellationToken = default)
     {
+        // Validate limit to prevent excessive resource usage
+        if (limit < 1 || limit > 100)
+        {
+            return BadRequest("Limit must be between 1 and 100");
+        }
+
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
         var filter = await _filterRepository.GetByIdAsync(id, cancellationToken);
 
