@@ -15,6 +15,8 @@ pub enum AuthError {
     SerializationError(String),
     #[error("Account not found: {0}")]
     AccountNotFound(String),
+    #[error("Internal error: {0}")]
+    Internal(String),
 }
 
 impl serde::Serialize for AuthError {
@@ -132,8 +134,14 @@ pub async fn load_accounts(
     if let Some(active_id) = &data.active_account_id {
         if let Some(account) = data.accounts.iter().find(|a| &a.id == active_id) {
             if let Some(api_key) = get_api_key_for_account(&account.id)? {
-                *state.server_url.write().unwrap() = Some(account.server_url.clone());
-                *state.api_key.write().unwrap() = Some(api_key);
+                match state.server_url.write() {
+                    Ok(mut guard) => *guard = Some(account.server_url.clone()),
+                    Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                }
+                match state.api_key.write() {
+                    Ok(mut guard) => *guard = Some(api_key),
+                    Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                }
             }
         }
     }
@@ -187,8 +195,14 @@ pub async fn save_account(
     // Update AppState with the new active account
     let active_id = data.active_account_id.as_ref().unwrap();
     let active_account = data.accounts.iter().find(|a| &a.id == active_id).unwrap();
-    *state.server_url.write().unwrap() = Some(active_account.server_url.clone());
-    *state.api_key.write().unwrap() = Some(api_key);
+    match state.server_url.write() {
+        Ok(mut guard) => *guard = Some(active_account.server_url.clone()),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
+    match state.api_key.write() {
+        Ok(mut guard) => *guard = Some(api_key),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
 
     Ok(data)
 }
@@ -215,14 +229,26 @@ pub async fn delete_account(
         if let Some(new_active_id) = &data.active_account_id {
             if let Some(account) = data.accounts.iter().find(|a| &a.id == new_active_id) {
                 if let Some(api_key) = get_api_key_for_account(&account.id)? {
-                    *state.server_url.write().unwrap() = Some(account.server_url.clone());
-                    *state.api_key.write().unwrap() = Some(api_key);
+                    match state.server_url.write() {
+                        Ok(mut guard) => *guard = Some(account.server_url.clone()),
+                        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                    }
+                    match state.api_key.write() {
+                        Ok(mut guard) => *guard = Some(api_key),
+                        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                    }
                 }
             }
         } else {
             // No accounts left, clear AppState
-            *state.server_url.write().unwrap() = None;
-            *state.api_key.write().unwrap() = None;
+            match state.server_url.write() {
+                Ok(mut guard) => *guard = None,
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+            }
+            match state.api_key.write() {
+                Ok(mut guard) => *guard = None,
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+            }
         }
     }
 
@@ -262,8 +288,14 @@ pub async fn set_active_account(
     save_accounts_data(&data)?;
 
     // Update AppState
-    *state.server_url.write().unwrap() = Some(account.server_url.clone());
-    *state.api_key.write().unwrap() = Some(api_key);
+    match state.server_url.write() {
+        Ok(mut guard) => *guard = Some(account.server_url.clone()),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
+    match state.api_key.write() {
+        Ok(mut guard) => *guard = Some(api_key),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
 
     Ok(account)
 }
@@ -302,8 +334,14 @@ pub async fn save_credentials(
         .map_err(|e| AuthError::KeyringError(e.to_string()))?;
 
     // Update app state
-    *state.server_url.write().unwrap() = Some(server_url);
-    *state.api_key.write().unwrap() = Some(api_key);
+    match state.server_url.write() {
+        Ok(mut guard) => *guard = Some(server_url),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
+    match state.api_key.write() {
+        Ok(mut guard) => *guard = Some(api_key),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
 
     Ok(())
 }
@@ -319,8 +357,14 @@ pub async fn load_credentials(state: State<'_, AppState>) -> Result<Option<Crede
                 .map_err(|e| AuthError::SerializationError(e.to_string()))?;
 
             // Update app state
-            *state.server_url.write().unwrap() = Some(credentials.server_url.clone());
-            *state.api_key.write().unwrap() = Some(credentials.api_key.clone());
+            match state.server_url.write() {
+                Ok(mut guard) => *guard = Some(credentials.server_url.clone()),
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+            }
+            match state.api_key.write() {
+                Ok(mut guard) => *guard = Some(credentials.api_key.clone()),
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+            }
 
             Ok(Some(credentials))
         }
@@ -338,8 +382,14 @@ pub async fn clear_credentials(state: State<'_, AppState>) -> Result<(), AuthErr
     let _ = entry.delete_credential();
 
     // Clear app state
-    *state.server_url.write().unwrap() = None;
-    *state.api_key.write().unwrap() = None;
+    match state.server_url.write() {
+        Ok(mut guard) => *guard = None,
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
+    match state.api_key.write() {
+        Ok(mut guard) => *guard = None,
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+    }
 
     Ok(())
 }

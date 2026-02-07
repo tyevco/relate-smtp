@@ -7,6 +7,8 @@ pub enum ApiError {
     NotConfigured(String),
     #[error("Request failed: {0}")]
     RequestFailed(String),
+    #[error("Internal error: {0}")]
+    Internal(String),
 }
 
 impl serde::Serialize for ApiError {
@@ -34,14 +36,14 @@ async fn make_request(
     let server_url = state
         .server_url
         .read()
-        .unwrap()
+        .map_err(|e| ApiError::Internal(format!("State lock poisoned: {}", e)))?
         .clone()
         .ok_or_else(|| ApiError::NotConfigured("Server URL not set".to_string()))?;
 
     let api_key = state
         .api_key
         .read()
-        .unwrap()
+        .map_err(|e| ApiError::Internal(format!("State lock poisoned: {}", e)))?
         .clone()
         .ok_or_else(|| ApiError::NotConfigured("API key not set".to_string()))?;
 

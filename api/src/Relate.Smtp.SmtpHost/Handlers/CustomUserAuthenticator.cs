@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using Relate.Smtp.Core.Interfaces;
+using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,6 +15,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CustomUserAuthenticator> _logger;
+    private readonly IBackgroundTaskQueue _backgroundTaskQueue;
     private static readonly MemoryCache _authCache = new(new MemoryCacheOptions
     {
         SizeLimit = 10000,
@@ -21,10 +23,14 @@ public class CustomUserAuthenticator : IUserAuthenticator
     });
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
-    public CustomUserAuthenticator(IServiceProvider serviceProvider, ILogger<CustomUserAuthenticator> logger)
+    public CustomUserAuthenticator(
+        IServiceProvider serviceProvider,
+        ILogger<CustomUserAuthenticator> logger,
+        IBackgroundTaskQueue backgroundTaskQueue)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _backgroundTaskQueue = backgroundTaskQueue;
     }
 
     private static string GenerateCacheKey(string email, string password)
@@ -60,20 +66,8 @@ public class CustomUserAuthenticator : IUserAuthenticator
                 ProtocolMetrics.SmtpAuthFailures.Add(1);
             }
 
-            // Update LastUsedAt in background
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    using var scope = _serviceProvider.CreateScope();
-                    var apiKeyRepo = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
-                    await apiKeyRepo.UpdateLastUsedAsync(cached.KeyId, DateTimeOffset.UtcNow, CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to update LastUsedAt for cached API key {KeyId}", cached.KeyId);
-                }
-            }, CancellationToken.None);
+            // Queue LastUsedAt update for background processing
+            _backgroundTaskQueue.QueueLastUsedAtUpdate(cached.KeyId, DateTimeOffset.UtcNow);
 
             return cached.IsAuthenticated;
         }
@@ -121,8 +115,8 @@ public class CustomUserAuthenticator : IUserAuthenticator
                 context.Properties["AuthenticatedUserId"] = dbUser.Id;
                 context.Properties["AuthenticatedEmail"] = normalizedEmail;
 
-                // Update last used timestamp
-                await apiKeyRepository.UpdateLastUsedAsync(apiKey.Id, DateTimeOffset.UtcNow, cancellationToken);
+                // Queue last used timestamp update for background processing
+                _backgroundTaskQueue.QueueLastUsedAtUpdate(apiKey.Id, DateTimeOffset.UtcNow);
 
                 CacheResult(cacheKey, apiKey.Id, true);
                 return true;

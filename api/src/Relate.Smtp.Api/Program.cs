@@ -1,3 +1,4 @@
+using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -16,8 +17,18 @@ using Relate.Smtp.Infrastructure.Telemetry;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Port=5432;Database=relate_smtp;Username=postgres;Password=postgres";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection is required. Set via environment variable ConnectionStrings__DefaultConnection.");
+    }
+    // Development fallback - log warning
+    connectionString = "Host=localhost;Port=5432;Database=relate_mail;Username=postgres;Password=postgres";
+    Console.WriteLine("WARNING: Using default development database connection. Set ConnectionStrings__DefaultConnection for production.");
+}
 
 builder.Services.AddInfrastructure(connectionString);
 builder.Services.AddScoped<UserProvisioningService>();
@@ -52,17 +63,28 @@ if (!string.IsNullOrEmpty(oidcAuthority))
 }
 else
 {
-    // Development mode - accept any token or allow anonymous
+    // Development mode - use symmetric key for local testing
+    var devKey = builder.Configuration["Jwt:DevelopmentKey"];
+    if (string.IsNullOrEmpty(devKey))
+    {
+        // Generate a stable development key based on machine name
+        devKey = $"dev-key-{Environment.MachineName}-relate-mail-development-only-key-32chars!";
+        Console.WriteLine("WARNING: Using auto-generated development JWT key. Set Jwt:DevelopmentKey for consistent tokens across restarts.");
+    }
+
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = false,
-                ValidateIssuerSigningKey = false,
-                RequireSignedTokens = false
+                ValidateIssuer = true,
+                ValidIssuer = "relate-mail-dev",
+                ValidateAudience = true,
+                ValidAudience = "relate-mail",
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(devKey)),
+                RequireSignedTokens = true
             };
         })
         .AddApiKeyAuthentication();

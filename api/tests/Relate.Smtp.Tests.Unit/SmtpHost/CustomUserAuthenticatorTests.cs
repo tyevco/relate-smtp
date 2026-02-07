@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
+using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.SmtpHost.Handlers;
 using Relate.Smtp.Tests.Common.Factories;
 using Shouldly;
@@ -20,6 +21,7 @@ public class CustomUserAuthenticatorTests
     private readonly Mock<IServiceScope> _serviceScopeMock;
     private readonly Mock<IServiceScopeFactory> _serviceScopeFactoryMock;
     private readonly Mock<ILogger<CustomUserAuthenticator>> _loggerMock;
+    private readonly Mock<IBackgroundTaskQueue> _backgroundTaskQueueMock;
     private readonly CustomUserAuthenticator _authenticator;
     private readonly UserFactory _userFactory;
 
@@ -31,6 +33,7 @@ public class CustomUserAuthenticatorTests
         _serviceScopeMock = new Mock<IServiceScope>();
         _serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
         _loggerMock = new Mock<ILogger<CustomUserAuthenticator>>();
+        _backgroundTaskQueueMock = new Mock<IBackgroundTaskQueue>();
         _userFactory = new UserFactory();
 
         // Setup service provider chain
@@ -45,7 +48,10 @@ public class CustomUserAuthenticatorTests
         _serviceProviderMock.Setup(s => s.GetService(typeof(IServiceScopeFactory)))
             .Returns(_serviceScopeFactoryMock.Object);
 
-        _authenticator = new CustomUserAuthenticator(_serviceProviderMock.Object, _loggerMock.Object);
+        _authenticator = new CustomUserAuthenticator(
+            _serviceProviderMock.Object,
+            _loggerMock.Object,
+            _backgroundTaskQueueMock.Object);
     }
 
     [Fact]
@@ -221,7 +227,7 @@ public class CustomUserAuthenticatorTests
     }
 
     [Fact]
-    public async Task AuthenticateAsync_UpdatesLastUsedTimestamp()
+    public async Task AuthenticateAsync_QueuesLastUsedTimestampUpdate()
     {
         // Arrange
         var (user, plainTextKey) = _userFactory.WithApiKey("Test Key", SmtpApiKeyFactory.SmtpOnlyScopes);
@@ -238,9 +244,9 @@ public class CustomUserAuthenticatorTests
         // Act
         await _authenticator.AuthenticateAsync(context.Object, user.Email, plainTextKey, CancellationToken.None);
 
-        // Assert
-        _apiKeyRepositoryMock.Verify(r => r.UpdateLastUsedAsync(
-            apiKey.Id, It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()), Times.Once);
+        // Assert - Should queue update to background task queue
+        _backgroundTaskQueueMock.Verify(q => q.QueueLastUsedAtUpdate(
+            apiKey.Id, It.IsAny<DateTimeOffset>()), Times.Once);
     }
 
     private Mock<ISessionContext> CreateMockSessionContext()

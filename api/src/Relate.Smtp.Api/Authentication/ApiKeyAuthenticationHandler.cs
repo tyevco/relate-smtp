@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Relate.Smtp.Core.Interfaces;
+using Relate.Smtp.Infrastructure.Services;
 
 namespace Relate.Smtp.Api.Authentication;
 
@@ -16,18 +17,18 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
     private const string ApiKeyScheme = "ApiKey ";
 
     private readonly ISmtpApiKeyRepository _apiKeyRepository;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly IBackgroundTaskQueue _backgroundTaskQueue;
 
     public ApiKeyAuthenticationHandler(
         IOptionsMonitor<ApiKeyAuthenticationOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
         ISmtpApiKeyRepository apiKeyRepository,
-        IServiceScopeFactory serviceScopeFactory)
+        IBackgroundTaskQueue backgroundTaskQueue)
         : base(options, logger, encoder)
     {
         _apiKeyRepository = apiKeyRepository;
-        _serviceScopeFactory = serviceScopeFactory;
+        _backgroundTaskQueue = backgroundTaskQueue;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
@@ -79,21 +80,8 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             return AuthenticateResult.Fail("Invalid API key or missing required scope");
         }
 
-        // Update LastUsedAt (background task with its own DI scope to avoid disposed DbContext)
-        var keyId = keyEntity.Id;
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var repo = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
-                await repo.UpdateLastUsedAsync(keyId, DateTimeOffset.UtcNow, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to update LastUsedAt for API key {KeyId}", keyId);
-            }
-        });
+        // Queue LastUsedAt update for background processing
+        _backgroundTaskQueue.QueueLastUsedAtUpdate(keyEntity.Id, DateTimeOffset.UtcNow);
 
         // Create claims
         var scopes = _apiKeyRepository.ParseScopes(keyEntity.Scopes);

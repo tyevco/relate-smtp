@@ -102,15 +102,18 @@ public class Pop3ServerHostedService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<Handlers.Pop3CommandHandler>();
 
+        SslStream? sslStream = null;
+        X509Certificate2? cert = null;
+
         try
         {
             Stream stream = client.GetStream();
 
             if (useSsl)
             {
-                var sslStream = new SslStream(stream, false);
-                var cert = LoadCertificate(_options.Value.CertificatePath!,
-                                          _options.Value.CertificatePassword);
+                sslStream = new SslStream(stream, leaveInnerStreamOpen: false);
+                cert = LoadCertificate(_options.Value.CertificatePath!,
+                                       _options.Value.CertificatePassword);
                 await sslStream.AuthenticateAsServerAsync(
                     cert,
                     clientCertificateRequired: false,
@@ -137,6 +140,13 @@ public class Pop3ServerHostedService : BackgroundService
         finally
         {
             ProtocolMetrics.Pop3ActiveSessions.Add(-1);
+
+            // Dispose SSL stream and certificate properly
+            if (sslStream != null)
+            {
+                await sslStream.DisposeAsync();
+            }
+            cert?.Dispose();
             client.Close();
         }
     }

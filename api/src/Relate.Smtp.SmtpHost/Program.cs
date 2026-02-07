@@ -7,8 +7,17 @@ using Relate.Smtp.SmtpHost.Services;
 var builder = Host.CreateApplicationBuilder(args);
 
 // Add infrastructure services
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "Host=localhost;Port=5432;Database=relate_smtp;Username=postgres;Password=postgres";
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrEmpty(connectionString))
+{
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection is required. Set via environment variable ConnectionStrings__DefaultConnection.");
+    }
+    connectionString = "Host=localhost;Port=5432;Database=relate_mail;Username=postgres;Password=postgres";
+    Console.WriteLine("WARNING: Using default development database connection. Set ConnectionStrings__DefaultConnection for production.");
+}
 
 builder.Services.AddInfrastructure(connectionString);
 

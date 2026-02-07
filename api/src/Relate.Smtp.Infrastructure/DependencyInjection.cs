@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Data;
 using Relate.Smtp.Infrastructure.Repositories;
+using Relate.Smtp.Infrastructure.Services;
 
 namespace Relate.Smtp.Infrastructure;
 
@@ -23,6 +24,11 @@ public static class DependencyInjection
         services.AddScoped<IEmailFilterRepository, EmailFilterRepository>();
         services.AddScoped<IUserPreferenceRepository, UserPreferenceRepository>();
         services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
+
+        // Background task queue for non-critical updates (e.g., LastUsedAt)
+        services.AddSingleton<BackgroundTaskQueue>();
+        services.AddSingleton<IBackgroundTaskQueue>(sp => sp.GetRequiredService<BackgroundTaskQueue>());
+        services.AddHostedService<BackgroundTaskQueueHostedService>();
 
         return services;
     }

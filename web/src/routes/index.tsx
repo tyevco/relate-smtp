@@ -79,24 +79,30 @@ function InboxPage() {
       apiUrl = window.location.origin
     }
 
+    // Store unsubscribe functions to clean up on unmount
+    let unsubNewEmail: (() => void) | undefined
+    let unsubEmailUpdated: (() => void) | undefined
+    let unsubEmailDeleted: (() => void) | undefined
+    let unsubUnreadCount: (() => void) | undefined
+
     signalRConnection.connect(apiUrl).then(() => {
       // Handle new email notifications
-      signalRConnection.onNewEmail(() => {
+      unsubNewEmail = signalRConnection.onNewEmail(() => {
         queryClient.invalidateQueries({ queryKey: ['emails'] })
       })
 
       // Handle email updates (read/unread)
-      signalRConnection.onEmailUpdated(() => {
+      unsubEmailUpdated = signalRConnection.onEmailUpdated(() => {
         queryClient.invalidateQueries({ queryKey: ['emails'] })
       })
 
       // Handle email deletions
-      signalRConnection.onEmailDeleted(() => {
+      unsubEmailDeleted = signalRConnection.onEmailDeleted(() => {
         queryClient.invalidateQueries({ queryKey: ['emails'] })
       })
 
       // Handle unread count changes
-      signalRConnection.onUnreadCountChanged((count) => {
+      unsubUnreadCount = signalRConnection.onUnreadCountChanged((count) => {
         setUnreadCount(count)
       })
     }).catch((error) => {
@@ -104,7 +110,12 @@ function InboxPage() {
     })
 
     return () => {
-      signalRConnection.disconnect()
+      // Unsubscribe handlers but don't disconnect singleton connection
+      // The connection persists for app lifetime and handles reconnection
+      unsubNewEmail?.()
+      unsubEmailUpdated?.()
+      unsubEmailDeleted?.()
+      unsubUnreadCount?.()
     }
   }, [queryClient, auth.isAuthenticated])
 

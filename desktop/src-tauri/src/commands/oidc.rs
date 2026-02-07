@@ -252,17 +252,25 @@ pub async fn start_oidc_auth(
     let code_challenge = generate_code_challenge(&code_verifier);
     let state = generate_state();
 
-    // Bind localhost listener (try fixed port first, then random)
-    let listener = match TcpListener::bind(format!("127.0.0.1:{}", CALLBACK_PORT)).await {
-        Ok(l) => l,
-        Err(_) => TcpListener::bind("127.0.0.1:0")
-            .await
-            .map_err(|e| OidcError::AuthFailed(format!("Failed to start callback server: {}", e)))?,
-    };
+    // Bind to fixed port only - fail loudly if unavailable
+    // Using a random port would break OIDC flows that require pre-registered redirect URIs
+    let listener = TcpListener::bind(format!("127.0.0.1:{}", CALLBACK_PORT))
+        .await
+        .map_err(|e| OidcError::AuthFailed(
+            format!("Port {} unavailable. Close other apps using this port. Error: {}", CALLBACK_PORT, e)
+        ))?;
 
     let local_addr = listener
         .local_addr()
         .map_err(|e| OidcError::AuthFailed(format!("Failed to get listener address: {}", e)))?;
+
+    // Verify we got the expected port (defensive check)
+    if local_addr.port() != CALLBACK_PORT {
+        return Err(OidcError::AuthFailed(
+            format!("Expected port {} but got {}", CALLBACK_PORT, local_addr.port())
+        ));
+    }
+
     let actual_redirect_uri = format!("http://127.0.0.1:{}/auth/callback", local_addr.port());
 
     // Build authorization URL

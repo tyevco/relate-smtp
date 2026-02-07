@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Caching.Memory;
 using Relate.Smtp.Core.Interfaces;
+using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,6 +13,7 @@ public class Pop3UserAuthenticator
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<Pop3UserAuthenticator> _logger;
+    private readonly IBackgroundTaskQueue _backgroundTaskQueue;
     private static readonly MemoryCache _authCache = new(new MemoryCacheOptions
     {
         SizeLimit = 10000,
@@ -19,10 +21,14 @@ public class Pop3UserAuthenticator
     });
     private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
 
-    public Pop3UserAuthenticator(IServiceProvider serviceProvider, ILogger<Pop3UserAuthenticator> logger)
+    public Pop3UserAuthenticator(
+        IServiceProvider serviceProvider,
+        ILogger<Pop3UserAuthenticator> logger,
+        IBackgroundTaskQueue backgroundTaskQueue)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
+        _backgroundTaskQueue = backgroundTaskQueue;
     }
 
     private static string GenerateCacheKey(string email, string password)
@@ -57,7 +63,7 @@ public class Pop3UserAuthenticator
                 ProtocolMetrics.Pop3AuthFailures.Add(1);
             }
 
-            _ = UpdateLastUsedAsync(cached.KeyId); // Background update
+            _backgroundTaskQueue.QueueLastUsedAtUpdate(cached.KeyId, DateTimeOffset.UtcNow);
             return (cached.IsAuthenticated, cached.UserId);
         }
 
@@ -99,7 +105,7 @@ public class Pop3UserAuthenticator
                 activity?.SetTag("pop3.auth.success", true);
                 activity?.SetTag("pop3.auth.key_name", apiKey.Name);
                 CacheResult(cacheKey, true, user.Id, apiKey.Id);
-                _ = UpdateLastUsedAsync(apiKey.Id); // Background update
+                _backgroundTaskQueue.QueueLastUsedAtUpdate(apiKey.Id, DateTimeOffset.UtcNow);
                 return (true, user.Id);
             }
         }
@@ -126,24 +132,6 @@ public class Pop3UserAuthenticator
             .SetAbsoluteExpiration(CacheDuration);
 
         _authCache.Set(cacheKey, entry, options);
-    }
-
-    private Task UpdateLastUsedAsync(Guid keyId)
-    {
-        // Background task to update LastUsedAt
-        return Task.Run(async () =>
-        {
-            try
-            {
-                using var scope = _serviceProvider.CreateScope();
-                var apiKeyRepo = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
-                await apiKeyRepo.UpdateLastUsedAsync(keyId, DateTimeOffset.UtcNow, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to update LastUsedAt for API key: {KeyId}", keyId);
-            }
-        });
     }
 
     private record CacheEntry

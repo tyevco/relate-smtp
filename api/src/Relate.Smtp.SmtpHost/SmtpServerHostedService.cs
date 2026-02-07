@@ -3,6 +3,7 @@ using SmtpServer;
 using SmtpServer.Authentication;
 using SmtpServer.Storage;
 using Relate.Smtp.SmtpHost.Handlers;
+using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
 using Microsoft.Extensions.Options;
 
@@ -117,7 +118,8 @@ public class SmtpServerHostedService : BackgroundService
     private IUserAuthenticator CreateUserAuthenticator()
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CustomUserAuthenticator>>();
-        return new CustomUserAuthenticator(_serviceProvider, logger);
+        var backgroundTaskQueue = _serviceProvider.GetRequiredService<IBackgroundTaskQueue>();
+        return new CustomUserAuthenticator(_serviceProvider, logger, backgroundTaskQueue);
     }
 
     private X509Certificate2 LoadCertificate()
