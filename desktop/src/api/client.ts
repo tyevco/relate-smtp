@@ -8,18 +8,18 @@ async function delay(ms: number): Promise<void> {
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
-  let lastError: unknown
+  let lastError: Error | undefined
   for (let i = 0; i < retries; i++) {
     try {
       return await fn()
     } catch (error) {
-      lastError = error
+      lastError = error instanceof Error ? error : new Error(String(error))
       if (i < retries - 1) {
         await delay(Math.pow(2, i) * BASE_DELAY_MS)
       }
     }
   }
-  throw lastError
+  throw lastError ?? new Error('Unknown error after retries')
 }
 
 // API client that wraps Tauri commands

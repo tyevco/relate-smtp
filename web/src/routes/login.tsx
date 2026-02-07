@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -11,14 +11,14 @@ export const Route = createFileRoute('/login')({
 
 function Login() {
   const auth = useAuth()
+  const navigate = useNavigate()
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
     if (!auth.isLoading && auth.isAuthenticated) {
-      console.log('🔐 Login: Already authenticated, redirecting to dashboard')
-      window.location.href = '/'
+      navigate({ to: '/' })
     }
-  }, [auth.isAuthenticated, auth.isLoading])
+  }, [auth.isAuthenticated, auth.isLoading, navigate])
 
   const handleLogin = () => {
     auth.signinRedirect()

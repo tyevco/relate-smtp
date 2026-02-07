@@ -22,5 +22,8 @@ public class SmtpApiKey
     public DateTimeOffset? LastUsedAt { get; set; }
     public DateTimeOffset? RevokedAt { get; set; }
 
+    /// <summary>
+    /// Navigation property to the key owner. Always populated by EF Core when loaded from database.
+    /// </summary>
     public User User { get; set; } = null!;
 }

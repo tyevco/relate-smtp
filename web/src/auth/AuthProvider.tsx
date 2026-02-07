@@ -38,13 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Callback handlers
     onSigninCallback: () => {
-      console.log('✅ Sign in callback completed');
       // Remove code and state from URL
       window.history.replaceState({}, document.title, window.location.pathname);
     },
 
     onSignoutCallback: () => {
-      console.log('✅ Sign out callback completed');
       window.location.href = '/';
     },
   };

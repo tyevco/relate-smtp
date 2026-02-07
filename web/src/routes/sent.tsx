@@ -23,9 +23,9 @@ function SentMailPage() {
   useEffect(() => {
     const config = getConfig()
     if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
-      window.location.href = '/login'
+      navigate({ to: '/login' })
     }
-  }, [auth.isAuthenticated, auth.isLoading])
+  }, [auth.isAuthenticated, auth.isLoading, navigate])
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6">

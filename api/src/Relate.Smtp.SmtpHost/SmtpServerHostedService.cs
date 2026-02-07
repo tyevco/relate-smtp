@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using SmtpServer;
 using SmtpServer.Authentication;
 using SmtpServer.Storage;
@@ -40,6 +41,7 @@ public class SmtpServerHostedService : BackgroundService
     {
         var optionsBuilder = new SmtpServerOptionsBuilder()
             .ServerName(_options.ServerName)
+            // Plain port with STARTTLS support
             .Endpoint(endpoint =>
             {
                 endpoint.Port(_options.Port, false);
@@ -47,6 +49,19 @@ public class SmtpServerHostedService : BackgroundService
                 {
                     endpoint.AuthenticationRequired();
                     endpoint.AllowUnsecureAuthentication();
+                }
+            })
+            // Secure port (implicit TLS)
+            .Endpoint(endpoint =>
+            {
+                endpoint.Port(_options.SecurePort, true);
+                if (_options.RequireAuthentication)
+                {
+                    endpoint.AuthenticationRequired();
+                }
+                if (!string.IsNullOrEmpty(_options.CertificatePath))
+                {
+                    endpoint.Certificate(LoadCertificate());
                 }
             });
 
@@ -68,7 +83,8 @@ public class SmtpServerHostedService : BackgroundService
             try { ProtocolMetrics.SmtpActiveConnections.Add(-1); } catch { /* ignore */ }
         };
 
-        _logger.LogInformation("Starting SMTP server on port {Port}", _options.Port);
+        _logger.LogInformation("Starting SMTP server on port {Port} (plain) and {SecurePort} (TLS)",
+            _options.Port, _options.SecurePort);
 
         try
         {
@@ -104,4 +120,15 @@ public class SmtpServerHostedService : BackgroundService
         return new CustomUserAuthenticator(_serviceProvider, logger);
     }
 
+    private X509Certificate2 LoadCertificate()
+    {
+        if (string.IsNullOrEmpty(_options.CertificatePath))
+        {
+            throw new InvalidOperationException("Certificate path is required for secure port");
+        }
+
+        return string.IsNullOrEmpty(_options.CertificatePassword)
+            ? X509CertificateLoader.LoadCertificateFromFile(_options.CertificatePath)
+            : X509CertificateLoader.LoadPkcs12FromFile(_options.CertificatePath, _options.CertificatePassword);
+    }
 }

@@ -10,6 +10,9 @@ public class EmailRecipient
     public Guid? UserId { get; set; }
     public bool IsRead { get; set; }
 
+    /// <summary>
+    /// Navigation property to the parent email. Always populated by EF Core when loaded from database.
+    /// </summary>
     public Email Email { get; set; } = null!;
     public User? User { get; set; }
 }

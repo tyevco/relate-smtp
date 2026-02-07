@@ -9,5 +9,8 @@ public class EmailAttachment
     public long SizeBytes { get; set; }
     public byte[] Content { get; set; } = Array.Empty<byte>();
 
+    /// <summary>
+    /// Navigation property to the parent email. Always populated by EF Core when loaded from database.
+    /// </summary>
     public Email Email { get; set; } = null!;
 }

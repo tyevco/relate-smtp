@@ -8,5 +8,8 @@ public class UserEmailAddress
     public bool IsVerified { get; set; }
     public DateTimeOffset AddedAt { get; set; }
 
+    /// <summary>
+    /// Navigation property to the address owner. Always populated by EF Core when loaded from database.
+    /// </summary>
     public User User { get; set; } = null!;
 }

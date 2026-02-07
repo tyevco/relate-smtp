@@ -23,6 +23,8 @@ services:
       context: ..
       dockerfile: api/Dockerfile
       target: api
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-relate_mail};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?err}
       - Oidc__Authority=${OIDC_AUTHORITY:-}
@@ -47,6 +49,8 @@ services:
       context: ..
       dockerfile: api/Dockerfile
       target: smtp
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-relate_mail};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?err}
       - Smtp__ServerName=${SMTP_SERVER_NAME:-localhost}
@@ -75,6 +79,8 @@ services:
       context: ..
       dockerfile: api/Dockerfile
       target: pop3
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-relate_mail};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?err}
       - Pop3__ServerName=${POP3_SERVER_NAME:-localhost}
@@ -102,6 +108,8 @@ services:
       context: ..
       dockerfile: api/Dockerfile
       target: imap
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-relate_mail};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:?err}
       - Imap__ServerName=${IMAP_SERVER_NAME:-localhost}

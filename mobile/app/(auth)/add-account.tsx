@@ -59,41 +59,18 @@ export default function AddAccountScreen() {
 
       // Step 2: Perform OIDC authentication
       setStep("authenticating");
-      console.log("[AddAccount] Starting OIDC auth...");
       const oidcResult = await performOidcAuth(oidcConfig);
-      console.log("[AddAccount] OIDC auth successful, got access token");
 
       // Step 3: Create API key using the JWT
       setStep("creating-key");
-      console.log("[AddAccount] Creating temp API client...");
-
-      // Debug: decode JWT to see claims (without exposing full token)
-      try {
-        const [, payload] = oidcResult.accessToken.split(".");
-        const decoded = JSON.parse(atob(payload));
-        console.log("[AddAccount] JWT claims:", {
-          iss: decoded.iss,
-          aud: decoded.aud,
-          sub: decoded.sub,
-          email: decoded.email,
-          preferred_username: decoded.preferred_username,
-          exp: decoded.exp,
-        });
-      } catch (e) {
-        console.log("[AddAccount] Could not decode JWT");
-      }
-
       const tempApi = createTempApiClient(normalizedUrl, oidcResult.accessToken);
 
       // Get user profile first
-      console.log("[AddAccount] Fetching profile...");
       const profile = await tempApi.get<Profile>("/profile");
-      console.log("[AddAccount] Profile:", profile);
 
       // Create mobile API key
       const platform = getPlatform();
       const deviceName = Platform.OS === "web" ? "Web Browser" : `Mobile ${platform}`;
-      console.log("[AddAccount] Creating API key for:", deviceName, platform);
 
       const apiKeyResponse = await tempApi.post<CreatedApiKey>(
         "/smtp-credentials/mobile",
@@ -102,7 +79,6 @@ export default function AddAccountScreen() {
           platform,
         }
       );
-      console.log("[AddAccount] API key created:", apiKeyResponse.id);
 
       // Store the API key securely
       const accountId = Crypto.randomUUID();

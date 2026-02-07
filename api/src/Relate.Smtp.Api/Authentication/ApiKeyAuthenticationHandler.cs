@@ -12,6 +12,9 @@ public class ApiKeyAuthenticationOptions : AuthenticationSchemeOptions
 
 public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthenticationOptions>
 {
+    private const string BearerScheme = "Bearer ";
+    private const string ApiKeyScheme = "ApiKey ";
+
     private readonly ISmtpApiKeyRepository _apiKeyRepository;
     private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -35,16 +38,20 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             return AuthenticateResult.NoResult();
         }
 
-        string? apiKey = null;
         var authValue = authHeader.ToString();
-
-        if (authValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrWhiteSpace(authValue))
         {
-            apiKey = authValue.Substring("Bearer ".Length).Trim();
+            return AuthenticateResult.NoResult();
         }
-        else if (authValue.StartsWith("ApiKey ", StringComparison.OrdinalIgnoreCase))
+
+        string? apiKey = null;
+        if (authValue.StartsWith(BearerScheme, StringComparison.OrdinalIgnoreCase))
         {
-            apiKey = authValue.Substring("ApiKey ".Length).Trim();
+            apiKey = authValue[BearerScheme.Length..].Trim();
+        }
+        else if (authValue.StartsWith(ApiKeyScheme, StringComparison.OrdinalIgnoreCase))
+        {
+            apiKey = authValue[ApiKeyScheme.Length..].Trim();
         }
 
         if (string.IsNullOrWhiteSpace(apiKey))

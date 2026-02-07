@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { getConfig } from '@/config'
 import { usePreferences, useUpdatePreferences } from '@/api/hooks'
@@ -18,6 +18,7 @@ export const Route = createFileRoute('/preferences')({
 
 function PreferencesPage() {
   const auth = useAuth()
+  const navigate = useNavigate()
   const { data: preferences, isLoading } = usePreferences()
   const updatePreferences = useUpdatePreferences()
   const pushNotifications = usePushNotifications()
@@ -37,9 +38,9 @@ function PreferencesPage() {
   useEffect(() => {
     const config = getConfig()
     if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
-      window.location.href = '/login'
+      navigate({ to: '/login' })
     }
-  }, [auth.isAuthenticated, auth.isLoading])
+  }, [auth.isAuthenticated, auth.isLoading, navigate])
 
   // Load preferences into state
   useEffect(() => {

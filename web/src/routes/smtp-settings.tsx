@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { getConfig } from '@/config'
 import { useSmtpCredentials, useCreateSmtpApiKey, useRevokeSmtpApiKey } from '@/api/hooks'
@@ -16,6 +16,7 @@ export const Route = createFileRoute('/smtp-settings')({
 
 function SmtpSettingsPage() {
   const auth = useAuth()
+  const navigate = useNavigate()
   const { data: credentials, isLoading } = useSmtpCredentials()
   const createKey = useCreateSmtpApiKey()
   const revokeKey = useRevokeSmtpApiKey()
@@ -26,9 +27,9 @@ function SmtpSettingsPage() {
   useEffect(() => {
     const config = getConfig()
     if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
-      window.location.href = '/login'
+      navigate({ to: '/login' })
     }
-  }, [auth.isAuthenticated, auth.isLoading])
+  }, [auth.isAuthenticated, auth.isLoading, navigate])
   const [keyName, setKeyName] = useState('')
   const [selectedScopes, setSelectedScopes] = useState<string[]>(['smtp', 'pop3', 'imap', 'api:read', 'api:write'])
   const [createdKey, setCreatedKey] = useState<{ apiKey: string; name: string; scopes: string[] } | null>(null)

@@ -132,7 +132,7 @@ public class CustomMessageStore : MessageStore
                     {
                         Id = Guid.NewGuid(),
                         EmailId = email.Id,
-                        FileName = mimePart.FileName ?? "attachment",
+                        FileName = mimePart.FileName ?? GenerateFilenameFromContentType(mimePart.ContentType.MimeType),
                         ContentType = mimePart.ContentType.MimeType,
                         SizeBytes = attachmentStream.Length,
                         Content = attachmentStream.ToArray()
@@ -187,6 +187,38 @@ public class CustomMessageStore : MessageStore
             _logger.LogError(ex, "Failed to save email");
             return SmtpResponse.TransactionFailed;
         }
+    }
+
+    /// <summary>
+    /// Generates a filename with extension based on the MIME content type.
+    /// </summary>
+    private static string GenerateFilenameFromContentType(string mimeType)
+    {
+        var extension = mimeType.ToLowerInvariant() switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            "image/gif" => ".gif",
+            "image/webp" => ".webp",
+            "image/svg+xml" => ".svg",
+            "application/pdf" => ".pdf",
+            "application/zip" => ".zip",
+            "application/x-zip-compressed" => ".zip",
+            "application/msword" => ".doc",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => ".docx",
+            "application/vnd.ms-excel" => ".xls",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => ".xlsx",
+            "application/vnd.ms-powerpoint" => ".ppt",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" => ".pptx",
+            "text/plain" => ".txt",
+            "text/html" => ".html",
+            "text/csv" => ".csv",
+            "application/json" => ".json",
+            "application/xml" or "text/xml" => ".xml",
+            _ => string.Empty
+        };
+
+        return $"attachment{extension}";
     }
 
     private static async Task AddRecipientsAsync(

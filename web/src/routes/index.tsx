@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { useState, useEffect, useCallback } from 'react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { getConfig } from '@/config'
 import { useQueryClient } from '@tanstack/react-query'
@@ -20,6 +20,7 @@ export const Route = createFileRoute('/')({
 
 function InboxPage() {
   const auth = useAuth()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null)
@@ -47,11 +48,28 @@ function InboxPage() {
   }, [currentData])
 
   // Handle search
-  const handleSearch = (query: string) => {
+  const handleSearch = useCallback((query: string) => {
     setSearchFilters({ query })
     setPage(1) // Reset to first page when searching
     setSelectedEmailId(null) // Clear selection
-  }
+  }, [])
+
+  const handleSelectEmail = useCallback((id: string) => {
+    setSelectedEmailId(id)
+    markRead.mutate({ id, isRead: true })
+  }, [markRead])
+
+  const handleBack = useCallback(() => {
+    setSelectedEmailId(null)
+  }, [])
+
+  const handleDelete = useCallback(() => {
+    if (selectedEmailId) {
+      deleteEmail.mutate(selectedEmailId, {
+        onSuccess: () => setSelectedEmailId(null),
+      })
+    }
+  }, [selectedEmailId, deleteEmail])
 
   // Connect to SignalR for real-time updates
   useEffect(() => {
@@ -94,10 +112,9 @@ function InboxPage() {
   useEffect(() => {
     const config = getConfig()
     if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
-      console.log('🔐 Index: Not authenticated, redirecting to login')
-      window.location.href = '/login'
+      navigate({ to: '/login' })
     }
-  }, [auth.isAuthenticated, auth.isLoading])
+  }, [auth.isAuthenticated, auth.isLoading, navigate])
 
   // Show loading while checking auth
   if (auth.isLoading) {
@@ -106,23 +123,6 @@ function InboxPage() {
         <div className="text-lg">Loading...</div>
       </div>
     )
-  }
-
-  const handleSelectEmail = (id: string) => {
-    setSelectedEmailId(id)
-    markRead.mutate({ id, isRead: true })
-  }
-
-  const handleBack = () => {
-    setSelectedEmailId(null)
-  }
-
-  const handleDelete = () => {
-    if (selectedEmailId) {
-      deleteEmail.mutate(selectedEmailId, {
-        onSuccess: () => setSelectedEmailId(null),
-      })
-    }
   }
 
   const totalPages = currentData ? Math.ceil(currentData.totalCount / currentData.pageSize) : 1

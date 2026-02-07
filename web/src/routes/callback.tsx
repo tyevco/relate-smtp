@@ -1,6 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 export const Route = createFileRoute('/callback')({
   component: Callback,
@@ -8,46 +8,30 @@ export const Route = createFileRoute('/callback')({
 
 function Callback() {
   const auth = useAuth()
+  const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
 
+  const handleBackToLogin = useCallback(() => {
+    navigate({ to: '/login' })
+  }, [navigate])
+
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        console.log('🔄 Callback: Auth state', {
-          isAuthenticated: auth.isAuthenticated,
-          isLoading: auth.isLoading,
-          activeNavigator: auth.activeNavigator,
-          error: auth.error,
-        })
-
-        // Wait for auth to finish loading
-        if (auth.isLoading) {
-          console.log('⏳ Callback: Still loading...')
-          return
-        }
-
-        // Check for errors
-        if (auth.error) {
-          console.error('❌ Callback: Auth error', auth.error)
-          setError(auth.error.message)
-          return
-        }
-
-        // If authenticated, redirect to dashboard
-        if (auth.isAuthenticated) {
-          console.log('✅ Callback: Authenticated, redirecting to dashboard')
-          window.location.href = '/'
-        } else {
-          console.log('⚠️ Callback: Not authenticated yet, waiting...')
-        }
-      } catch (err) {
-        console.error('❌ Callback: Exception', err)
-        setError(err instanceof Error ? err.message : 'Unknown error')
-      }
+    // Wait for auth to finish loading
+    if (auth.isLoading) {
+      return
     }
 
-    handleCallback()
-  }, [auth.isAuthenticated, auth.isLoading, auth.error, auth.activeNavigator])
+    // Check for errors
+    if (auth.error) {
+      setError(auth.error.message)
+      return
+    }
+
+    // If authenticated, redirect to dashboard
+    if (auth.isAuthenticated) {
+      navigate({ to: '/' })
+    }
+  }, [auth.isAuthenticated, auth.isLoading, auth.error, navigate])
 
   if (error) {
     return (
@@ -56,7 +40,7 @@ function Callback() {
           <div className="text-lg text-red-600 font-semibold">Authentication Error</div>
           <div className="text-sm text-muted-foreground">{error}</div>
           <button
-            onClick={() => window.location.href = '/login'}
+            onClick={handleBackToLogin}
             className="px-4 py-2 bg-primary text-primary-foreground rounded"
           >
             Back to Login

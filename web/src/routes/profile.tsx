@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { getConfig } from '@/config'
 import { useProfile, useUpdateProfile, useAddEmailAddress, useRemoveEmailAddress } from '@/api/hooks'
@@ -15,6 +15,7 @@ export const Route = createFileRoute('/profile')({
 
 function ProfilePage() {
   const auth = useAuth()
+  const navigate = useNavigate()
   const { data: profile, isLoading } = useProfile()
   const updateProfile = useUpdateProfile()
   const addAddress = useAddEmailAddress()
@@ -29,9 +30,9 @@ function ProfilePage() {
   useEffect(() => {
     const config = getConfig()
     if (config.oidcAuthority && !auth.isLoading && !auth.isAuthenticated) {
-      window.location.href = '/login'
+      navigate({ to: '/login' })
     }
-  }, [auth.isAuthenticated, auth.isLoading])
+  }, [auth.isAuthenticated, auth.isLoading, navigate])
 
   const handleSaveName = () => {
     updateProfile.mutate({ displayName }, {

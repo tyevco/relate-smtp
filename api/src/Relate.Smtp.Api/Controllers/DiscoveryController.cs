@@ -27,12 +27,12 @@ public class DiscoveryController : ControllerBase
 
         var features = new List<string>();
 
-        // Add enabled protocol features
-        if (bool.Parse(_configuration["Smtp:Enabled"] ?? "true"))
+        // Add enabled protocol features (defaults to true if not configured or invalid)
+        if (!bool.TryParse(_configuration["Smtp:Enabled"], out var smtpEnabled) || smtpEnabled)
             features.Add("smtp");
-        if (bool.Parse(_configuration["Pop3:Enabled"] ?? "true"))
+        if (!bool.TryParse(_configuration["Pop3:Enabled"], out var pop3Enabled) || pop3Enabled)
             features.Add("pop3");
-        if (bool.Parse(_configuration["Imap:Enabled"] ?? "true"))
+        if (!bool.TryParse(_configuration["Imap:Enabled"], out var imapEnabled) || imapEnabled)
             features.Add("imap");
 
         // Add other features

@@ -14,8 +14,6 @@ export default function OidcCallbackScreen() {
   useEffect(() => {
     // The callback is typically handled by expo-auth-session's promptAsync
     // This screen is mainly for handling edge cases or manual redirects
-    console.log("OIDC Callback received:", params);
-
     // Redirect back to add-account flow
     // The actual token exchange happens in the add-account screen
     router.replace("/(auth)/add-account");
