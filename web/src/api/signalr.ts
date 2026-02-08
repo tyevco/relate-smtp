@@ -56,18 +56,16 @@ class SignalRConnection {
       .build();
 
     await this.connection.start();
-    console.log('SignalR connected');
 
     this.connection.onreconnecting(() => {
-      console.log('SignalR reconnecting...');
+      // Connection lost, attempting to reconnect
     });
 
     this.connection.onreconnected(() => {
-      console.log('SignalR reconnected');
+      // Successfully reconnected
     });
 
-    this.connection.onclose((error) => {
-      console.error('SignalR disconnected:', error);
+    this.connection.onclose(() => {
       // Clear promises on disconnect so reconnection can be attempted
       this.connectionPromise = null;
     });

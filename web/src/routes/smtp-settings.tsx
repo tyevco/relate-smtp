@@ -68,13 +68,18 @@ function SmtpSettingsPage() {
 
   const handleCopyKey = async () => {
     if (createdKey) {
-      await navigator.clipboard.writeText(createdKey.apiKey)
-      setCopiedKey(true)
-      // Clear any existing timeout
-      if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current)
+      try {
+        await navigator.clipboard.writeText(createdKey.apiKey)
+        setCopiedKey(true)
+        // Clear any existing timeout
+        if (copyTimeoutRef.current) {
+          clearTimeout(copyTimeoutRef.current)
+        }
+        copyTimeoutRef.current = setTimeout(() => setCopiedKey(false), 2000)
+      } catch {
+        // Fallback for browsers without clipboard API or when permission denied
+        alert('Failed to copy to clipboard. Please copy the key manually.')
       }
-      copyTimeoutRef.current = setTimeout(() => setCopiedKey(false), 2000)
     }
   }
 

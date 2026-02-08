@@ -146,6 +146,8 @@ jobs:
         run: dotnet test --no-build --configuration Release --filter "Category=Integration" --verbosity normal --logger "trx;LogFileName=integration-tests.trx" --results-directory ./TestResults
         env:
           TESTCONTAINERS_RYUK_DISABLED: false
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
 
       - name: Upload Integration Test Results
         uses: actions/upload-artifact@v4
@@ -183,6 +185,8 @@ jobs:
         run: dotnet test --no-build --configuration Release --filter "Category=E2E" --verbosity normal --logger "trx;LogFileName=e2e-tests.trx" --results-directory ./TestResults
         env:
           TESTCONTAINERS_RYUK_DISABLED: false
+          TESTCONTAINERS_REUSE_ENABLE: true
+          TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: /var/run/docker.sock
 
       - name: Upload E2E Test Results
         uses: actions/upload-artifact@v4

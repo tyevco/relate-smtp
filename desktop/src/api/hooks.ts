@@ -1,16 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiGet, apiPost, apiPatch, apiDelete } from './client'
+import { DEFAULT_PAGE_SIZE } from '@relate/shared/lib/constants'
 import type { EmailListResponse, EmailDetail, Profile, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey } from '@relate/shared/api/types'
 
 // Emails
-export function useEmails(page = 1, pageSize = 20) {
+export function useEmails(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   return useQuery({
     queryKey: ['emails', page, pageSize],
     queryFn: () => apiGet<EmailListResponse>(`/emails?page=${page}&pageSize=${pageSize}`),
   })
 }
 
-export function useSentEmails(page = 1, pageSize = 20) {
+export function useSentEmails(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   return useQuery({
     queryKey: ['sent-emails', page, pageSize],
     queryFn: () => apiGet<EmailListResponse>(`/emails/sent?page=${page}&pageSize=${pageSize}`),
