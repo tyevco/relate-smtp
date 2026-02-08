@@ -1,6 +1,5 @@
-import { Stack } from "expo-router";
+import { Stack, Redirect } from "expo-router";
 import { useHasAccounts } from "@/lib/auth/account-store";
-import { Redirect } from "expo-router";
 
 export default function MainLayout() {
   const hasAccounts = useHasAccounts();

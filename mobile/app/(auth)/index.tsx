@@ -1,4 +1,4 @@
-import { View, Text, Image } from "react-native";
+import { View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
 import { Mail } from "lucide-react-native";
