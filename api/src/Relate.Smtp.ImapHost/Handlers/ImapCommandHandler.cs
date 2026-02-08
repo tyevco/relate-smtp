@@ -55,7 +55,18 @@ public class ImapCommandHandler
                 session.LastActivityAt = DateTime.UtcNow;
                 _logger.LogDebug("Command received: {Command}", line);
 
-                var command = ImapCommand.Parse(line);
+                ImapCommand command;
+                try
+                {
+                    command = ImapCommand.Parse(line);
+                }
+                catch (ImapParseException ex)
+                {
+                    _logger.LogWarning("Command parse error: {Error}", ex.Message);
+                    await writer.WriteLineAsync(ImapResponse.UntaggedBad(ex.Message));
+                    continue;
+                }
+
                 await ExecuteCommandAsync(command, session, writer, ct);
 
                 if (session.State == ImapState.Logout)
@@ -476,7 +487,16 @@ public class ImapCommandHandler
         var sequenceSet = command.Arguments[0];
         var fetchItems = command.RawArguments[(sequenceSet.Length + 1)..].Trim();
 
-        var messages = ParseSequenceSet(sequenceSet, session.Messages, useUid);
+        List<ImapMessage> messages;
+        try
+        {
+            messages = ParseSequenceSet(sequenceSet, session.Messages, useUid);
+        }
+        catch (ImapParseException ex)
+        {
+            await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, ex.Message));
+            return;
+        }
 
         foreach (var msg in messages)
         {
@@ -573,7 +593,17 @@ public class ImapCommandHandler
 
         // Parse flags from the value (e.g., "(\Seen \Flagged)")
         var flags = ParseFlagsFromString(flagsStr);
-        var messages = ParseSequenceSet(sequenceSet, session.Messages, useUid);
+
+        List<ImapMessage> messages;
+        try
+        {
+            messages = ParseSequenceSet(sequenceSet, session.Messages, useUid);
+        }
+        catch (ImapParseException ex)
+        {
+            await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, ex.Message));
+            return;
+        }
 
         var silent = dataItem.Contains(".SILENT");
 
@@ -766,6 +796,10 @@ public class ImapCommandHandler
         await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "UNSELECT completed"));
     }
 
+    /// <summary>
+    /// Parse a sequence set and return matching messages.
+    /// </summary>
+    /// <exception cref="ImapParseException">Thrown when sequence set is malformed or exceeds limits.</exception>
     private static List<ImapMessage> ParseSequenceSet(
         string sequenceSet,
         List<ImapMessage> messages,
@@ -781,29 +815,50 @@ public class ImapCommandHandler
 
         // Handle ranges like "1:*" or "1:10" or "1,3,5"
         var parts = sequenceSet.Split(',');
+
+        // Validate sequence set complexity to prevent DoS attacks
+        if (parts.Length > ImapCommand.MaxSequenceSetParts)
+        {
+            throw new ImapParseException($"Sequence set has too many parts (max {ImapCommand.MaxSequenceSetParts})");
+        }
+
         foreach (var part in parts)
         {
+            if (string.IsNullOrWhiteSpace(part))
+            {
+                throw new ImapParseException("Invalid sequence set: empty part");
+            }
+
             if (part.Contains(':'))
             {
                 var range = part.Split(':');
+                if (range.Length != 2)
+                {
+                    throw new ImapParseException($"Invalid range in sequence set: {part}");
+                }
+
                 uint start, end;
 
                 if (range[0] == "*")
                 {
-                    start = useUid ? messages.Max(m => m.Uid) : (uint)messages.Count;
+                    start = messages.Count > 0
+                        ? (useUid ? messages.Max(m => m.Uid) : (uint)messages.Count)
+                        : 1;
                 }
                 else if (!uint.TryParse(range[0], out start))
                 {
-                    continue;
+                    throw new ImapParseException($"Invalid sequence number in range: {range[0]}");
                 }
 
                 if (range[1] == "*")
                 {
-                    end = useUid ? messages.Max(m => m.Uid) : (uint)messages.Count;
+                    end = messages.Count > 0
+                        ? (useUid ? messages.Max(m => m.Uid) : (uint)messages.Count)
+                        : 1;
                 }
                 else if (!uint.TryParse(range[1], out end))
                 {
-                    continue;
+                    throw new ImapParseException($"Invalid sequence number in range: {range[1]}");
                 }
 
                 if (start > end)
@@ -824,7 +879,7 @@ public class ImapCommandHandler
             {
                 if (!uint.TryParse(part, out var num))
                 {
-                    continue;
+                    throw new ImapParseException($"Invalid sequence number: {part}");
                 }
                 var msg = useUid
                     ? messages.FirstOrDefault(m => m.Uid == num)

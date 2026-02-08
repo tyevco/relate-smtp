@@ -65,15 +65,16 @@ export const useAccountStore = create<AccountState>()(
           let newActiveId = state.activeAccountId;
           if (state.activeAccountId === accountId) {
             newActiveId = remainingAccounts[0]?.id ?? null;
-            if (newActiveId) {
-              remainingAccounts.forEach((a) => {
-                a.isActive = a.id === newActiveId;
-              });
-            }
           }
 
+          // Use immutable pattern - create new objects instead of mutating
+          const updatedAccounts = remainingAccounts.map((a) => ({
+            ...a,
+            isActive: a.id === newActiveId,
+          }));
+
           return {
-            accounts: remainingAccounts,
+            accounts: updatedAccounts,
             activeAccountId: newActiveId,
           };
         });

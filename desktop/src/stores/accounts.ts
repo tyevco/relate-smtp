@@ -17,40 +17,56 @@ export interface AccountsData {
   active_account_id: string | null
 }
 
-// Base atoms
-export const accountsAtom = atom<Account[]>([])
-export const activeAccountIdAtom = atom<string | null>(null)
-export const accountsLoadedAtom = atom<boolean>(false)
+// Combined state for atomic updates - prevents partial state renders
+export interface AccountsState {
+  accounts: Account[]
+  activeAccountId: string | null
+  loaded: boolean
+}
+
+// Single source of truth for accounts state
+export const accountsStateAtom = atom<AccountsState>({
+  accounts: [],
+  activeAccountId: null,
+  loaded: false,
+})
+
+// Derived atoms for backward compatibility
+export const accountsAtom = atom((get) => get(accountsStateAtom).accounts)
+export const activeAccountIdAtom = atom((get) => get(accountsStateAtom).activeAccountId)
+export const accountsLoadedAtom = atom((get) => get(accountsStateAtom).loaded)
 
 // Derived atom for active account
 export const activeAccountAtom = atom((get) => {
-  const accounts = get(accountsAtom)
-  const activeId = get(activeAccountIdAtom)
-  return accounts.find((a) => a.id === activeId) ?? null
+  const { accounts, activeAccountId } = get(accountsStateAtom)
+  return accounts.find((a) => a.id === activeAccountId) ?? null
 })
 
 // Derived atom for checking if user has any accounts
 export const hasAccountsAtom = atom((get) => {
-  const accounts = get(accountsAtom)
+  const { accounts } = get(accountsStateAtom)
   return accounts.length > 0
 })
 
-// Action: Load accounts from Tauri backend
+// Action: Load accounts from Tauri backend - single atomic update
 export const loadAccountsAtom = atom(null, async (_get, set) => {
   try {
     const data = await invoke<AccountsData>('load_accounts')
-    set(accountsAtom, data.accounts)
-    set(activeAccountIdAtom, data.active_account_id)
-    set(accountsLoadedAtom, true)
+    // Atomic update - all state changes happen in one render
+    set(accountsStateAtom, {
+      accounts: data.accounts,
+      activeAccountId: data.active_account_id,
+      loaded: true,
+    })
     return data
   } catch (err) {
     console.error('Failed to load accounts:', err)
-    set(accountsLoadedAtom, true)
+    set(accountsStateAtom, (prev) => ({ ...prev, loaded: true }))
     throw err
   }
 })
 
-// Action: Add a new account
+// Action: Add a new account - atomic update
 export const addAccountAtom = atom(
   null,
   async (
@@ -69,8 +85,12 @@ export const addAccountAtom = atom(
         account,
         apiKey,
       })
-      set(accountsAtom, data.accounts)
-      set(activeAccountIdAtom, data.active_account_id)
+      // Atomic update from Rust response
+      set(accountsStateAtom, (prev) => ({
+        ...prev,
+        accounts: data.accounts,
+        activeAccountId: data.active_account_id,
+      }))
       return data
     } catch (err) {
       console.error('Failed to save account:', err)
@@ -79,12 +99,16 @@ export const addAccountAtom = atom(
   }
 )
 
-// Action: Remove an account
+// Action: Remove an account - atomic update
 export const removeAccountAtom = atom(null, async (_get, set, accountId: string) => {
   try {
     const data = await invoke<AccountsData>('delete_account', { accountId })
-    set(accountsAtom, data.accounts)
-    set(activeAccountIdAtom, data.active_account_id)
+    // Atomic update from Rust response
+    set(accountsStateAtom, (prev) => ({
+      ...prev,
+      accounts: data.accounts,
+      activeAccountId: data.active_account_id,
+    }))
     return data
   } catch (err) {
     console.error('Failed to delete account:', err)
@@ -92,17 +116,18 @@ export const removeAccountAtom = atom(null, async (_get, set, accountId: string)
   }
 })
 
-// Action: Switch active account
+// Action: Switch active account - atomic update
 export const switchAccountAtom = atom(null, async (_get, set, accountId: string) => {
   try {
     const account = await invoke<Account>('set_active_account', { accountId })
-    set(activeAccountIdAtom, accountId)
-    // Update the account's last_used_at in the local state
-    set(accountsAtom, (accounts) =>
-      accounts.map((a) =>
+    // Atomic update - both activeAccountId and last_used_at change together
+    set(accountsStateAtom, (prev) => ({
+      ...prev,
+      activeAccountId: accountId,
+      accounts: prev.accounts.map((a) =>
         a.id === accountId ? { ...a, last_used_at: new Date().toISOString() } : a
-      )
-    )
+      ),
+    }))
     return account
   } catch (err) {
     console.error('Failed to switch account:', err)

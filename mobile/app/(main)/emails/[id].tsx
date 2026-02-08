@@ -245,7 +245,7 @@ export default function EmailDetailScreen() {
         <View className="min-h-[300px] px-4 py-4">
           {htmlContent ? (
             <WebView
-              originWhitelist={["*"]}
+              originWhitelist={["https://*", "http://*"]}
               source={{ html: htmlContent }}
               style={{ flex: 1, minHeight: 300, width: width - 32 }}
               scrollEnabled={false}

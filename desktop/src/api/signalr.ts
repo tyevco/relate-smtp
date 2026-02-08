@@ -49,36 +49,85 @@ export async function disconnect(): Promise<void> {
   }
 }
 
+/**
+ * Register a handler for new email events.
+ * @throws Error if connection is not established
+ */
 export function onNewEmail(handler: (emailId: string) => void): () => void {
-  connection?.on('NewEmail', handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.on('NewEmail', handler)
   return () => connection?.off('NewEmail', handler)
 }
 
+/**
+ * Register a handler for email updated events.
+ * @throws Error if connection is not established
+ */
 export function onEmailUpdated(handler: (emailId: string) => void): () => void {
-  connection?.on('EmailUpdated', handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.on('EmailUpdated', handler)
   return () => connection?.off('EmailUpdated', handler)
 }
 
+/**
+ * Register a handler for email deleted events.
+ * @throws Error if connection is not established
+ */
 export function onEmailDeleted(handler: (emailId: string) => void): () => void {
-  connection?.on('EmailDeleted', handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.on('EmailDeleted', handler)
   return () => connection?.off('EmailDeleted', handler)
 }
 
+/**
+ * Register a handler for unread count changes.
+ * @throws Error if connection is not established
+ */
 export function onUnreadCountChanged(handler: (count: number) => void): () => void {
-  connection?.on('UnreadCountChanged', handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.on('UnreadCountChanged', handler)
   return () => connection?.off('UnreadCountChanged', handler)
 }
 
+/**
+ * Register a handler for reconnecting events.
+ * @throws Error if connection is not established
+ */
 export function onReconnecting(handler: (error?: Error) => void): void {
-  connection?.onreconnecting(handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.onreconnecting(handler)
 }
 
+/**
+ * Register a handler for reconnected events.
+ * @throws Error if connection is not established
+ */
 export function onReconnected(handler: (connectionId?: string) => void): void {
-  connection?.onreconnected(handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.onreconnected(handler)
 }
 
+/**
+ * Register a handler for connection close events.
+ * @throws Error if connection is not established
+ */
 export function onClose(handler: (error?: Error) => void): void {
-  connection?.onclose(handler)
+  if (!connection) {
+    throw new Error('SignalR connection not established. Call connect() first.')
+  }
+  connection.onclose(handler)
 }
 
 export function getConnection(): signalR.HubConnection | null {
