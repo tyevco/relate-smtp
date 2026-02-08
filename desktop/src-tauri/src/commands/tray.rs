@@ -62,7 +62,7 @@ pub async fn set_tray_tooltip(tooltip: String, app: AppHandle) -> Result<(), Str
 pub async fn set_badge_count(count: u32, app: AppHandle) -> Result<(), String> {
     if let Some(tray) = app.tray_by_id("main") {
         let tooltip = if count > 0 {
-            format!("Relate Mail - {} unread", count)
+            format!("Relate Mail - {count} unread")
         } else {
             "Relate Mail".to_string()
         };
@@ -72,7 +72,7 @@ pub async fn set_badge_count(count: u32, app: AppHandle) -> Result<(), String> {
     // Also update the window title to reflect unread count
     if let Some(window) = app.get_webview_window("main") {
         let title = if count > 0 {
-            format!("({}) Relate Mail", count)
+            format!("({count}) Relate Mail")
         } else {
             "Relate Mail".to_string()
         };

@@ -36,18 +36,18 @@ async fn make_request(
     let server_url = state
         .server_url
         .read()
-        .map_err(|e| ApiError::Internal(format!("State lock poisoned: {}", e)))?
+        .map_err(|e| ApiError::Internal(format!("State lock poisoned: {e}")))?
         .clone()
         .ok_or_else(|| ApiError::NotConfigured("Server URL not set".to_string()))?;
 
     let api_key = state
         .api_key
         .read()
-        .map_err(|e| ApiError::Internal(format!("State lock poisoned: {}", e)))?
+        .map_err(|e| ApiError::Internal(format!("State lock poisoned: {e}")))?
         .clone()
         .ok_or_else(|| ApiError::NotConfigured("API key not set".to_string()))?;
 
-    let url = format!("{}/api{}", server_url, endpoint);
+    let url = format!("{server_url}/api{endpoint}");
     let client = get_client();
 
     let mut request = client
@@ -72,8 +72,7 @@ async fn make_request(
 
     if !status.is_success() {
         return Err(ApiError::RequestFailed(format!(
-            "HTTP {}: {}",
-            status, text
+            "HTTP {status}: {text}"
         )));
     }
 
