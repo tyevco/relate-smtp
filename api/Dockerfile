@@ -45,13 +45,10 @@ RUN dotnet publish src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj -c Relea
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 WORKDIR /app
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' --uid 1000 appuser
-
 COPY --from=build /app/api .
 
-# Switch to non-root user
-USER appuser
+# Switch to built-in non-root user (UID 1654 in .NET 8+ images)
+USER app
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail API"
@@ -67,13 +64,10 @@ ENTRYPOINT ["dotnet", "Relate.Smtp.Api.dll"]
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS smtp
 WORKDIR /app
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' --uid 1000 appuser
-
 COPY --from=build /app/smtp .
 
-# Switch to non-root user
-USER appuser
+# Switch to built-in non-root user (UID 1654 in .NET 8+ images)
+USER app
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail SMTP Server"
@@ -88,13 +82,10 @@ ENTRYPOINT ["dotnet", "Relate.Smtp.SmtpHost.dll"]
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS pop3
 WORKDIR /app
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' --uid 1000 appuser
-
 COPY --from=build /app/pop3 .
 
-# Switch to non-root user
-USER appuser
+# Switch to built-in non-root user (UID 1654 in .NET 8+ images)
+USER app
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail POP3 Server"
@@ -109,13 +100,10 @@ ENTRYPOINT ["dotnet", "Relate.Smtp.Pop3Host.dll"]
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS imap
 WORKDIR /app
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos '' --uid 1000 appuser
-
 COPY --from=build /app/imap .
 
-# Switch to non-root user
-USER appuser
+# Switch to built-in non-root user (UID 1654 in .NET 8+ images)
+USER app
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail IMAP Server"
