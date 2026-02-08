@@ -34,8 +34,8 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .Include(u => u.AdditionalAddresses)
             .FirstOrDefaultAsync(u =>
-                u.Email.ToLower() == normalizedEmail ||
-                u.AdditionalAddresses.Any(a => a.Address.ToLower() == normalizedEmail),
+                EF.Functions.Collate(u.Email, "NOCASE") == normalizedEmail ||
+                u.AdditionalAddresses.Any(a => EF.Functions.Collate(a.Address, "NOCASE") == normalizedEmail),
                 cancellationToken).ConfigureAwait(false);
     }
 
@@ -44,7 +44,7 @@ public class UserRepository : IUserRepository
         var normalizedEmail = email.ToLowerInvariant();
         return await _context.Users
             .Include(u => u.SmtpApiKeys.Where(k => k.RevokedAt == null))
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken).ConfigureAwait(false);
+            .FirstOrDefaultAsync(u => EF.Functions.Collate(u.Email, "NOCASE") == normalizedEmail, cancellationToken).ConfigureAwait(false);
     }
 
     public async Task<User> AddAsync(User user, CancellationToken cancellationToken = default)

@@ -104,6 +104,7 @@ public class Pop3ServerFixture : IAsyncLifetime
         {
             await _postgres.DisposeAsync();
         }
+        GC.SuppressFinalize(this);
     }
 
     private static int GetAvailablePort()
@@ -121,6 +122,8 @@ public class Pop3ServerFixture : IAsyncLifetime
 /// Collection definition for sharing Pop3ServerFixture across tests.
 /// </summary>
 [CollectionDefinition("Pop3Server")]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - xUnit collection fixture convention
 public class Pop3ServerCollection : ICollectionFixture<Pop3ServerFixture>
+#pragma warning restore CA1711
 {
 }

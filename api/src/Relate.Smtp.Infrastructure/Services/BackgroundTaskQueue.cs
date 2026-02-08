@@ -14,7 +14,9 @@ public readonly record struct LastUsedAtUpdate(Guid KeyId, DateTimeOffset Timest
 /// <summary>
 /// Interface for queueing background tasks.
 /// </summary>
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - This is a legitimate queue interface
 public interface IBackgroundTaskQueue
+#pragma warning restore CA1711
 {
     /// <summary>
     /// Queue an API key LastUsedAt update for background processing.
@@ -26,7 +28,9 @@ public interface IBackgroundTaskQueue
 /// Channel-based background task queue for processing non-critical updates.
 /// Ensures tasks are processed on shutdown rather than being lost.
 /// </summary>
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - This is a legitimate queue implementation
 public sealed class BackgroundTaskQueue : IBackgroundTaskQueue
+#pragma warning restore CA1711
 {
     private readonly Channel<LastUsedAtUpdate> _channel;
 
@@ -124,7 +128,9 @@ public sealed class BackgroundTaskQueueHostedService : BackgroundService
             var repository = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
             await repository.UpdateLastUsedAsync(update.KeyId, update.Timestamp, ct);
         }
+        #pragma warning disable CA1031 // Do not catch general exception types - Intentionally catching all exceptions to prevent background task crashes
         catch (Exception ex)
+        #pragma warning restore CA1031
         {
             _logger.LogError(ex, "Failed to update LastUsedAt for API key {KeyId}", update.KeyId);
         }

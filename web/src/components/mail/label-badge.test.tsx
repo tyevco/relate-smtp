@@ -10,7 +10,8 @@ describe('LabelBadge', () => {
 
   it('applies custom color to styles', () => {
     render(<LabelBadge name="Important" color="#ef4444" />)
-    const badge = screen.getByText('Important').closest('div')!
+    const badge = screen.getByText('Important').closest('div')
+    expect(badge).not.toBeNull()
 
     expect(badge).toHaveStyle({
       backgroundColor: '#ef444420',
@@ -55,7 +56,8 @@ describe('LabelBadge', () => {
   it('applies outline variant from Badge', () => {
     render(<LabelBadge name="Outline" color="#000" />)
     // The badge should have the outline variant class
-    const badge = screen.getByText('Outline').closest('div')!
+    const badge = screen.getByText('Outline').closest('div')
+    expect(badge).not.toBeNull()
     expect(badge).toHaveClass('text-foreground')
   })
 
@@ -67,13 +69,15 @@ describe('LabelBadge', () => {
         className="my-custom-class"
       />
     )
-    const badge = screen.getByText('Custom').closest('div')!
+    const badge = screen.getByText('Custom').closest('div')
+    expect(badge).not.toBeNull()
     expect(badge).toHaveClass('my-custom-class')
   })
 
   it('applies base styles', () => {
     render(<LabelBadge name="Styled" color="#000" />)
-    const badge = screen.getByText('Styled').closest('div')!
+    const badge = screen.getByText('Styled').closest('div')
+    expect(badge).not.toBeNull()
     expect(badge).toHaveClass('px-2')
     expect(badge).toHaveClass('py-0.5')
     expect(badge).toHaveClass('text-xs')
@@ -82,15 +86,18 @@ describe('LabelBadge', () => {
 
   it('renders with different colors correctly', () => {
     const { rerender } = render(<LabelBadge name="Blue" color="#3b82f6" />)
-    let badge = screen.getByText('Blue').closest('div')!
+    let badge = screen.getByText('Blue').closest('div')
+    expect(badge).not.toBeNull()
     expect(badge).toHaveStyle({ borderColor: '#3b82f6' })
 
     rerender(<LabelBadge name="Green" color="#22c55e" />)
-    badge = screen.getByText('Green').closest('div')!
+    badge = screen.getByText('Green').closest('div')
+    expect(badge).not.toBeNull()
     expect(badge).toHaveStyle({ borderColor: '#22c55e' })
 
     rerender(<LabelBadge name="Red" color="#ef4444" />)
-    badge = screen.getByText('Red').closest('div')!
+    badge = screen.getByText('Red').closest('div')
+    expect(badge).not.toBeNull()
     expect(badge).toHaveStyle({ borderColor: '#ef4444' })
   })
 })

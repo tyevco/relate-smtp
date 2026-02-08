@@ -64,16 +64,10 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         var keyEntity = await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "api:read", Context.RequestAborted);
 
         // If not found with api:read, try api:write
-        if (keyEntity == null)
-        {
-            keyEntity = await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "api:write", Context.RequestAborted);
-        }
+        keyEntity ??= await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "api:write", Context.RequestAborted);
 
         // If not found with api:write, try app (first-party mobile/desktop clients)
-        if (keyEntity == null)
-        {
-            keyEntity = await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "app", Context.RequestAborted);
-        }
+        keyEntity ??= await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "app", Context.RequestAborted);
 
         if (keyEntity == null)
         {

@@ -25,8 +25,7 @@ public class PostgresContainerFixture : IAsyncLifetime
     /// </summary>
     public async ValueTask InitializeAsync()
     {
-        _container = new PostgreSqlBuilder()
-            .WithImage("postgres:17-alpine")
+        _container = new PostgreSqlBuilder("postgres:17-alpine")
             .WithDatabase("relate_smtp_test")
             .WithUsername("test_user")
             .WithPassword("test_password")
@@ -50,6 +49,7 @@ public class PostgresContainerFixture : IAsyncLifetime
             await _container.StopAsync();
             await _container.DisposeAsync();
         }
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -104,8 +104,10 @@ public class PostgresContainerFixture : IAsyncLifetime
 
         foreach (var tableName in tableNames)
         {
+            #pragma warning disable EF1002 // Test code with safe table names
             await context.Database.ExecuteSqlRawAsync(
                 $"TRUNCATE TABLE \"{tableName}\" CASCADE");
+            #pragma warning restore EF1002
         }
     }
 }
@@ -114,6 +116,8 @@ public class PostgresContainerFixture : IAsyncLifetime
 /// Collection definition for sharing PostgresContainerFixture across tests.
 /// </summary>
 [CollectionDefinition("PostgresDatabase")]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - xUnit collection fixture convention
 public class PostgresDatabaseCollection : ICollectionFixture<PostgresContainerFixture>
+#pragma warning restore CA1711
 {
 }

@@ -40,9 +40,11 @@ function InboxPage() {
   const currentLoading = isSearching ? isSearchLoading : isLoading
   const currentRefetch = isSearching ? refetchSearch : refetch
 
-  // Update local unread count when emails data changes
+  // Sync unread count from server data to local state
+  // Local state allows SignalR to update count without refetching all emails
   useEffect(() => {
     if (currentData) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: sync server data to local state for SignalR updates
       setUnreadCount(currentData.unreadCount)
     }
   }, [currentData])

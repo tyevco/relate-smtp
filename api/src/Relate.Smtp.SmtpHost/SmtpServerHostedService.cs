@@ -77,11 +77,15 @@ public class SmtpServerHostedService : BackgroundService
         // Subscribe to session events for connection metrics (if metrics are available)
         _smtpServer.SessionCreated += (_, _) =>
         {
+            #pragma warning disable CA1031 // Metrics are best-effort, failures should not crash the server
             try { ProtocolMetrics.SmtpActiveConnections.Add(1); } catch { /* ignore */ }
+            #pragma warning restore CA1031
         };
         _smtpServer.SessionCompleted += (_, _) =>
         {
+            #pragma warning disable CA1031 // Metrics are best-effort, failures should not crash the server
             try { ProtocolMetrics.SmtpActiveConnections.Add(-1); } catch { /* ignore */ }
+            #pragma warning restore CA1031
         };
 
         _logger.LogInformation("Starting SMTP server on port {Port} (plain) and {SecurePort} (TLS)",
@@ -109,13 +113,13 @@ public class SmtpServerHostedService : BackgroundService
         await base.StopAsync(cancellationToken);
     }
 
-    private IMessageStore CreateMessageStore()
+    private CustomMessageStore CreateMessageStore()
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CustomMessageStore>>();
         return new CustomMessageStore(_serviceProvider, logger, _options);
     }
 
-    private IUserAuthenticator CreateUserAuthenticator()
+    private CustomUserAuthenticator CreateUserAuthenticator()
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CustomUserAuthenticator>>();
         var backgroundTaskQueue = _serviceProvider.GetRequiredService<IBackgroundTaskQueue>();

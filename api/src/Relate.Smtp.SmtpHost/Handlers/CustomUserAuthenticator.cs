@@ -146,7 +146,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
         _authCache.Set(cacheKey, entry, options);
     }
 
-    private class CacheEntry
+    private sealed class CacheEntry
     {
         public Guid KeyId { get; set; }
         public bool IsAuthenticated { get; set; }

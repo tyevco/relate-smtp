@@ -32,7 +32,11 @@ declare module '@tanstack/react-router' {
 
 // Load runtime configuration before rendering the app
 loadConfig().then(() => {
-  createRoot(document.getElementById('root')!).render(
+  const rootElement = document.getElementById('root')
+  if (!rootElement) {
+    throw new Error('Root element not found')
+  }
+  createRoot(rootElement).render(
     <StrictMode>
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
@@ -41,15 +45,20 @@ loadConfig().then(() => {
       </AuthProvider>
     </StrictMode>,
   )
-}).catch((error) => {
+}).catch((error: unknown) => {
   console.error('Failed to load configuration:', error)
   // Render error state
-  createRoot(document.getElementById('root')!).render(
+  const rootElement = document.getElementById('root')
+  if (!rootElement) {
+    return
+  }
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+  createRoot(rootElement).render(
     <div style={{ padding: '2rem', textAlign: 'center' }}>
       <h1>Configuration Error</h1>
       <p>Failed to load application configuration. Please check your deployment.</p>
       <pre style={{ textAlign: 'left', background: '#f5f5f5', padding: '1rem', borderRadius: '4px' }}>
-        {error.message}
+        {errorMessage}
       </pre>
     </div>
   )

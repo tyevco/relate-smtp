@@ -219,7 +219,9 @@ public class EmailsController : ControllerBase
         }
 
         // Reconstruct MIME message
+        #pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
         var message = new MimeMessage();
+        #pragma warning restore CA2000
         message.MessageId = email.MessageId;
         message.From.Add(new MailboxAddress(email.FromDisplayName, email.FromAddress));
 
@@ -264,10 +266,10 @@ public class EmailsController : ControllerBase
 
         // Convert to EML format
         using var stream = new MemoryStream();
-        message.WriteTo(stream);
+        await message.WriteToAsync(stream, cancellationToken);
         var emlContent = stream.ToArray();
 
-        var fileName = $"{email.Subject.Replace("/", "-").Replace("\\", "-")}_{email.ReceivedAt:yyyyMMdd}.eml";
+        var fileName = $"{email.Subject.Replace("/", "-", StringComparison.Ordinal).Replace("\\", "-", StringComparison.Ordinal)}_{email.ReceivedAt:yyyyMMdd}.eml";
         return File(emlContent, "message/rfc822", fileName);
     }
 
@@ -291,7 +293,9 @@ public class EmailsController : ControllerBase
             await writer.WriteLineAsync(fromLine);
 
             // Reconstruct MIME message
+            #pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
             var message = new MimeMessage();
+            #pragma warning restore CA2000
             message.MessageId = email.MessageId;
             message.From.Add(new MailboxAddress(email.FromDisplayName, email.FromAddress));
 
@@ -336,7 +340,7 @@ public class EmailsController : ControllerBase
 
             // Write message to MBOX
             using var messageStream = new MemoryStream();
-            message.WriteTo(messageStream);
+            await message.WriteToAsync(messageStream, cancellationToken);
             var messageContent = Encoding.UTF8.GetString(messageStream.ToArray());
 
             // Escape "From " at the beginning of lines (MBOX format requirement)

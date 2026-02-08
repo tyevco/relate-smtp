@@ -179,7 +179,9 @@ public class CustomMessageStore : MessageStore
 
             return SmtpResponse.Ok;
         }
+        #pragma warning disable CA1031 // Do not catch general exception types - SMTP server must return error response rather than crashing
         catch (Exception ex)
+        #pragma warning restore CA1031
         {
             activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
             activity?.AddTag("exception.type", ex.GetType().FullName);

@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
 
     onSignoutCallback: () => {
+      // Redirect to home page after signout
+      // eslint-disable-next-line react-hooks/immutability -- intentional redirect after signout
       window.location.href = '/';
     },
   };
@@ -63,9 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     onSigninError: handleSigninError,
   };
 
-  // Debug: Log config in development
+  // Debug: Log config in development (using console.debug which is typically filtered out)
   if (import.meta.env.DEV) {
-    console.log('🔐 OIDC Configuration:', {
+    // eslint-disable-next-line no-console
+    console.debug('OIDC Configuration:', {
       authority: oidcConfig.authority,
       client_id: oidcConfig.client_id,
       redirect_uri: oidcConfig.redirect_uri,

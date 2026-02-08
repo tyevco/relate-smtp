@@ -2,6 +2,9 @@
 
 #nullable disable
 
+#pragma warning disable IDE0161 // Convert to file-scoped namespace - EF Core generated migration
+#pragma warning disable CA1861 // Prefer static readonly fields - EF Core generated migration
+
 namespace Relate.Smtp.Infrastructure.Migrations
 {
     /// <inheritdoc />

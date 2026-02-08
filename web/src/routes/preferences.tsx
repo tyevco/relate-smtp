@@ -42,9 +42,11 @@ function PreferencesPage() {
     }
   }, [auth.isAuthenticated, auth.isLoading, navigate])
 
-  // Load preferences into state
+  // Initialize form state from server preferences
+  // This syncs server data to local form state for editing
   useEffect(() => {
     if (preferences) {
+      /* eslint-disable react-hooks/set-state-in-effect -- intentional: initialize form with server data */
       setTheme(preferences.theme)
       setDisplayDensity(preferences.displayDensity)
       setEmailsPerPage(preferences.emailsPerPage.toString())
@@ -55,6 +57,7 @@ function PreferencesPage() {
       setEmailDigest(preferences.emailDigest)
       setDigestFrequency(preferences.digestFrequency)
       setDigestTime(preferences.digestTime.substring(0, 5)) // Extract HH:mm from HH:mm:ss
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [preferences])
 
