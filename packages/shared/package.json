@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./api/types": "./src/api/types.ts",
@@ -10,6 +14,7 @@
     "./components/mail": "./src/components/mail/index.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./lib/sanitize": "./src/lib/sanitize.ts",
+    "./lib/constants": "./src/lib/constants.ts",
     "./styles/theme.css": "./src/styles/theme.css"
   },
   "peerDependencies": {

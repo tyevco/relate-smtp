@@ -61,6 +61,12 @@ public class PushNotificationService
             return;
         }
 
+        if (string.IsNullOrEmpty(vapidSubject))
+        {
+            _logger.LogWarning("VAPID subject not configured. Set Push:VapidSubject to a mailto: or https: URL.");
+            return;
+        }
+
         var webPushClient = new WebPushClient();
 
         foreach (var subscription in subscriptions)
@@ -103,7 +109,11 @@ public class PushNotificationService
 
 public class PushOptions
 {
-    public string VapidSubject { get; set; } = "mailto:admin@localhost";
+    /// <summary>
+    /// VAPID subject (contact URL, typically mailto: or https:).
+    /// Must be configured for push notifications to work.
+    /// </summary>
+    public string VapidSubject { get; set; } = string.Empty;
     public string VapidPublicKey { get; set; } = string.Empty;
     public string VapidPrivateKey { get; set; } = string.Empty;
 }

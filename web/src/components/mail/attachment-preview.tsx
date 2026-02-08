@@ -14,11 +14,22 @@ interface AttachmentPreviewProps {
   attachment: EmailAttachment
 }
 
+function isValidAttachmentId(id: string): boolean {
+  // Validate that attachment ID is a valid UUID or safe identifier
+  return /^[a-zA-Z0-9-]+$/.test(id)
+}
+
 export function AttachmentPreview({ emailId, attachment }: AttachmentPreviewProps) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 
   const apiUrl = import.meta.env.VITE_API_URL || '/api'
-  const downloadUrl = `${apiUrl}/emails/${emailId}/attachments/${attachment.id}`
+
+  // Validate IDs before constructing URL to prevent injection
+  const safeEmailId = isValidAttachmentId(emailId) ? emailId : ''
+  const safeAttachmentId = isValidAttachmentId(attachment.id) ? attachment.id : ''
+  const downloadUrl = safeEmailId && safeAttachmentId
+    ? `${apiUrl}/emails/${safeEmailId}/attachments/${safeAttachmentId}`
+    : ''
 
   const isImage = attachment.contentType.startsWith('image/')
   const isPdf = attachment.contentType === 'application/pdf'
@@ -31,7 +42,9 @@ export function AttachmentPreview({ emailId, attachment }: AttachmentPreviewProp
   }
 
   const handleDownload = () => {
-    window.open(downloadUrl, '_blank')
+    if (downloadUrl) {
+      window.open(downloadUrl, '_blank')
+    }
   }
 
   return (

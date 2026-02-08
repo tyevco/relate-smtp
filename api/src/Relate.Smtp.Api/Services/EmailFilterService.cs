@@ -35,7 +35,7 @@ public class EmailFilterService
 
         foreach (var filter in filters)
         {
-            if (await EmailMatchesFilterAsync(email, filter))
+            if (EmailMatchesFilter(email, filter))
             {
                 await ApplyFilterActionsAsync(email, userId, filter, cancellationToken);
 
@@ -51,7 +51,11 @@ public class EmailFilterService
         }
     }
 
-    private async Task<bool> EmailMatchesFilterAsync(Email email, EmailFilter filter)
+    /// <summary>
+    /// Check if an email matches a filter's conditions.
+    /// This is a synchronous operation since all conditions are evaluated in memory.
+    /// </summary>
+    public bool EmailMatchesFilter(Email email, EmailFilter filter)
     {
         // Check FromAddress condition
         if (!string.IsNullOrEmpty(filter.FromAddressContains))

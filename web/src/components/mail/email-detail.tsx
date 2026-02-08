@@ -7,18 +7,23 @@ import { AttachmentPreview } from './attachment-preview'
 import { ExportDialog } from './export-dialog'
 import type { EmailDetail as EmailDetailType } from '@/api/types'
 
+// Allowed tags for email HTML content sanitization
+const EMAIL_ALLOWED_TAGS = [
+  'p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'img',
+  'table', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'div', 'span',
+  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
+  'hr', 'sub', 'sup', 'small', 'mark', 'del', 'ins', 'address',
+]
+
+// Allowed attributes for email HTML content sanitization
+const EMAIL_ALLOWED_ATTRS = ['href', 'src', 'alt', 'class', 'style', 'target', 'rel', 'width', 'height']
+
 function sanitizeHtml(html: string | null | undefined): string {
   if (!html) return ''
   return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'img',
-      'table', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'div', 'span',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
-      'hr', 'sub', 'sup', 'small', 'mark', 'del', 'ins', 'address',
-    ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'style', 'target', 'rel', 'width', 'height'],
+    ALLOWED_TAGS: EMAIL_ALLOWED_TAGS,
+    ALLOWED_ATTR: EMAIL_ALLOWED_ATTRS,
     ALLOW_DATA_ATTR: false,
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
   })
 }
 

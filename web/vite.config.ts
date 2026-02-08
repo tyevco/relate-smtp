@@ -33,8 +33,13 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           // In development, use NODE_TLS_REJECT_UNAUTHORIZED=0 if using self-signed certs
           configure: (proxy, _options) => {
-            proxy.on('error', (err, _req, _res) => {
+            proxy.on('error', (err, _req, res) => {
               console.log('❌ Proxy error:', err.message);
+              // Return a proper error response instead of hanging
+              if (res && !res.headersSent) {
+                res.writeHead(502, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Proxy error', message: err.message }));
+              }
             });
             proxy.on('proxyReq', (proxyReq, req, _res) => {
               console.log('→ Proxying:', req.method, req.url, '→', proxyReq.path);

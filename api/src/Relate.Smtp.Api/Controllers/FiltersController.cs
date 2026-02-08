@@ -154,7 +154,7 @@ public class FiltersController : ControllerBase
         var matchedEmailIds = new List<string>();
         foreach (var email in emails)
         {
-            if (await EmailMatchesFilterAsync(email, filter))
+            if (EmailMatchesFilter(email, filter))
             {
                 matchedEmailIds.Add(email.Id.ToString());
             }
@@ -163,44 +163,9 @@ public class FiltersController : ControllerBase
         return Ok(new FilterTestResult(matchedEmailIds.Count, matchedEmailIds));
     }
 
-    private async Task<bool> EmailMatchesFilterAsync(Email email, EmailFilter filter)
+    private bool EmailMatchesFilter(Email email, EmailFilter filter)
     {
-        if (!string.IsNullOrEmpty(filter.FromAddressContains))
-        {
-            if (!email.FromAddress.Contains(filter.FromAddressContains, StringComparison.OrdinalIgnoreCase) &&
-                (email.FromDisplayName == null || !email.FromDisplayName.Contains(filter.FromAddressContains, StringComparison.OrdinalIgnoreCase)))
-            {
-                return false;
-            }
-        }
-
-        if (!string.IsNullOrEmpty(filter.SubjectContains))
-        {
-            if (email.Subject == null || !email.Subject.Contains(filter.SubjectContains, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-        }
-
-        if (!string.IsNullOrEmpty(filter.BodyContains))
-        {
-            var bodyText = email.TextBody ?? email.HtmlBody ?? string.Empty;
-            if (!bodyText.Contains(filter.BodyContains, StringComparison.OrdinalIgnoreCase))
-            {
-                return false;
-            }
-        }
-
-        if (filter.HasAttachments.HasValue)
-        {
-            var hasAttachments = email.Attachments.Any();
-            if (hasAttachments != filter.HasAttachments.Value)
-            {
-                return false;
-            }
-        }
-
-        return await Task.FromResult(true);
+        return _filterService.EmailMatchesFilter(email, filter);
     }
 }
 

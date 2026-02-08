@@ -21,7 +21,14 @@ export default defineConfig({
   envPrefix: ['VITE_', 'TAURI_'],
   build: {
     // Tauri uses Chromium on Windows and WebKit on macOS and Linux
-    target: process.env.TAURI_ENV_PLATFORM === 'windows' ? 'chrome105' : 'safari13',
+    target: (() => {
+      const platform = process.env.TAURI_ENV_PLATFORM
+      if (!platform || !['windows', 'macos', 'linux'].includes(platform)) {
+        // Default to safari13 for broader compatibility when platform unknown
+        return 'safari13'
+      }
+      return platform === 'windows' ? 'chrome105' : 'safari13'
+    })(),
     // Don't minify for debug builds
     minify: !process.env.TAURI_ENV_DEBUG ? 'esbuild' : false,
     // Produce sourcemaps for debug builds

@@ -77,7 +77,6 @@ export function useSignalR(serverUrl: string | null, apiKey: string | null) {
           setIsConnected(false)
         })
       } catch (error) {
-        console.error('SignalR connection failed:', error)
         setIsConnected(false)
         if (!isCancelled) {
           setConnectionError(error instanceof Error ? error : new Error(String(error)))

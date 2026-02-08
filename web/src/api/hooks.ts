@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { api } from './client'
+import { DEFAULT_PAGE_SIZE } from '@relate/shared/lib/constants'
 import type { EmailListResponse, EmailDetail, Profile, EmailAddress, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey, Label, CreateLabelRequest, UpdateLabelRequest, EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest, UserPreference, UpdateUserPreferenceRequest } from './types'
 
 // Email hooks
-export function useEmails(page = 1, pageSize = 20) {
+export function useEmails(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   return useQuery({
     queryKey: ['emails', page, pageSize],
     queryFn: () => api.get<EmailListResponse>(`/emails?page=${page}&pageSize=${pageSize}`),
@@ -21,7 +22,7 @@ export interface EmailSearchFilters {
 export function useSearchEmails(
   filters: EmailSearchFilters,
   page = 1,
-  pageSize = 20
+  pageSize = DEFAULT_PAGE_SIZE
 ) {
   const params = new URLSearchParams()
   params.set('page', page.toString())
@@ -252,7 +253,7 @@ export function useRemoveLabelFromEmail() {
   })
 }
 
-export function useEmailsByLabel(labelId: string, page = 1, pageSize = 20) {
+export function useEmailsByLabel(labelId: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   return useQuery({
     queryKey: ['emails', 'label', labelId, page, pageSize],
     queryFn: () => api.get<EmailListResponse>(`/labels/${labelId}/emails?page=${page}&pageSize=${pageSize}`),
@@ -345,7 +346,7 @@ export function useUpdatePreferences() {
 }
 
 // Infinite scroll hook
-export function useInfiniteEmails(pageSize = 20) {
+export function useInfiniteEmails(pageSize = DEFAULT_PAGE_SIZE) {
   return useInfiniteQuery({
     queryKey: ['emails', 'infinite', pageSize],
     queryFn: ({ pageParam = 1 }) =>
@@ -399,7 +400,7 @@ export function useThread(threadId: string) {
 }
 
 // Sent mail hooks
-export function useSentEmails(fromAddress?: string, page = 1, pageSize = 20) {
+export function useSentEmails(fromAddress?: string, page = 1, pageSize = DEFAULT_PAGE_SIZE) {
   const params = new URLSearchParams()
   params.set('page', page.toString())
   params.set('pageSize', pageSize.toString())

@@ -32,7 +32,6 @@ export async function connect(serverUrl: string, apiKey: string): Promise<void> 
     .build()
 
   await connection.start()
-  console.log('SignalR connected to', hubUrl)
 }
 
 /**
@@ -42,8 +41,8 @@ export async function disconnect(): Promise<void> {
   if (connection) {
     try {
       await connection.stop()
-    } catch (error) {
-      console.error('Error disconnecting SignalR:', error)
+    } catch {
+      // Ignore disconnect errors
     }
     connection = null
   }
