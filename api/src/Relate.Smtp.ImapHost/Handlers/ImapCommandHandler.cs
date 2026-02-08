@@ -77,9 +77,9 @@ public class ImapCommandHandler
         {
             _logger.LogDebug("Client disconnected unexpectedly (broken pipe): {ConnectionId}", session.ConnectionId);
         }
-        #pragma warning disable CA1031 // Do not catch general exception types - Protocol handler must not crash on any exception
+#pragma warning disable CA1031 // Do not catch general exception types - Protocol handler must not crash on any exception
         catch (Exception ex)
-        #pragma warning restore CA1031
+#pragma warning restore CA1031
         {
             _logger.LogError(ex, "Session error: {ConnectionId}", session.ConnectionId);
         }
@@ -90,9 +90,9 @@ public class ImapCommandHandler
             {
                 await writer.FlushAsync(ct);
             }
-            #pragma warning disable CA1031 // Do not catch general exception types - Flush errors during cleanup are expected
+#pragma warning disable CA1031 // Do not catch general exception types - Flush errors during cleanup are expected
             catch
-            #pragma warning restore CA1031
+#pragma warning restore CA1031
             {
                 // Ignore flush errors during cleanup
             }
@@ -148,9 +148,9 @@ public class ImapCommandHandler
                     break;
             }
         }
-        #pragma warning disable CA1031 // Do not catch general exception types - Command handler must return error response
+#pragma warning disable CA1031 // Do not catch general exception types - Command handler must return error response
         catch (Exception ex)
-        #pragma warning restore CA1031
+#pragma warning restore CA1031
         {
             activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
             activity?.AddTag("exception.type", ex.GetType().FullName);

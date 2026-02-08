@@ -131,9 +131,9 @@ public class EmailFilterService
 
                 await _emailLabelRepository.AddAsync(emailLabel, cancellationToken);
             }
-            #pragma warning disable CA1031 // Do not catch general exception types - Label assignment may fail due to various DB errors
+#pragma warning disable CA1031 // Do not catch general exception types - Label assignment may fail due to various DB errors
             catch (Exception ex)
-            #pragma warning restore CA1031
+#pragma warning restore CA1031
             {
                 // Label might already be assigned, log and continue
                 _logger.LogDebug(ex, "Failed to assign label to email (may already exist)");

@@ -176,9 +176,9 @@ public class ImapMessageManager
 
     private string BuildRfc822Message(Email email)
     {
-        #pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
+#pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
         var message = new MimeMessage();
-        #pragma warning restore CA2000
+#pragma warning restore CA2000
         message.From.Add(new MailboxAddress(email.FromDisplayName, email.FromAddress));
 
         foreach (var recipient in email.Recipients)

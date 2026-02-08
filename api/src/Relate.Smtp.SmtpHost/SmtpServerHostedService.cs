@@ -77,15 +77,15 @@ public class SmtpServerHostedService : BackgroundService
         // Subscribe to session events for connection metrics (if metrics are available)
         _smtpServer.SessionCreated += (_, _) =>
         {
-            #pragma warning disable CA1031 // Metrics are best-effort, failures should not crash the server
+#pragma warning disable CA1031 // Metrics are best-effort, failures should not crash the server
             try { ProtocolMetrics.SmtpActiveConnections.Add(1); } catch { /* ignore */ }
-            #pragma warning restore CA1031
+#pragma warning restore CA1031
         };
         _smtpServer.SessionCompleted += (_, _) =>
         {
-            #pragma warning disable CA1031 // Metrics are best-effort, failures should not crash the server
+#pragma warning disable CA1031 // Metrics are best-effort, failures should not crash the server
             try { ProtocolMetrics.SmtpActiveConnections.Add(-1); } catch { /* ignore */ }
-            #pragma warning restore CA1031
+#pragma warning restore CA1031
         };
 
         _logger.LogInformation("Starting SMTP server on port {Port} (plain) and {SecurePort} (TLS)",

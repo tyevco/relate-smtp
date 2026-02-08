@@ -128,9 +128,9 @@ public sealed class BackgroundTaskQueueHostedService : BackgroundService
             var repository = scope.ServiceProvider.GetRequiredService<ISmtpApiKeyRepository>();
             await repository.UpdateLastUsedAsync(update.KeyId, update.Timestamp, ct);
         }
-        #pragma warning disable CA1031 // Do not catch general exception types - Intentionally catching all exceptions to prevent background task crashes
+#pragma warning disable CA1031 // Do not catch general exception types - Intentionally catching all exceptions to prevent background task crashes
         catch (Exception ex)
-        #pragma warning restore CA1031
+#pragma warning restore CA1031
         {
             _logger.LogError(ex, "Failed to update LastUsedAt for API key {KeyId}", update.KeyId);
         }

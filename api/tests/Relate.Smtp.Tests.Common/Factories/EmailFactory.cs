@@ -144,9 +144,9 @@ public class EmailFactory
         if (content == null)
         {
             content = new byte[1024]; // 1KB dummy content
-            #pragma warning disable CA5394 // Do not use insecure randomness - test data only
+#pragma warning disable CA5394 // Do not use insecure randomness - test data only
             new Random().NextBytes(content);
-            #pragma warning restore CA5394
+#pragma warning restore CA5394
         }
 
         email.Attachments.Add(new EmailAttachment

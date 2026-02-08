@@ -219,9 +219,9 @@ public class EmailsController : ControllerBase
         }
 
         // Reconstruct MIME message
-        #pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
+#pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
         var message = new MimeMessage();
-        #pragma warning restore CA2000
+#pragma warning restore CA2000
         message.MessageId = email.MessageId;
         message.From.Add(new MailboxAddress(email.FromDisplayName, email.FromAddress));
 
@@ -293,9 +293,9 @@ public class EmailsController : ControllerBase
             await writer.WriteLineAsync(fromLine);
 
             // Reconstruct MIME message
-            #pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
+#pragma warning disable CA2000 // Dispose objects before losing scope - MimeMessage doesn't implement IDisposable
             var message = new MimeMessage();
-            #pragma warning restore CA2000
+#pragma warning restore CA2000
             message.MessageId = email.MessageId;
             message.From.Add(new MailboxAddress(email.FromDisplayName, email.FromAddress));
 

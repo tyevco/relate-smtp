@@ -78,9 +78,9 @@ public class Pop3ServerHostedService : BackgroundService
                     {
                         await HandleClientAsync(client, useSsl, ct);
                     }
-                    #pragma warning disable CA1031 // Do not catch general exception types - Client handler must not crash server
+#pragma warning disable CA1031 // Do not catch general exception types - Client handler must not crash server
                     catch (Exception ex)
-                    #pragma warning restore CA1031
+#pragma warning restore CA1031
                     {
                         _logger.LogError(ex, "Unhandled exception in client handler for {Endpoint}", endpoint);
                     }
@@ -90,9 +90,9 @@ public class Pop3ServerHostedService : BackgroundService
             {
                 break;
             }
-            #pragma warning disable CA1031 // Do not catch general exception types - Accept loop must continue on errors
+#pragma warning disable CA1031 // Do not catch general exception types - Accept loop must continue on errors
             catch (Exception ex)
-            #pragma warning restore CA1031
+#pragma warning restore CA1031
             {
                 _logger.LogError(ex, "Error accepting connection");
             }
@@ -118,13 +118,13 @@ public class Pop3ServerHostedService : BackgroundService
                 sslStream = new SslStream(stream, leaveInnerStreamOpen: false);
                 cert = LoadCertificate(_options.Value.CertificatePath!,
                                        _options.Value.CertificatePassword);
-                #pragma warning disable CA5398 // Avoid hardcoding SslProtocols - TLS 1.2+ is required for email security
+#pragma warning disable CA5398 // Avoid hardcoding SslProtocols - TLS 1.2+ is required for email security
                 await sslStream.AuthenticateAsServerAsync(
                     cert,
                     clientCertificateRequired: false,
                     enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls13,
                     checkCertificateRevocation: false);
-                #pragma warning restore CA5398
+#pragma warning restore CA5398
                 stream = sslStream;
                 _logger.LogDebug("SSL/TLS handshake completed");
             }
@@ -139,9 +139,9 @@ public class Pop3ServerHostedService : BackgroundService
         {
             _logger.LogDebug("Client disconnected before greeting (broken pipe)");
         }
-        #pragma warning disable CA1031 // Do not catch general exception types - Protocol handler must gracefully handle all errors
+#pragma warning disable CA1031 // Do not catch general exception types - Protocol handler must gracefully handle all errors
         catch (Exception ex)
-        #pragma warning restore CA1031
+#pragma warning restore CA1031
         {
             _logger.LogError(ex, "Client handler error");
         }

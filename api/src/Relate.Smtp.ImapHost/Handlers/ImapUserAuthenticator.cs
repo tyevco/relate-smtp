@@ -134,12 +134,12 @@ public class ImapUserAuthenticator
         _authCache.Set(cacheKey, entry, options);
     }
 
-    #pragma warning disable CA1852 // Type can be sealed - Records are implicitly sealed
+#pragma warning disable CA1852 // Type can be sealed - Records are implicitly sealed
     private record CacheEntry
     {
         public bool IsAuthenticated { get; init; }
         public Guid? UserId { get; init; }
         public Guid KeyId { get; init; }
     }
-    #pragma warning restore CA1852
+#pragma warning restore CA1852
 }
