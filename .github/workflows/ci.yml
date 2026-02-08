@@ -20,6 +20,7 @@ jobs:
       mobile: ${{ steps.filter.outputs.mobile }}
       desktop: ${{ steps.filter.outputs.desktop }}
       docker: ${{ steps.filter.outputs.docker }}
+      shared: ${{ steps.filter.outputs.shared }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,6 +42,8 @@ jobs:
               - 'api/**'
               - 'web/**'
               - 'docker/**'
+            shared:
+              - 'packages/shared/**'
 
   # Secret scanning with TruffleHog
   secret-scan:
@@ -81,6 +84,9 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore --configuration Release
+
+      - name: Verify formatting
+        run: dotnet format --verify-no-changes --verbosity diagnostic
 
   # Unit tests (fast, no external dependencies)
   unit-tests:
@@ -215,6 +221,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Lint shared package
+        run: npm run lint -w @relate/shared
+
+      - name: Type check shared package
+        run: npm run typecheck -w @relate/shared
 
       - name: Run ESLint
         run: npm run lint -w web
@@ -392,6 +404,31 @@ jobs:
 
       - name: Type check
         run: npx tsc --noEmit -p desktop/tsconfig.json
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('desktop/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-clippy-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev libayatana-appindicator3-dev
+
+      - name: Run Clippy
+        working-directory: desktop/src-tauri
+        run: cargo clippy --all-targets -- -D warnings
 
   # Docker build validation (no push)
   docker-validate:

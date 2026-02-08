@@ -22,7 +22,8 @@ export type {
   UpdateUserPreferenceRequest,
 } from './api/types'
 
-// UI Components - export with explicit names to avoid conflicts
+// UI Components - explicit re-exports to avoid name conflicts with api/types
+// Consumers should prefer subpath imports: @relate/shared/components/ui
 export {
   Badge,
   badgeVariants,
@@ -59,6 +60,7 @@ export {
 export type { BadgeProps, ButtonProps, InputProps, LabelProps, SwitchProps } from './components/ui'
 
 // Mail Components - export with renamed EmailDetail to avoid conflict
+// Consumers should prefer subpath imports: @relate/shared/components/mail
 export { EmailList, SearchBar, LabelBadge } from './components/mail'
 export { EmailDetail as EmailDetailComponent, EmailDetailView } from './components/mail'
 

@@ -21,7 +21,7 @@ export function useTheme() {
       // Use user preference
       root.classList.add(theme)
     }
-  }, [preferences?.theme])
+  }, [preferences, preferences?.theme])
 
   return preferences
 }

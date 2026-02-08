@@ -365,7 +365,7 @@ export function useBulkMarkRead() {
 
   return useMutation({
     mutationFn: ({ emailIds, isRead }: { emailIds: string[]; isRead: boolean }) =>
-      api.post<void>('/emails/bulk/mark-read', { emailIds, isRead }),
+      api.post<undefined>('/emails/bulk/mark-read', { emailIds, isRead }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
@@ -380,7 +380,7 @@ export function useBulkDelete() {
 
   return useMutation({
     mutationFn: (emailIds: string[]) =>
-      api.post<void>('/emails/bulk/delete', { emailIds }),
+      api.post<undefined>('/emails/bulk/delete', { emailIds }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },

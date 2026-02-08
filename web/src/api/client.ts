@@ -99,7 +99,7 @@ export const api = {
       body: JSON.stringify(data),
     }),
   delete: (endpoint: string) =>
-    apiRequest<void>(endpoint, {
+    apiRequest<undefined>(endpoint, {
       method: 'DELETE',
     }),
 }

@@ -1,5 +1,4 @@
-import { AuthProvider as OidcAuthProvider } from 'react-oidc-context';
-import type { AuthProviderProps } from 'react-oidc-context';
+import { AuthProvider as OidcAuthProvider, type AuthProviderProps } from 'react-oidc-context';
 import { WebStorageStateStore } from 'oidc-client-ts';
 import { getConfig } from '../config';
 

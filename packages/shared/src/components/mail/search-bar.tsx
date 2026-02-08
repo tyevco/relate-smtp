@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Input } from '../ui/input'
 import { Button } from '../ui/button'
 import { Search, X } from 'lucide-react'
