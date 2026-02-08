@@ -63,8 +63,9 @@
 		<!-- Install dependencies if node_modules doesn't exist -->
 		<Exec Command="npm install" WorkingDirectory="$(ClientAppDir)" Condition="!Exists('$(ClientAppDir)\node_modules')" />
 
-		<!-- Build the client app -->
-		<Exec Command="npm run build" WorkingDirectory="$(ClientAppDir)" />
+		<!-- Build the client app if dist doesn't exist (allows pre-built dist from Docker multi-stage) -->
+		<Exec Command="npm run build" WorkingDirectory="$(ClientAppDir)" Condition="!Exists('$(ClientAppBuildDir)\index.html')" />
+		<Message Importance="high" Text="Using pre-built client app from $(ClientAppBuildDir)" Condition="Exists('$(ClientAppBuildDir)\index.html')" />
 	</Target>
 
 	<Target Name="PrepareFiles">
