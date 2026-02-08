@@ -78,6 +78,7 @@ function SmtpSettingsPage() {
         copyTimeoutRef.current = setTimeout(() => setCopiedKey(false), 2000)
       } catch {
         // Fallback for browsers without clipboard API or when permission denied
+        // eslint-disable-next-line no-alert -- clipboard fallback needs native dialog
         alert('Failed to copy to clipboard. Please copy the key manually.')
       }
     }
@@ -309,7 +310,8 @@ function SmtpSettingsPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (confirm(`Revoke API key "${key.name}"? Email clients using this key will stop working.`)) {
+                        // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
+                        if (window.confirm(`Revoke API key "${key.name}"? Email clients using this key will stop working.`)) {
                           revokeKey.mutate(key.id)
                         }
                       }}

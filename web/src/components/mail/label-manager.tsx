@@ -71,7 +71,8 @@ export function LabelManager({ open, onOpenChange }: LabelManagerProps) {
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this label?')) {
+    // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
+    if (window.confirm('Are you sure you want to delete this label?')) {
       await deleteLabel.mutateAsync(id)
     }
   }

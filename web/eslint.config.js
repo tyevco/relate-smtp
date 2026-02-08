@@ -5,9 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', '.tanstack'] },
+  { ignores: ['dist', 'node_modules', '.tanstack', 'vite.config.d.ts'] },
   {
-    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    extends: [js.configs.recommended, ...tseslint.configs.strict],
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 2020,
@@ -23,20 +23,55 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // TypeScript rules - relaxed for existing codebase
-      // TODO(tech-debt): Upgrade to 'error' after fixing violations
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+
+      // --- TypeScript strict rules ---
+      '@typescript-eslint/no-unused-vars': ['error', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+      }],
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-empty-object-type': 'off',
-      // React hooks rules - set to 'warn' due to existing violations
-      // These are important for correctness but require careful refactoring
-      // TODO(tech-debt): Upgrade to 'error' after fixing hook dependency issues
-      // See: https://react.dev/reference/rules/rules-of-hooks
-      'react-hooks/exhaustive-deps': 'warn',
-      'react-hooks/rules-of-hooks': 'error', // This one should always be error
-      // setState in effect patterns need refactoring to derived state or useMemo
-      // TODO(tech-debt): Refactor to avoid setState in useEffect
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+      '@typescript-eslint/consistent-type-imports': ['warn', {
+        prefer: 'type-imports',
+        fixStyle: 'inline-type-imports',
+      }],
+
+      // --- React hooks ---
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
       'react-hooks/set-state-in-effect': 'warn',
+
+      // --- Security rules ---
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'no-script-url': 'error',
+
+      // --- Bug prevention ---
+      'eqeqeq': ['error', 'always'],
+      'no-constructor-return': 'error',
+      'no-promise-executor-return': 'error',
+      'no-self-compare': 'error',
+      'no-template-curly-in-string': 'warn',
+      'no-unreachable-loop': 'error',
+      'no-duplicate-imports': 'error',
+
+      // --- Code quality ---
+      'no-debugger': 'error',
+      'no-alert': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'no-return-assign': 'error',
+    },
+  },
+  // Config files can use console.log for build/dev tooling output
+  {
+    files: ['*.config.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 );

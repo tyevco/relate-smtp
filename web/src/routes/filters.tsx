@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-react'
-import type { EmailFilter } from '@/api/types'
+import type { EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest } from '@/api/types'
 
 export const Route = createFileRoute('/filters')({
   component: FiltersPage,
@@ -28,19 +28,20 @@ function FiltersPage() {
   const [editingFilter, setEditingFilter] = useState<EmailFilter | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
-  const handleCreate = async (data: any) => {
-    await createFilter.mutateAsync(data)
+  const handleCreate = async (data: CreateEmailFilterRequest | UpdateEmailFilterRequest) => {
+    await createFilter.mutateAsync(data as CreateEmailFilterRequest)
     setIsCreating(false)
   }
 
-  const handleUpdate = async (data: any) => {
+  const handleUpdate = async (data: CreateEmailFilterRequest | UpdateEmailFilterRequest) => {
     if (!editingFilter) return
-    await updateFilter.mutateAsync({ id: editingFilter.id, data })
+    await updateFilter.mutateAsync({ id: editingFilter.id, data: data as UpdateEmailFilterRequest })
     setEditingFilter(null)
   }
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this filter?')) {
+    // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
+    if (window.confirm('Are you sure you want to delete this filter?')) {
       await deleteFilter.mutateAsync(id)
     }
   }

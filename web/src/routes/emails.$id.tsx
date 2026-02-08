@@ -1,8 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEmail } from '../api/hooks'
 import { EmailDetail } from '../components/mail/email-detail'
 import { ArrowLeft } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/emails/$id')({
   component: EmailDetailPage,

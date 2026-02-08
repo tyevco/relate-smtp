@@ -4,7 +4,7 @@ const MAX_RETRIES = 3
 const BASE_DELAY_MS = 1000
 
 async function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise(resolve => { setTimeout(resolve, ms) })
 }
 
 async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {

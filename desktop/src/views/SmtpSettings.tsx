@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useSmtpCredentials, useCreateSmtpApiKey, useRevokeSmtpApiKey } from '../api/hooks'
-import { Button } from '@relate/shared/components/ui'
-import { Input } from '@relate/shared/components/ui'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@relate/shared/components/ui'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@relate/shared/components/ui'
+import {
+  Button,
+  Input,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
+} from '@relate/shared/components/ui'
 import { Trash2, Plus, Copy, Check, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -268,7 +270,8 @@ export function SmtpSettings() {
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        if (confirm(`Revoke API key "${key.name}"? Email clients using this key will stop working.`)) {
+                        // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
+                        if (window.confirm(`Revoke API key "${key.name}"? Email clients using this key will stop working.`)) {
                           revokeKey.mutate(key.id)
                         }
                       }}
