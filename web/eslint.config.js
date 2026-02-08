@@ -23,12 +23,19 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // Relax rules for existing codebase - TODO: upgrade to error after fixing violations
+      // TypeScript rules - relaxed for existing codebase
+      // TODO(tech-debt): Upgrade to 'error' after fixing violations
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-empty-object-type': 'off',
-      // React hooks rules - warning until existing violations are fixed
+      // React hooks rules - set to 'warn' due to existing violations
+      // These are important for correctness but require careful refactoring
+      // TODO(tech-debt): Upgrade to 'error' after fixing hook dependency issues
+      // See: https://react.dev/reference/rules/rules-of-hooks
       'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/rules-of-hooks': 'error', // This one should always be error
+      // setState in effect patterns need refactoring to derived state or useMemo
+      // TODO(tech-debt): Refactor to avoid setState in useEffect
       'react-hooks/set-state-in-effect': 'warn',
     },
   },

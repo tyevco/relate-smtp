@@ -43,6 +43,12 @@ public static class ImapResponse
         $"* OK {message}";
 
     /// <summary>
+    /// Untagged BAD response (protocol error when no tag available)
+    /// </summary>
+    public static string UntaggedBad(string message) =>
+        $"* BAD {message}";
+
+    /// <summary>
     /// Untagged data response
     /// </summary>
     public static string Untagged(string data) =>

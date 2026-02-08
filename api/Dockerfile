@@ -1,13 +1,20 @@
 # syntax=docker/dockerfile:1
-# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+
+# Node.js build stage for web frontend
+FROM node:22-bookworm-slim AS node-build
 WORKDIR /src
 
-# Install Node.js for web frontend build
-RUN apt-get update && apt-get install -y curl && \
-    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
+# Copy web frontend sources
+COPY web web/
+COPY packages packages/
+COPY package.json package-lock.json ./
+
+# Build web frontend
+RUN npm ci && npm run build:web
+
+# .NET build stage
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
 
 # Copy csproj files and restore
 COPY api/src/Relate.Smtp.Core/Relate.Smtp.Core.csproj api/src/Relate.Smtp.Core/
@@ -21,14 +28,11 @@ RUN dotnet restore api/src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj
 RUN dotnet restore api/src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj
 RUN dotnet restore api/src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj
 
-# Copy backend and web sources
+# Copy backend sources
 COPY api api/
-COPY web web/
-COPY packages packages/
-COPY package.json package-lock.json ./
 
-# Build web frontend from monorepo root
-RUN npm ci && npm run build:web
+# Copy web build output from node-build stage
+COPY --from=node-build /src/web/dist /src/web/dist
 
 # Build backend (API publish will copy web/dist to wwwroot)
 WORKDIR /src/api
@@ -40,7 +44,14 @@ RUN dotnet publish src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj -c Relea
 # API runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
 WORKDIR /app
+
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser
+
 COPY --from=build /app/api .
+
+# Switch to non-root user
+USER appuser
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail API"
@@ -55,7 +66,14 @@ ENTRYPOINT ["dotnet", "Relate.Smtp.Api.dll"]
 # SMTP runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS smtp
 WORKDIR /app
+
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser
+
 COPY --from=build /app/smtp .
+
+# Switch to non-root user
+USER appuser
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail SMTP Server"
@@ -69,7 +87,14 @@ ENTRYPOINT ["dotnet", "Relate.Smtp.SmtpHost.dll"]
 # POP3 runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS pop3
 WORKDIR /app
+
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser
+
 COPY --from=build /app/pop3 .
+
+# Switch to non-root user
+USER appuser
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail POP3 Server"
@@ -83,7 +108,14 @@ ENTRYPOINT ["dotnet", "Relate.Smtp.Pop3Host.dll"]
 # IMAP runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS imap
 WORKDIR /app
+
+# Create non-root user for security
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser
+
 COPY --from=build /app/imap .
+
+# Switch to non-root user
+USER appuser
 
 # OCI Labels
 LABEL org.opencontainers.image.title="Relate Mail IMAP Server"

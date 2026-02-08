@@ -1,12 +1,28 @@
 namespace Relate.Smtp.ImapHost.Protocol;
 
 /// <summary>
+/// Exception thrown when IMAP command parsing fails.
+/// </summary>
+public class ImapParseException : Exception
+{
+    public ImapParseException(string message) : base(message) { }
+}
+
+/// <summary>
 /// Represents a parsed IMAP command with tag and arguments.
 /// IMAP commands have format: tag command [arguments]
 /// Example: A001 LOGIN user@example.com password
 /// </summary>
 public record ImapCommand
 {
+    /// <summary>Maximum length of an IMAP command line (RFC 9051 recommends 8192)</summary>
+    public const int MaxCommandLineLength = 8192;
+
+    /// <summary>Maximum number of arguments in a single command</summary>
+    public const int MaxArgumentCount = 100;
+
+    /// <summary>Maximum number of parts in a sequence set (e.g., 1,2,3,4:10)</summary>
+    public const int MaxSequenceSetParts = 500;
     /// <summary>
     /// Command tag for correlating responses (e.g., "A001")
     /// </summary>
@@ -31,11 +47,18 @@ public record ImapCommand
     /// Parse an IMAP command line into structured command.
     /// Handles quoted strings and literal+ syntax basics.
     /// </summary>
+    /// <exception cref="ImapParseException">Thrown when command line exceeds limits or is malformed.</exception>
     public static ImapCommand Parse(string line)
     {
         if (string.IsNullOrWhiteSpace(line))
         {
             return new ImapCommand { Tag = "*", Name = "NOOP" };
+        }
+
+        // Validate command line length to prevent DoS attacks
+        if (line.Length > MaxCommandLineLength)
+        {
+            throw new ImapParseException($"Command line exceeds maximum length of {MaxCommandLineLength} characters");
         }
 
         var trimmed = line.Trim();
@@ -69,6 +92,12 @@ public record ImapCommand
 
         // Parse arguments respecting quotes
         var arguments = ParseArguments(rawArgs);
+
+        // Validate argument count to prevent DoS attacks
+        if (arguments.Length > MaxArgumentCount)
+        {
+            throw new ImapParseException($"Command has too many arguments (max {MaxArgumentCount})");
+        }
 
         return new ImapCommand
         {
