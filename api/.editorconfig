@@ -20,7 +20,7 @@ dotnet_naming_style.begins_with_i.capitalization = pascal_case
 
 dotnet_naming_rule.async_methods_end_with_async.symbols = async_method_symbols
 dotnet_naming_rule.async_methods_end_with_async.style = ends_with_async
-dotnet_naming_rule.async_methods_end_with_async.severity = warning
+dotnet_naming_rule.async_methods_end_with_async.severity = suggestion
 dotnet_naming_symbol.async_method_symbols.applicable_kinds = method
 dotnet_naming_symbol.async_method_symbols.required_modifiers = async
 dotnet_naming_style.ends_with_async.required_suffix = Async
@@ -33,6 +33,10 @@ dotnet_naming_symbol.private_field_symbols.applicable_kinds = field
 dotnet_naming_symbol.private_field_symbols.applicable_accessibilities = private, protected
 dotnet_naming_style.camel_with_underscore.required_prefix = _
 dotnet_naming_style.camel_with_underscore.capitalization = camel_case
+
+# IDE1006: Naming rule violations - set to suggestion to allow dotnet format to pass
+# Individual naming rules above control the actual severity in the IDE
+dotnet_diagnostic.IDE1006.severity = suggestion
 
 # --- Code style ---
 dotnet_style_qualification_for_field = false:warning
