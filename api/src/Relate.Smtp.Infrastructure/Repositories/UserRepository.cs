@@ -33,10 +33,14 @@ public class UserRepository : IUserRepository
         var normalizedEmail = email.ToLowerInvariant();
         return await _context.Users
             .Include(u => u.AdditionalAddresses)
+            // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
+            // EF Core translates ToLower() to SQL LOWER() function
+#pragma warning disable CA1304, CA1309, CA1311, CA1862
             .FirstOrDefaultAsync(u =>
-                EF.Functions.Collate(u.Email, "NOCASE") == normalizedEmail ||
-                u.AdditionalAddresses.Any(a => EF.Functions.Collate(a.Address, "NOCASE") == normalizedEmail),
+                u.Email.ToLower() == normalizedEmail ||
+                u.AdditionalAddresses.Any(a => a.Address.ToLower() == normalizedEmail),
                 cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA1304, CA1309, CA1311, CA1862
     }
 
     public async Task<User?> GetByEmailWithApiKeysAsync(string email, CancellationToken cancellationToken = default)
@@ -44,7 +48,11 @@ public class UserRepository : IUserRepository
         var normalizedEmail = email.ToLowerInvariant();
         return await _context.Users
             .Include(u => u.SmtpApiKeys.Where(k => k.RevokedAt == null))
-            .FirstOrDefaultAsync(u => EF.Functions.Collate(u.Email, "NOCASE") == normalizedEmail, cancellationToken).ConfigureAwait(false);
+            // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
+            // EF Core translates ToLower() to SQL LOWER() function
+#pragma warning disable CA1304, CA1309, CA1311, CA1862
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken).ConfigureAwait(false);
+#pragma warning restore CA1304, CA1309, CA1311, CA1862
     }
 
     public async Task<User> AddAsync(User user, CancellationToken cancellationToken = default)
