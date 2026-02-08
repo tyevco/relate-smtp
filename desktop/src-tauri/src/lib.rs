@@ -3,6 +3,7 @@ mod commands;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+#[allow(clippy::expect_used)] // Application cannot proceed if Tauri fails to run
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -13,7 +14,7 @@ pub fn run() {
 
             // Create system tray
             if let Err(e) = commands::tray::create_tray(app.handle()) {
-                eprintln!("Failed to create tray: {}", e);
+                eprintln!("Failed to create tray: {e}");
             }
 
             // Handle window close event - minimize to tray instead of quitting

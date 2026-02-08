@@ -40,19 +40,10 @@ pub struct Account {
     pub last_used_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AccountsData {
     pub accounts: Vec<Account>,
     pub active_account_id: Option<String>,
-}
-
-impl Default for AccountsData {
-    fn default() -> Self {
-        Self {
-            accounts: Vec::new(),
-            active_account_id: None,
-        }
-    }
 }
 
 // Legacy credential structure for migration
@@ -68,7 +59,7 @@ fn get_accounts_entry() -> Result<Entry, AuthError> {
 }
 
 fn get_api_key_entry(account_id: &str) -> Result<Entry, AuthError> {
-    Entry::new(SERVICE_NAME, &format!("api_key_{}", account_id))
+    Entry::new(SERVICE_NAME, &format!("api_key_{account_id}"))
         .map_err(|e| AuthError::KeyringError(e.to_string()))
 }
 
@@ -136,11 +127,11 @@ pub async fn load_accounts(
             if let Some(api_key) = get_api_key_for_account(&account.id)? {
                 match state.server_url.write() {
                     Ok(mut guard) => *guard = Some(account.server_url.clone()),
-                    Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                    Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
                 }
                 match state.api_key.write() {
                     Ok(mut guard) => *guard = Some(api_key),
-                    Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                    Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
                 }
             }
         }
@@ -193,15 +184,18 @@ pub async fn save_account(
     save_accounts_data(&data)?;
 
     // Update AppState with the new active account
-    let active_id = data.active_account_id.as_ref().unwrap();
-    let active_account = data.accounts.iter().find(|a| &a.id == active_id).unwrap();
+    // Safe to use expect here: active_account_id is always set above in this function
+    let active_id = data.active_account_id.as_ref()
+        .ok_or_else(|| AuthError::Internal("active_account_id should be set".to_string()))?;
+    let active_account = data.accounts.iter().find(|a| &a.id == active_id)
+        .ok_or_else(|| AuthError::Internal("active account not found in list".to_string()))?;
     match state.server_url.write() {
         Ok(mut guard) => *guard = Some(active_account.server_url.clone()),
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
     match state.api_key.write() {
         Ok(mut guard) => *guard = Some(api_key),
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
 
     Ok(data)
@@ -231,11 +225,11 @@ pub async fn delete_account(
                 if let Some(api_key) = get_api_key_for_account(&account.id)? {
                     match state.server_url.write() {
                         Ok(mut guard) => *guard = Some(account.server_url.clone()),
-                        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
                     }
                     match state.api_key.write() {
                         Ok(mut guard) => *guard = Some(api_key),
-                        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
                     }
                 }
             }
@@ -243,11 +237,11 @@ pub async fn delete_account(
             // No accounts left, clear AppState
             match state.server_url.write() {
                 Ok(mut guard) => *guard = None,
-                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
             }
             match state.api_key.write() {
                 Ok(mut guard) => *guard = None,
-                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
             }
         }
     }
@@ -290,11 +284,11 @@ pub async fn set_active_account(
     // Update AppState
     match state.server_url.write() {
         Ok(mut guard) => *guard = Some(account.server_url.clone()),
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
     match state.api_key.write() {
         Ok(mut guard) => *guard = Some(api_key),
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
 
     Ok(account)
@@ -336,11 +330,11 @@ pub async fn save_credentials(
     // Update app state
     match state.server_url.write() {
         Ok(mut guard) => *guard = Some(server_url),
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
     match state.api_key.write() {
         Ok(mut guard) => *guard = Some(api_key),
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
 
     Ok(())
@@ -359,11 +353,11 @@ pub async fn load_credentials(state: State<'_, AppState>) -> Result<Option<Crede
             // Update app state
             match state.server_url.write() {
                 Ok(mut guard) => *guard = Some(credentials.server_url.clone()),
-                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
             }
             match state.api_key.write() {
                 Ok(mut guard) => *guard = Some(credentials.api_key.clone()),
-                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+                Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
             }
 
             Ok(Some(credentials))
@@ -384,11 +378,11 @@ pub async fn clear_credentials(state: State<'_, AppState>) -> Result<(), AuthErr
     // Clear app state
     match state.server_url.write() {
         Ok(mut guard) => *guard = None,
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
     match state.api_key.write() {
         Ok(mut guard) => *guard = None,
-        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {}", e))),
+        Err(e) => return Err(AuthError::Internal(format!("State lock poisoned: {e}"))),
     }
 
     Ok(())

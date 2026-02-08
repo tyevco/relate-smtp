@@ -146,7 +146,7 @@ fn urlencoding_encode(s: &str) -> String {
                 result.push(byte as char);
             }
             _ => {
-                result.push_str(&format!("%{:02X}", byte));
+                result.push_str(&format!("%{byte:02X}"));
             }
         }
     }
@@ -158,50 +158,50 @@ pub async fn discover_server(server_url: String) -> Result<ServerDiscovery, Oidc
     let client = get_client();
 
     // Fetch API discovery
-    let discovery_url = format!("{}/api/discovery", server_url);
+    let discovery_url = format!("{server_url}/api/discovery");
     let discovery_resp = client
         .get(&discovery_url)
         .send()
         .await
-        .map_err(|e| OidcError::DiscoveryFailed(format!("Failed to reach server: {}", e)))?;
+        .map_err(|e| OidcError::DiscoveryFailed(format!("Failed to reach server: {e}")))?;
 
     if !discovery_resp.status().is_success() {
+        let status = discovery_resp.status();
         return Err(OidcError::DiscoveryFailed(format!(
-            "Server returned HTTP {}",
-            discovery_resp.status()
+            "Server returned HTTP {status}"
         )));
     }
 
     let discovery: serde_json::Value = discovery_resp
         .json()
         .await
-        .map_err(|e| OidcError::DiscoveryFailed(format!("Invalid discovery response: {}", e)))?;
+        .map_err(|e| OidcError::DiscoveryFailed(format!("Invalid discovery response: {e}")))?;
 
     // Fetch OIDC config from config.json
-    let config_url = format!("{}/config/config.json", server_url);
+    let config_url = format!("{server_url}/config/config.json");
     let oidc_config = match client.get(&config_url).send().await {
         Ok(resp) if resp.status().is_success() => {
             let config: serde_json::Value = resp
                 .json()
                 .await
-                .map_err(|e| OidcError::DiscoveryFailed(format!("Invalid config response: {}", e)))?;
+                .map_err(|e| OidcError::DiscoveryFailed(format!("Invalid config response: {e}")))?;
 
             // Extract OIDC settings from config
             let authority = config
                 .get("oidcAuthority")
                 .or_else(|| config.get("oidc_authority"))
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .map(ToString::to_string);
             let client_id = config
                 .get("oidcClientId")
                 .or_else(|| config.get("oidc_client_id"))
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .map(ToString::to_string);
             let scopes = config
                 .get("oidcScopes")
                 .or_else(|| config.get("oidc_scopes"))
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .map(ToString::to_string);
 
             match (authority, client_id) {
                 (Some(authority), Some(client_id)) if !authority.is_empty() => {
@@ -232,20 +232,18 @@ pub async fn start_oidc_auth(
     let client = get_client();
 
     // Fetch OpenID Configuration
-    let openid_config_url = format!(
-        "{}/.well-known/openid-configuration",
-        authority.trim_end_matches('/')
-    );
+    let trimmed_authority = authority.trim_end_matches('/');
+    let openid_config_url = format!("{trimmed_authority}/.well-known/openid-configuration");
     let openid_resp = client
         .get(&openid_config_url)
         .send()
         .await
-        .map_err(|e| OidcError::DiscoveryFailed(format!("Failed to fetch OIDC config: {}", e)))?;
+        .map_err(|e| OidcError::DiscoveryFailed(format!("Failed to fetch OIDC config: {e}")))?;
 
     let openid_config: OpenIdConfiguration = openid_resp
         .json()
         .await
-        .map_err(|e| OidcError::DiscoveryFailed(format!("Invalid OIDC config: {}", e)))?;
+        .map_err(|e| OidcError::DiscoveryFailed(format!("Invalid OIDC config: {e}")))?;
 
     // Generate PKCE parameters
     let code_verifier = generate_code_verifier();
@@ -254,24 +252,25 @@ pub async fn start_oidc_auth(
 
     // Bind to fixed port only - fail loudly if unavailable
     // Using a random port would break OIDC flows that require pre-registered redirect URIs
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", CALLBACK_PORT))
+    let listener = TcpListener::bind(format!("127.0.0.1:{CALLBACK_PORT}"))
         .await
         .map_err(|e| OidcError::AuthFailed(
-            format!("Port {} unavailable. Close other apps using this port. Error: {}", CALLBACK_PORT, e)
+            format!("Port {CALLBACK_PORT} unavailable. Close other apps using this port. Error: {e}")
         ))?;
 
     let local_addr = listener
         .local_addr()
-        .map_err(|e| OidcError::AuthFailed(format!("Failed to get listener address: {}", e)))?;
+        .map_err(|e| OidcError::AuthFailed(format!("Failed to get listener address: {e}")))?;
 
     // Verify we got the expected port (defensive check)
-    if local_addr.port() != CALLBACK_PORT {
+    let port = local_addr.port();
+    if port != CALLBACK_PORT {
         return Err(OidcError::AuthFailed(
-            format!("Expected port {} but got {}", CALLBACK_PORT, local_addr.port())
+            format!("Expected port {CALLBACK_PORT} but got {port}")
         ));
     }
 
-    let actual_redirect_uri = format!("http://127.0.0.1:{}/auth/callback", local_addr.port());
+    let actual_redirect_uri = format!("http://127.0.0.1:{port}/auth/callback");
 
     // Build authorization URL
     let scope = scopes.unwrap_or_else(|| "openid profile email".to_string());
@@ -287,7 +286,7 @@ pub async fn start_oidc_auth(
 
     // Open browser
     open::that(&auth_url)
-        .map_err(|e| OidcError::AuthFailed(format!("Failed to open browser: {}", e)))?;
+        .map_err(|e| OidcError::AuthFailed(format!("Failed to open browser: {e}")))?;
 
     // Wait for callback with timeout
     let (code, received_state) = tokio::time::timeout(
@@ -296,7 +295,7 @@ pub async fn start_oidc_auth(
     )
     .await
     .map_err(|_| OidcError::Timeout)?
-    .map_err(|e| OidcError::AuthFailed(e))?;
+    .map_err(OidcError::AuthFailed)?;
 
     // Validate state
     if received_state != state {
@@ -317,21 +316,20 @@ pub async fn start_oidc_auth(
         .form(&token_params)
         .send()
         .await
-        .map_err(|e| OidcError::TokenExchangeFailed(format!("Token request failed: {}", e)))?;
+        .map_err(|e| OidcError::TokenExchangeFailed(format!("Token request failed: {e}")))?;
 
     if !token_resp.status().is_success() {
         let status = token_resp.status();
         let body = token_resp.text().await.unwrap_or_default();
         return Err(OidcError::TokenExchangeFailed(format!(
-            "Token endpoint returned HTTP {}: {}",
-            status, body
+            "Token endpoint returned HTTP {status}: {body}"
         )));
     }
 
     let tokens: TokenResponse = token_resp
         .json()
         .await
-        .map_err(|e| OidcError::TokenExchangeFailed(format!("Invalid token response: {}", e)))?;
+        .map_err(|e| OidcError::TokenExchangeFailed(format!("Invalid token response: {e}")))?;
 
     Ok(tokens)
 }
@@ -340,13 +338,13 @@ async fn wait_for_callback(listener: &TcpListener) -> Result<(String, String), S
     let (mut stream, _) = listener
         .accept()
         .await
-        .map_err(|e| format!("Failed to accept connection: {}", e))?;
+        .map_err(|e| format!("Failed to accept connection: {e}"))?;
 
     let mut buf = vec![0u8; 4096];
     let n = stream
         .read(&mut buf)
         .await
-        .map_err(|e| format!("Failed to read request: {}", e))?;
+        .map_err(|e| format!("Failed to read request: {e}"))?;
 
     let request = String::from_utf8_lossy(&buf[..n]).to_string();
 
@@ -359,8 +357,8 @@ async fn wait_for_callback(listener: &TcpListener) -> Result<(String, String), S
 
     // Extract query string
     let query = path
-        .splitn(2, '?')
-        .nth(1)
+        .split_once('?')
+        .map(|x| x.1)
         .unwrap_or("");
 
     let params = parse_query_params(query);
@@ -382,11 +380,9 @@ async fn wait_for_callback(listener: &TcpListener) -> Result<(String, String), S
         )
     };
 
+    let body_len = body.len();
     let response = format!(
-        "{}\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
-        status_line,
-        body.len(),
-        body
+        "{status_line}\r\nContent-Type: text/html\r\nContent-Length: {body_len}\r\nConnection: close\r\n\r\n{body}"
     );
 
     let _ = stream.write_all(response.as_bytes()).await;
@@ -395,7 +391,7 @@ async fn wait_for_callback(listener: &TcpListener) -> Result<(String, String), S
     match (code, state, error) {
         (Some(code), Some(state), _) => Ok((code, state)),
         (_, None, _) => Err("Missing state parameter - possible CSRF attack".to_string()),
-        (None, _, Some(error)) => Err(format!("OIDC error: {}", error)),
+        (None, _, Some(error)) => Err(format!("OIDC error: {error}")),
         _ => Err("No authorization code received".to_string()),
     }
 }
@@ -407,27 +403,26 @@ pub async fn fetch_profile_with_jwt(
 ) -> Result<UserProfile, OidcError> {
     let client = get_client();
 
-    let url = format!("{}/api/profile", server_url);
+    let url = format!("{server_url}/api/profile");
     let resp = client
         .get(&url)
-        .header("Authorization", format!("Bearer {}", jwt_token))
+        .header("Authorization", format!("Bearer {jwt_token}"))
         .send()
         .await
-        .map_err(|e| OidcError::RequestFailed(format!("Profile request failed: {}", e)))?;
+        .map_err(|e| OidcError::RequestFailed(format!("Profile request failed: {e}")))?;
 
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(OidcError::RequestFailed(format!(
-            "Profile endpoint returned HTTP {}: {}",
-            status, body
+            "Profile endpoint returned HTTP {status}: {body}"
         )));
     }
 
     let profile: UserProfile = resp
         .json()
         .await
-        .map_err(|e| OidcError::RequestFailed(format!("Invalid profile response: {}", e)))?;
+        .map_err(|e| OidcError::RequestFailed(format!("Invalid profile response: {e}")))?;
 
     Ok(profile)
 }
@@ -441,7 +436,7 @@ pub async fn create_api_key_with_jwt(
 ) -> Result<ApiKeyResponse, OidcError> {
     let client = get_client();
 
-    let url = format!("{}/api/smtp-credentials/mobile", server_url);
+    let url = format!("{server_url}/api/smtp-credentials/mobile");
     let body = serde_json::json!({
         "deviceName": device_name,
         "platform": platform,
@@ -449,26 +444,25 @@ pub async fn create_api_key_with_jwt(
 
     let resp = client
         .post(&url)
-        .header("Authorization", format!("Bearer {}", jwt_token))
+        .header("Authorization", format!("Bearer {jwt_token}"))
         .header("Content-Type", "application/json")
         .body(body.to_string())
         .send()
         .await
-        .map_err(|e| OidcError::RequestFailed(format!("API key creation failed: {}", e)))?;
+        .map_err(|e| OidcError::RequestFailed(format!("API key creation failed: {e}")))?;
 
     if !resp.status().is_success() {
         let status = resp.status();
         let body = resp.text().await.unwrap_or_default();
         return Err(OidcError::RequestFailed(format!(
-            "API key endpoint returned HTTP {}: {}",
-            status, body
+            "API key endpoint returned HTTP {status}: {body}"
         )));
     }
 
     let api_key_resp: ApiKeyResponse = resp
         .json()
         .await
-        .map_err(|e| OidcError::RequestFailed(format!("Invalid API key response: {}", e)))?;
+        .map_err(|e| OidcError::RequestFailed(format!("Invalid API key response: {e}")))?;
 
     Ok(api_key_resp)
 }
