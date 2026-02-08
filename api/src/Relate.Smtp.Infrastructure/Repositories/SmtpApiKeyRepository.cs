@@ -110,9 +110,9 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
         {
             return JsonSerializer.Deserialize<List<string>>(scopesJson) ?? new List<string>();
         }
-        #pragma warning disable CA1031 // Do not catch general exception types - Intentionally catching all JSON parsing errors for graceful fallback
+#pragma warning disable CA1031 // Do not catch general exception types - Intentionally catching all JSON parsing errors for graceful fallback
         catch (JsonException)
-        #pragma warning restore CA1031
+#pragma warning restore CA1031
         {
             return Array.Empty<string>();
         }

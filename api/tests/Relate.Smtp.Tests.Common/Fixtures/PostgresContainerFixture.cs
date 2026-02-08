@@ -104,10 +104,10 @@ public class PostgresContainerFixture : IAsyncLifetime
 
         foreach (var tableName in tableNames)
         {
-            #pragma warning disable EF1002 // Test code with safe table names
+#pragma warning disable EF1002 // Test code with safe table names
             await context.Database.ExecuteSqlRawAsync(
                 $"TRUNCATE TABLE \"{tableName}\" CASCADE");
-            #pragma warning restore EF1002
+#pragma warning restore EF1002
         }
     }
 }

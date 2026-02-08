@@ -41,9 +41,9 @@ public class ApiServerFixture : IAsyncLifetime
         await _postgres.InitializeAsync();
 
         // Create web application factory
-        #pragma warning disable CA2000 // Dispose objects - _factory is disposed in DisposeAsync
+#pragma warning disable CA2000 // Dispose objects - _factory is disposed in DisposeAsync
         _factory = new WebApplicationFactory<Program>()
-        #pragma warning restore CA2000
+#pragma warning restore CA2000
             .WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
