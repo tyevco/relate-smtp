@@ -90,7 +90,9 @@ public class ImapMessage
 /// IMAP message flags
 /// </summary>
 [Flags]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - This is a legitimate Flags enum for IMAP protocol
 public enum ImapFlags
+#pragma warning restore CA1711
 {
     None = 0,
     Seen = 1,

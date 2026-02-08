@@ -99,6 +99,7 @@ public class SmtpServerFixture : IAsyncLifetime
         {
             await _postgres.DisposeAsync();
         }
+        GC.SuppressFinalize(this);
     }
 
     private static int GetAvailablePort()
@@ -116,6 +117,8 @@ public class SmtpServerFixture : IAsyncLifetime
 /// Collection definition for sharing SmtpServerFixture across tests.
 /// </summary>
 [CollectionDefinition("SmtpServer")]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - xUnit collection fixture convention
 public class SmtpServerCollection : ICollectionFixture<SmtpServerFixture>
+#pragma warning restore CA1711
 {
 }

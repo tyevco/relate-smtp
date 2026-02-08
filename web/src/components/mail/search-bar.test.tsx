@@ -101,10 +101,11 @@ describe('SearchBar', () => {
     const onSearch = vi.fn()
     render(<SearchBar onSearch={onSearch} />)
 
-    const form = screen.getByPlaceholderText('Search emails...').closest('form')!
+    const form = screen.getByPlaceholderText('Search emails...').closest('form')
+    expect(form).not.toBeNull()
     const submitEvent = { preventDefault: vi.fn() }
 
-    fireEvent.submit(form, submitEvent)
+    fireEvent.submit(form as HTMLFormElement, submitEvent)
 
     // The form should handle submission without page reload
     expect(onSearch).toHaveBeenCalled()

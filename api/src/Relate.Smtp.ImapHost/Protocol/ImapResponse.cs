@@ -6,11 +6,11 @@ namespace Relate.Smtp.ImapHost.Protocol;
 public static class ImapResponse
 {
     // Response types
-    public const string OK = "OK";
-    public const string NO = "NO";
-    public const string BAD = "BAD";
-    public const string BYE = "BYE";
-    public const string PREAUTH = "PREAUTH";
+    public const string OkCode = "OK";
+    public const string NoCode = "NO";
+    public const string BadCode = "BAD";
+    public const string ByeCode = "BYE";
+    public const string PreauthCode = "PREAUTH";
 
     /// <summary>
     /// Server greeting on connection (untagged)

@@ -48,7 +48,9 @@ public class HttpEmailNotificationService : IEmailNotificationService
             var response = await _httpClient.PostAsJsonAsync("/api/internal/notifications/new-email", payload, ct);
             response.EnsureSuccessStatusCode();
         }
+        #pragma warning disable CA1031 // Do not catch general exception types - Notifications are non-critical, failures should not propagate
         catch (Exception ex)
+        #pragma warning restore CA1031
         {
             _logger.LogWarning(ex, "Failed to send new email notification");
         }

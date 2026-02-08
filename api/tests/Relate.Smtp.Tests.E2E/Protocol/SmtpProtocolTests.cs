@@ -105,7 +105,7 @@ public class SmtpProtocolTests : IAsyncLifetime
         var email = verifyContext.Emails.FirstOrDefault(e => e.Subject == "Test Email via SMTP");
         email.ShouldNotBeNull();
         email.FromAddress.ShouldBe(sender.Email);
-        email.TextBody.ShouldContain("test email body");
+        email.TextBody!.ShouldContain("test email body");
     }
 
     [Fact]

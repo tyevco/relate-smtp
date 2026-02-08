@@ -104,6 +104,7 @@ public class ImapServerFixture : IAsyncLifetime
         {
             await _postgres.DisposeAsync();
         }
+        GC.SuppressFinalize(this);
     }
 
     private static int GetAvailablePort()
@@ -121,6 +122,8 @@ public class ImapServerFixture : IAsyncLifetime
 /// Collection definition for sharing ImapServerFixture across tests.
 /// </summary>
 [CollectionDefinition("ImapServer")]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - xUnit collection fixture convention
 public class ImapServerCollection : ICollectionFixture<ImapServerFixture>
+#pragma warning restore CA1711
 {
 }

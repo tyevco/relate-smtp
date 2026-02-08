@@ -67,7 +67,7 @@ public class PushNotificationService
             return;
         }
 
-        var webPushClient = new WebPushClient();
+        using var webPushClient = new WebPushClient();
 
         foreach (var subscription in subscriptions)
         {
@@ -99,7 +99,9 @@ public class PushNotificationService
                     await _subscriptionRepository.DeleteAsync(subscription.Id, cancellationToken);
                 }
             }
+            #pragma warning disable CA1031 // Do not catch general exception types - Notification failures should not stop other notifications
             catch (Exception ex)
+            #pragma warning restore CA1031
             {
                 _logger.LogError(ex, "Unexpected error sending push notification to subscription {SubscriptionId}", subscription.Id);
             }

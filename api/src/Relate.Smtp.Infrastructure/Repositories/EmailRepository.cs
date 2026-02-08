@@ -115,13 +115,13 @@ public class EmailRepository : IEmailRepository
         // Full-text search across From, Subject, and Body
         if (!string.IsNullOrWhiteSpace(filters.Query))
         {
-            var searchTerm = filters.Query.ToLower();
+            var searchTerm = filters.Query.ToLowerInvariant();
             query = query.Where(e =>
-                e.FromAddress.ToLower().Contains(searchTerm) ||
-                (e.FromDisplayName != null && e.FromDisplayName.ToLower().Contains(searchTerm)) ||
-                (e.Subject != null && e.Subject.ToLower().Contains(searchTerm)) ||
-                (e.TextBody != null && e.TextBody.ToLower().Contains(searchTerm)) ||
-                (e.HtmlBody != null && e.HtmlBody.ToLower().Contains(searchTerm)));
+                EF.Functions.Like(e.FromAddress, $"%{searchTerm}%") ||
+                (e.FromDisplayName != null && EF.Functions.Like(e.FromDisplayName, $"%{searchTerm}%")) ||
+                (e.Subject != null && EF.Functions.Like(e.Subject, $"%{searchTerm}%")) ||
+                (e.TextBody != null && EF.Functions.Like(e.TextBody, $"%{searchTerm}%")) ||
+                (e.HtmlBody != null && EF.Functions.Like(e.HtmlBody, $"%{searchTerm}%")));
         }
 
         // Date range filters
@@ -186,7 +186,7 @@ public class EmailRepository : IEmailRepository
         var addresses = emailAddresses.Select(a => a.ToLowerInvariant()).ToList();
 
         var recipients = await _context.EmailRecipients
-            .Where(r => r.UserId == null && addresses.Contains(r.Address.ToLower()))
+            .Where(r => r.UserId == null && addresses.Any(a => EF.Functions.Collate(r.Address, "NOCASE") == a))
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var recipient in recipients)
@@ -228,9 +228,10 @@ public class EmailRepository : IEmailRepository
         int take,
         CancellationToken cancellationToken = default)
     {
+        var normalizedAddress = fromAddress.ToLowerInvariant();
         return await _context.Emails
             .Include(e => e.Recipients)
-            .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == fromAddress.ToLower())
+            .Where(e => e.SentByUserId == userId && EF.Functions.Collate(e.FromAddress, "NOCASE") == normalizedAddress)
             .OrderByDescending(e => e.ReceivedAt)
             .Skip(skip)
             .Take(take)
@@ -242,8 +243,9 @@ public class EmailRepository : IEmailRepository
         string fromAddress,
         CancellationToken cancellationToken = default)
     {
+        var normalizedAddress = fromAddress.ToLowerInvariant();
         return await _context.Emails
-            .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == fromAddress.ToLower())
+            .Where(e => e.SentByUserId == userId && EF.Functions.Collate(e.FromAddress, "NOCASE") == normalizedAddress)
             .CountAsync(cancellationToken).ConfigureAwait(false);
     }
 

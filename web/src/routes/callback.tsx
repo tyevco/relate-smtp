@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 
 export const Route = createFileRoute('/callback')({
   component: Callback,
@@ -9,21 +9,23 @@ export const Route = createFileRoute('/callback')({
 function Callback() {
   const auth = useAuth()
   const navigate = useNavigate()
-  const [error, setError] = useState<string | null>(null)
+
+  // Derive error message directly from auth.error
+  const errorMessage = useMemo(() => auth.error?.message ?? null, [auth.error])
 
   const handleBackToLogin = useCallback(() => {
     navigate({ to: '/login' })
   }, [navigate])
 
+  // Handle redirects based on auth state
   useEffect(() => {
     // Wait for auth to finish loading
     if (auth.isLoading) {
       return
     }
 
-    // Check for errors
+    // Don't redirect if there's an error
     if (auth.error) {
-      setError(auth.error.message)
       return
     }
 
@@ -33,12 +35,12 @@ function Callback() {
     }
   }, [auth.isAuthenticated, auth.isLoading, auth.error, navigate])
 
-  if (error) {
+  if (errorMessage) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="text-lg text-red-600 font-semibold">Authentication Error</div>
-          <div className="text-sm text-muted-foreground">{error}</div>
+          <div className="text-sm text-muted-foreground">{errorMessage}</div>
           <button
             onClick={handleBackToLogin}
             className="px-4 py-2 bg-primary text-primary-foreground rounded"

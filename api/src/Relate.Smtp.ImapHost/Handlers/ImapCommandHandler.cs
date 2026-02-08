@@ -73,11 +73,13 @@ public class ImapCommandHandler
                     break;
             }
         }
-        catch (IOException ex) when (ex.Message.Contains("Broken pipe") || ex.InnerException?.Message.Contains("Broken pipe") == true)
+        catch (IOException ex) when (ex.Message.Contains("Broken pipe", StringComparison.Ordinal) || ex.InnerException?.Message.Contains("Broken pipe", StringComparison.Ordinal) == true)
         {
             _logger.LogDebug("Client disconnected unexpectedly (broken pipe): {ConnectionId}", session.ConnectionId);
         }
+        #pragma warning disable CA1031 // Do not catch general exception types - Protocol handler must not crash on any exception
         catch (Exception ex)
+        #pragma warning restore CA1031
         {
             _logger.LogError(ex, "Session error: {ConnectionId}", session.ConnectionId);
         }
@@ -88,7 +90,9 @@ public class ImapCommandHandler
             {
                 await writer.FlushAsync(ct);
             }
+            #pragma warning disable CA1031 // Do not catch general exception types - Flush errors during cleanup are expected
             catch
+            #pragma warning restore CA1031
             {
                 // Ignore flush errors during cleanup
             }
@@ -144,7 +148,9 @@ public class ImapCommandHandler
                     break;
             }
         }
+        #pragma warning disable CA1031 // Do not catch general exception types - Command handler must return error response
         catch (Exception ex)
+        #pragma warning restore CA1031
         {
             activity?.SetStatus(System.Diagnostics.ActivityStatusCode.Error, ex.Message);
             activity?.AddTag("exception.type", ex.GetType().FullName);
@@ -371,13 +377,13 @@ public class ImapCommandHandler
         var statusItems = command.RawArguments.ToUpperInvariant();
         var statusParts = new List<string>();
 
-        if (statusItems.Contains("MESSAGES"))
+        if (statusItems.Contains("MESSAGES", StringComparison.Ordinal))
             statusParts.Add($"MESSAGES {messages.Count}");
-        if (statusItems.Contains("UNSEEN"))
+        if (statusItems.Contains("UNSEEN", StringComparison.Ordinal))
             statusParts.Add($"UNSEEN {messages.Count(m => !m.Flags.HasFlag(ImapFlags.Seen))}");
-        if (statusItems.Contains("UIDNEXT"))
+        if (statusItems.Contains("UIDNEXT", StringComparison.Ordinal))
             statusParts.Add($"UIDNEXT {(messages.Count > 0 ? messages.Max(m => m.Uid) + 1 : 1)}");
-        if (statusItems.Contains("UIDVALIDITY"))
+        if (statusItems.Contains("UIDVALIDITY", StringComparison.Ordinal))
             statusParts.Add($"UIDVALIDITY {session.UidValidity}");
 
         await writer.WriteLineAsync(ImapResponse.Status("INBOX", string.Join(" ", statusParts)));
@@ -517,49 +523,49 @@ public class ImapCommandHandler
         var parts = new List<string>();
         var upperItems = fetchItems.ToUpperInvariant();
 
-        if (includeUid || upperItems.Contains("UID"))
+        if (includeUid || upperItems.Contains("UID", StringComparison.Ordinal))
         {
             parts.Add($"UID {msg.Uid}");
         }
 
-        if (upperItems.Contains("FLAGS"))
+        if (upperItems.Contains("FLAGS", StringComparison.Ordinal))
         {
             parts.Add($"FLAGS ({msg.Flags.ToImapString()})");
         }
 
-        if (upperItems.Contains("INTERNALDATE"))
+        if (upperItems.Contains("INTERNALDATE", StringComparison.Ordinal))
         {
             parts.Add($"INTERNALDATE \"{msg.InternalDate:dd-MMM-yyyy HH:mm:ss zzzz}\"");
         }
 
-        if (upperItems.Contains("RFC822.SIZE") || upperItems.Contains("SIZE"))
+        if (upperItems.Contains("RFC822.SIZE", StringComparison.Ordinal) || upperItems.Contains("SIZE", StringComparison.Ordinal))
         {
             parts.Add($"RFC822.SIZE {msg.SizeBytes}");
         }
 
-        if (upperItems.Contains("ENVELOPE"))
+        if (upperItems.Contains("ENVELOPE", StringComparison.Ordinal))
         {
             // Simplified envelope - would need full message parsing for complete implementation
             parts.Add("ENVELOPE NIL");
         }
 
-        if (upperItems.Contains("BODY[]") || upperItems.Contains("RFC822"))
+        if (upperItems.Contains("BODY[]", StringComparison.Ordinal) || upperItems.Contains("RFC822", StringComparison.Ordinal))
         {
             var content = await _messageManager.RetrieveMessageAsync(msg.EmailId, userId, ct);
             // Mark as seen if BODY[] (not BODY.PEEK[])
-            if (!upperItems.Contains("PEEK"))
+            if (!upperItems.Contains("PEEK", StringComparison.Ordinal))
             {
                 msg.Flags |= ImapFlags.Seen;
                 await _messageManager.MarkAsSeenAsync(msg.EmailId, userId, ct);
             }
             parts.Add($"BODY[] {{{content.Length}}}\r\n{content}");
         }
-        else if (upperItems.Contains("BODY.PEEK[]"))
+        else if (upperItems.Contains("BODY.PEEK[]", StringComparison.Ordinal))
         {
             var content = await _messageManager.RetrieveMessageAsync(msg.EmailId, userId, ct);
             parts.Add($"BODY[] {{{content.Length}}}\r\n{content}");
         }
-        else if (upperItems.Contains("BODY[HEADER]") || upperItems.Contains("BODY.PEEK[HEADER]"))
+        else if (upperItems.Contains("BODY[HEADER]", StringComparison.Ordinal) || upperItems.Contains("BODY.PEEK[HEADER]", StringComparison.Ordinal))
         {
             var headers = await _messageManager.RetrieveHeadersAsync(msg.EmailId, userId, ct);
             parts.Add($"BODY[HEADER] {{{headers.Length}}}\r\n{headers}");
@@ -605,19 +611,19 @@ public class ImapCommandHandler
             return;
         }
 
-        var silent = dataItem.Contains(".SILENT");
+        var silent = dataItem.Contains(".SILENT", StringComparison.Ordinal);
 
         foreach (var msg in messages)
         {
-            if (dataItem.StartsWith("+FLAGS"))
+            if (dataItem.StartsWith("+FLAGS", StringComparison.Ordinal))
             {
                 msg.Flags |= flags;
             }
-            else if (dataItem.StartsWith("-FLAGS"))
+            else if (dataItem.StartsWith("-FLAGS", StringComparison.Ordinal))
             {
                 msg.Flags &= ~flags;
             }
-            else if (dataItem.StartsWith("FLAGS"))
+            else if (dataItem.StartsWith("FLAGS", StringComparison.Ordinal))
             {
                 msg.Flags = flags;
             }
@@ -656,11 +662,11 @@ public class ImapCommandHandler
         var flags = ImapFlags.None;
         var upper = flagsStr.ToUpperInvariant();
 
-        if (upper.Contains(@"\SEEN")) flags |= ImapFlags.Seen;
-        if (upper.Contains(@"\ANSWERED")) flags |= ImapFlags.Answered;
-        if (upper.Contains(@"\FLAGGED")) flags |= ImapFlags.Flagged;
-        if (upper.Contains(@"\DELETED")) flags |= ImapFlags.Deleted;
-        if (upper.Contains(@"\DRAFT")) flags |= ImapFlags.Draft;
+        if (upper.Contains(@"\SEEN", StringComparison.Ordinal)) flags |= ImapFlags.Seen;
+        if (upper.Contains(@"\ANSWERED", StringComparison.Ordinal)) flags |= ImapFlags.Answered;
+        if (upper.Contains(@"\FLAGGED", StringComparison.Ordinal)) flags |= ImapFlags.Flagged;
+        if (upper.Contains(@"\DELETED", StringComparison.Ordinal)) flags |= ImapFlags.Deleted;
+        if (upper.Contains(@"\DRAFT", StringComparison.Ordinal)) flags |= ImapFlags.Draft;
 
         return flags;
     }
@@ -676,26 +682,26 @@ public class ImapCommandHandler
 
         foreach (var msg in session.Messages)
         {
-            if (session.DeletedUids.Contains(msg.Uid) && !criteria.Contains("DELETED"))
+            if (session.DeletedUids.Contains(msg.Uid) && !criteria.Contains("DELETED", StringComparison.Ordinal))
                 continue;
 
             var matches = true;
 
-            if (criteria.Contains("ALL"))
+            if (criteria.Contains("ALL", StringComparison.Ordinal))
             {
                 // Match all
             }
             else
             {
-                if (criteria.Contains("SEEN") && !msg.Flags.HasFlag(ImapFlags.Seen))
+                if (criteria.Contains("SEEN", StringComparison.Ordinal) && !msg.Flags.HasFlag(ImapFlags.Seen))
                     matches = false;
-                if (criteria.Contains("UNSEEN") && msg.Flags.HasFlag(ImapFlags.Seen))
+                if (criteria.Contains("UNSEEN", StringComparison.Ordinal) && msg.Flags.HasFlag(ImapFlags.Seen))
                     matches = false;
-                if (criteria.Contains("DELETED") && !msg.Flags.HasFlag(ImapFlags.Deleted))
+                if (criteria.Contains("DELETED", StringComparison.Ordinal) && !msg.Flags.HasFlag(ImapFlags.Deleted))
                     matches = false;
-                if (criteria.Contains("FLAGGED") && !msg.Flags.HasFlag(ImapFlags.Flagged))
+                if (criteria.Contains("FLAGGED", StringComparison.Ordinal) && !msg.Flags.HasFlag(ImapFlags.Flagged))
                     matches = false;
-                if (criteria.Contains("UNFLAGGED") && msg.Flags.HasFlag(ImapFlags.Flagged))
+                if (criteria.Contains("UNFLAGGED", StringComparison.Ordinal) && msg.Flags.HasFlag(ImapFlags.Flagged))
                     matches = false;
             }
 

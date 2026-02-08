@@ -1,0 +1,36 @@
+# Test-specific .editorconfig overrides
+# These settings only apply to test projects
+
+[*.cs]
+
+# CA1707: Identifiers should not contain underscores
+# xUnit test naming convention uses underscores: MethodName_Scenario_ExpectedResult
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1711: Identifiers should not have incorrect suffix
+# xUnit ICollectionFixture<T> classes conventionally end in "Collection"
+dotnet_diagnostic.CA1711.severity = none
+
+# CA1816: Call GC.SuppressFinalize correctly
+# Test fixtures implement IAsyncLifetime which doesn't require SuppressFinalize
+dotnet_diagnostic.CA1816.severity = none
+
+# xUnit1051: Use TestContext.Current.CancellationToken
+# Many tests use default cancellation token - this is acceptable in test code
+dotnet_diagnostic.xUnit1051.severity = suggestion
+
+# CA2000: Dispose objects before losing scope
+# Test code often creates objects that are disposed by test framework
+dotnet_diagnostic.CA2000.severity = suggestion
+
+# CA1826: Do not use Enumerable methods on indexable collections
+# In tests, readability with .First() is preferred over [0] indexing
+dotnet_diagnostic.CA1826.severity = suggestion
+
+# CA1861: Prefer static readonly fields over constant array arguments
+# Test inline data arrays are acceptable for clarity
+dotnet_diagnostic.CA1861.severity = suggestion
+
+# xUnit1026: Theory method does not use parameter
+# Sometimes test data has extra params for documentation purposes
+dotnet_diagnostic.xUnit1026.severity = suggestion

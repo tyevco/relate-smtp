@@ -41,7 +41,9 @@ public class ApiServerFixture : IAsyncLifetime
         await _postgres.InitializeAsync();
 
         // Create web application factory
+        #pragma warning disable CA2000 // Dispose objects - _factory is disposed in DisposeAsync
         _factory = new WebApplicationFactory<Program>()
+        #pragma warning restore CA2000
             .WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
@@ -78,6 +80,7 @@ public class ApiServerFixture : IAsyncLifetime
         }
 
         await _postgres.DisposeAsync();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -121,6 +124,8 @@ public class ApiServerFixture : IAsyncLifetime
 /// Collection definition for sharing ApiServerFixture across tests.
 /// </summary>
 [CollectionDefinition("ApiServer")]
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - xUnit collection fixture convention
 public class ApiServerCollection : ICollectionFixture<ApiServerFixture>
+#pragma warning restore CA1711
 {
 }
