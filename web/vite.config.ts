@@ -36,7 +36,8 @@ export default defineConfig(({ mode }) => {
             proxy.on('error', (err, _req, res) => {
               console.log('❌ Proxy error:', err.message);
               // Return a proper error response instead of hanging
-              if (res && !res.headersSent) {
+              // Check if res is a ServerResponse (not a Socket) by checking for writeHead method
+              if (res && 'writeHead' in res && !res.headersSent) {
                 res.writeHead(502, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Proxy error', message: err.message }));
               }
