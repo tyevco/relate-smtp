@@ -9,14 +9,12 @@ import {
   Mail,
   MailOpen,
   Paperclip,
-  Calendar,
   User,
   Users,
 } from "lucide-react-native";
 import { useEmail, useMarkEmailRead, useDeleteEmail } from "@/lib/api/hooks";
 import { Loading } from "@/components/ui/loading";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { formatDate, formatBytes } from "@/lib/utils";
 
 function sanitizeHtml(html: string | null | undefined): string {

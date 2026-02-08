@@ -10,7 +10,7 @@ describe('Button Component', () => {
     })
 
     it('renders with custom React node children', () => {
-      const { root } = render(
+      render(
         <Button testID="custom-button">
           <></>
         </Button>

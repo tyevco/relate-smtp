@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import type { EmailListItem } from "@/lib/api/types";
 
 export default function SentScreen() {
-  const [page, setPage] = useState(1);
+  const [page] = useState(1);
   const { data, isLoading, isError, refetch } = useSentEmails(undefined, page, 20);
   const deleteEmail = useDeleteEmail();
 

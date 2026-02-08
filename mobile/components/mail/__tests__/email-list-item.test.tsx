@@ -5,7 +5,7 @@ import type { EmailListItem } from '@/lib/api/types'
 
 // Mock react-native-gesture-handler
 jest.mock('react-native-gesture-handler', () => {
-  const { View } = require('react-native')
+  const { View } = jest.requireActual('react-native')
   return {
     Swipeable: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,
     GestureHandlerRootView: ({ children }: { children: React.ReactNode }) => <View>{children}</View>,

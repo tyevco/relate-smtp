@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { Trash2, Mail, MailOpen, Paperclip } from "lucide-react-native";
 import { Avatar } from "@/components/ui/avatar";
-import { cn, formatDate, truncate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 import type { EmailListItem } from "@/lib/api/types";
 
 interface EmailListItemProps {
