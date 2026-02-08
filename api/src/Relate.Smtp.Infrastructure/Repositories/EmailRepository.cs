@@ -186,7 +186,11 @@ public class EmailRepository : IEmailRepository
         var addresses = emailAddresses.Select(a => a.ToLowerInvariant()).ToList();
 
         var recipients = await _context.EmailRecipients
-            .Where(r => r.UserId == null && addresses.Any(a => EF.Functions.Collate(r.Address, "NOCASE") == a))
+            // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
+            // EF Core translates ToLower() to SQL LOWER() function
+#pragma warning disable CA1304, CA1309, CA1311, CA1862
+            .Where(r => r.UserId == null && addresses.Any(a => r.Address.ToLower() == a))
+#pragma warning restore CA1304, CA1309, CA1311, CA1862
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var recipient in recipients)
@@ -231,7 +235,11 @@ public class EmailRepository : IEmailRepository
         var normalizedAddress = fromAddress.ToLowerInvariant();
         return await _context.Emails
             .Include(e => e.Recipients)
-            .Where(e => e.SentByUserId == userId && EF.Functions.Collate(e.FromAddress, "NOCASE") == normalizedAddress)
+            // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
+            // EF Core translates ToLower() to SQL LOWER() function
+#pragma warning disable CA1304, CA1309, CA1311, CA1862
+            .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == normalizedAddress)
+#pragma warning restore CA1304, CA1309, CA1311, CA1862
             .OrderByDescending(e => e.ReceivedAt)
             .Skip(skip)
             .Take(take)
@@ -245,7 +253,11 @@ public class EmailRepository : IEmailRepository
     {
         var normalizedAddress = fromAddress.ToLowerInvariant();
         return await _context.Emails
-            .Where(e => e.SentByUserId == userId && EF.Functions.Collate(e.FromAddress, "NOCASE") == normalizedAddress)
+            // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
+            // EF Core translates ToLower() to SQL LOWER() function
+#pragma warning disable CA1304, CA1309, CA1311, CA1862
+            .Where(e => e.SentByUserId == userId && e.FromAddress.ToLower() == normalizedAddress)
+#pragma warning restore CA1304, CA1309, CA1311, CA1862
             .CountAsync(cancellationToken).ConfigureAwait(false);
     }
 
