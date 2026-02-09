@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createRootRoute, Link, Outlet, useLocation } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
-import { Mail, User, LogOut, Menu, X } from 'lucide-react'
+import { Mail, User, LogOut, Menu, X, PenSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTheme } from '@/hooks/use-theme'
 
@@ -42,16 +42,35 @@ function RootComponent() {
                 {/* Desktop Navigation */}
                 <nav className="hidden lg:flex items-center gap-4">
                   <Link
+                    to="/compose"
+                    className="flex items-center gap-1 text-sm font-medium bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                  >
+                    <PenSquare className="h-3.5 w-3.5" />
+                    Compose
+                  </Link>
+                  <Link
                     to="/"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors [&.active]:text-foreground"
                   >
                     Inbox
                   </Link>
                   <Link
+                    to="/drafts"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors [&.active]:text-foreground"
+                  >
+                    Drafts
+                  </Link>
+                  <Link
                     to="/sent"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors [&.active]:text-foreground"
                   >
                     Sent Mail
+                  </Link>
+                  <Link
+                    to="/outbox"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors [&.active]:text-foreground"
+                  >
+                    Outbox
                   </Link>
                   <Link
                     to="/profile"
@@ -104,6 +123,14 @@ function RootComponent() {
             {mobileMenuOpen && (
               <div className="lg:hidden border-t py-4 space-y-2">
                 <Link
+                  to="/compose"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-2 mx-4 mb-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors justify-center"
+                >
+                  <PenSquare className="h-3.5 w-3.5" />
+                  Compose
+                </Link>
+                <Link
                   to="/"
                   onClick={closeMobileMenu}
                   className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors [&.active]:text-foreground [&.active]:bg-accent"
@@ -111,11 +138,25 @@ function RootComponent() {
                   Inbox
                 </Link>
                 <Link
+                  to="/drafts"
+                  onClick={closeMobileMenu}
+                  className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors [&.active]:text-foreground [&.active]:bg-accent"
+                >
+                  Drafts
+                </Link>
+                <Link
                   to="/sent"
                   onClick={closeMobileMenu}
                   className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors [&.active]:text-foreground [&.active]:bg-accent"
                 >
                   Sent Mail
+                </Link>
+                <Link
+                  to="/outbox"
+                  onClick={closeMobileMenu}
+                  className="block px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors [&.active]:text-foreground [&.active]:bg-accent"
+                >
+                  Outbox
                 </Link>
                 <Link
                   to="/profile"

@@ -1,3 +1,4 @@
+using DnsClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Relate.Smtp.Core.Interfaces;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<IEmailFilterRepository, EmailFilterRepository>();
         services.AddScoped<IUserPreferenceRepository, UserPreferenceRepository>();
         services.AddScoped<IPushSubscriptionRepository, PushSubscriptionRepository>();
+        services.AddScoped<IOutboundEmailRepository, OutboundEmailRepository>();
 
         // Background task queue for non-critical updates (e.g., LastUsedAt)
         services.AddSingleton<BackgroundTaskQueue>();
@@ -32,6 +34,12 @@ public static class DependencyInjection
 
         // Authentication rate limiter for brute force protection
         services.AddSingleton<IAuthenticationRateLimiter, AuthenticationRateLimiter>();
+
+        // Outbound mail delivery services
+        services.AddSingleton<ILookupClient>(new LookupClient());
+        services.AddSingleton<MxResolverService>();
+        services.AddScoped<SmtpDeliveryService>();
+        services.AddHostedService<DeliveryQueueProcessor>();
 
         return services;
     }

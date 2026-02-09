@@ -20,6 +20,10 @@ public class AppDbContext : DbContext
     public DbSet<EmailFilter> EmailFilters => Set<EmailFilter>();
     public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+    public DbSet<OutboundEmail> OutboundEmails => Set<OutboundEmail>();
+    public DbSet<OutboundRecipient> OutboundRecipients => Set<OutboundRecipient>();
+    public DbSet<OutboundAttachment> OutboundAttachments => Set<OutboundAttachment>();
+    public DbSet<DeliveryLog> DeliveryLogs => Set<DeliveryLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

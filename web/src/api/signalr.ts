@@ -18,6 +18,11 @@ export type EmailDeletedHandler = (emailId: string) => void;
 
 export type UnreadCountChangedHandler = (count: number) => void;
 
+export type DeliveryStatusChangedHandler = (update: {
+  id: string;
+  status: string;
+}) => void;
+
 class SignalRConnection {
   private connection: signalR.HubConnection | null = null;
   private connectionPromise: Promise<signalR.HubConnection> | null = null;
@@ -107,6 +112,15 @@ class SignalRConnection {
     }
     this.connection.on('UnreadCountChanged', handler);
     return () => this.connection?.off('UnreadCountChanged', handler);
+  }
+
+  onDeliveryStatusChanged(handler: DeliveryStatusChangedHandler): () => void {
+    if (!this.connection) {
+      console.warn('SignalR connection not established');
+      return () => {};
+    }
+    this.connection.on('DeliveryStatusChanged', handler);
+    return () => this.connection?.off('DeliveryStatusChanged', handler);
   }
 
   async disconnect() {

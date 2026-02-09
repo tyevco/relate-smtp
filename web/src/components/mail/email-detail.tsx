@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
-import { ArrowLeft, Paperclip, Trash2, Download } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { ArrowLeft, Paperclip, Trash2, Download, Reply, ReplyAll, Forward } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -38,6 +39,8 @@ interface EmailDetailProps {
 }
 
 export function EmailDetailView({ email, onBack, onDelete }: EmailDetailViewProps) {
+  const navigate = useNavigate()
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 p-3 sm:p-4 border-b">
@@ -45,6 +48,30 @@ export function EmailDetailView({ email, onBack, onDelete }: EmailDetailViewProp
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1" />
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Reply"
+          onClick={() => navigate({ to: '/compose', search: { replyTo: email.id } })}
+        >
+          <Reply className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Reply All"
+          onClick={() => navigate({ to: '/compose', search: { replyTo: email.id, replyAll: 'true' } })}
+        >
+          <ReplyAll className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Forward"
+          onClick={() => navigate({ to: '/compose', search: { forwardFrom: email.id } })}
+        >
+          <Forward className="h-4 w-4" />
+        </Button>
         <ExportDialog
           emailId={email.id}
           trigger={
@@ -122,6 +149,34 @@ export function EmailDetailView({ email, onBack, onDelete }: EmailDetailViewProp
               {email.textBody || '(No content)'}
             </pre>
           )}
+        </div>
+
+        {/* Reply/Forward actions */}
+        <div className="flex items-center gap-2 mt-6 pt-4 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ to: '/compose', search: { replyTo: email.id } })}
+          >
+            <Reply className="h-3.5 w-3.5 mr-1" />
+            Reply
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ to: '/compose', search: { replyTo: email.id, replyAll: 'true' } })}
+          >
+            <ReplyAll className="h-3.5 w-3.5 mr-1" />
+            Reply All
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ to: '/compose', search: { forwardFrom: email.id } })}
+          >
+            <Forward className="h-3.5 w-3.5 mr-1" />
+            Forward
+          </Button>
         </div>
       </div>
     </div>
