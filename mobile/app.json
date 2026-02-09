@@ -37,7 +37,8 @@
       "expo-router",
       "expo-secure-store",
       "expo-local-authentication",
-      "expo-font"
+      "expo-font",
+      "./plugins/withCertificatePinning"
     ],
     "experiments": {
       "typedRoutes": true

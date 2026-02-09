@@ -22,6 +22,7 @@ export default function MainLayout() {
       <Stack.Screen name="accounts" />
       <Stack.Screen name="api-keys" />
       <Stack.Screen name="preferences" />
+      <Stack.Screen name="security" />
     </Stack>
   );
 }
