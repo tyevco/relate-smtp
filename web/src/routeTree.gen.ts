@@ -13,8 +13,11 @@ import { Route as SmtpSettingsRouteImport } from './routes/smtp-settings'
 import { Route as SentRouteImport } from './routes/sent'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PreferencesRouteImport } from './routes/preferences'
+import { Route as OutboxRouteImport } from './routes/outbox'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FiltersRouteImport } from './routes/filters'
+import { Route as DraftsRouteImport } from './routes/drafts'
+import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as CallbackRouteImport } from './routes/callback'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EmailsIdRouteImport } from './routes/emails.$id'
@@ -39,6 +42,11 @@ const PreferencesRoute = PreferencesRouteImport.update({
   path: '/preferences',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OutboxRoute = OutboxRouteImport.update({
+  id: '/outbox',
+  path: '/outbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -47,6 +55,16 @@ const LoginRoute = LoginRouteImport.update({
 const FiltersRoute = FiltersRouteImport.update({
   id: '/filters',
   path: '/filters',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DraftsRoute = DraftsRouteImport.update({
+  id: '/drafts',
+  path: '/drafts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComposeRoute = ComposeRouteImport.update({
+  id: '/compose',
+  path: '/compose',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CallbackRoute = CallbackRouteImport.update({
@@ -68,8 +86,11 @@ const EmailsIdRoute = EmailsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
+  '/compose': typeof ComposeRoute
+  '/drafts': typeof DraftsRoute
   '/filters': typeof FiltersRoute
   '/login': typeof LoginRoute
+  '/outbox': typeof OutboxRoute
   '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
   '/sent': typeof SentRoute
@@ -79,8 +100,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
+  '/compose': typeof ComposeRoute
+  '/drafts': typeof DraftsRoute
   '/filters': typeof FiltersRoute
   '/login': typeof LoginRoute
+  '/outbox': typeof OutboxRoute
   '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
   '/sent': typeof SentRoute
@@ -91,8 +115,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/callback': typeof CallbackRoute
+  '/compose': typeof ComposeRoute
+  '/drafts': typeof DraftsRoute
   '/filters': typeof FiltersRoute
   '/login': typeof LoginRoute
+  '/outbox': typeof OutboxRoute
   '/preferences': typeof PreferencesRoute
   '/profile': typeof ProfileRoute
   '/sent': typeof SentRoute
@@ -104,8 +131,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/callback'
+    | '/compose'
+    | '/drafts'
     | '/filters'
     | '/login'
+    | '/outbox'
     | '/preferences'
     | '/profile'
     | '/sent'
@@ -115,8 +145,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/callback'
+    | '/compose'
+    | '/drafts'
     | '/filters'
     | '/login'
+    | '/outbox'
     | '/preferences'
     | '/profile'
     | '/sent'
@@ -126,8 +159,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/callback'
+    | '/compose'
+    | '/drafts'
     | '/filters'
     | '/login'
+    | '/outbox'
     | '/preferences'
     | '/profile'
     | '/sent'
@@ -138,8 +174,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CallbackRoute: typeof CallbackRoute
+  ComposeRoute: typeof ComposeRoute
+  DraftsRoute: typeof DraftsRoute
   FiltersRoute: typeof FiltersRoute
   LoginRoute: typeof LoginRoute
+  OutboxRoute: typeof OutboxRoute
   PreferencesRoute: typeof PreferencesRoute
   ProfileRoute: typeof ProfileRoute
   SentRoute: typeof SentRoute
@@ -177,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/outbox': {
+      id: '/outbox'
+      path: '/outbox'
+      fullPath: '/outbox'
+      preLoaderRoute: typeof OutboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -189,6 +235,20 @@ declare module '@tanstack/react-router' {
       path: '/filters'
       fullPath: '/filters'
       preLoaderRoute: typeof FiltersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/drafts': {
+      id: '/drafts'
+      path: '/drafts'
+      fullPath: '/drafts'
+      preLoaderRoute: typeof DraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compose': {
+      id: '/compose'
+      path: '/compose'
+      fullPath: '/compose'
+      preLoaderRoute: typeof ComposeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/callback': {
@@ -218,8 +278,11 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CallbackRoute: CallbackRoute,
+  ComposeRoute: ComposeRoute,
+  DraftsRoute: DraftsRoute,
   FiltersRoute: FiltersRoute,
   LoginRoute: LoginRoute,
+  OutboxRoute: OutboxRoute,
   PreferencesRoute: PreferencesRoute,
   ProfileRoute: ProfileRoute,
   SentRoute: SentRoute,

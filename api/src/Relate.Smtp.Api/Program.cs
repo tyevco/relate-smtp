@@ -41,6 +41,10 @@ builder.Services.AddScoped<PushNotificationService>();
 // Configure push notification options
 builder.Services.Configure<PushOptions>(builder.Configuration.GetSection("Push"));
 
+// Configure outbound mail delivery
+builder.Services.Configure<OutboundMailOptions>(builder.Configuration.GetSection(OutboundMailOptions.SectionName));
+builder.Services.AddScoped<IDeliveryNotificationService, SignalRDeliveryNotificationService>();
+
 // Configure OIDC/JWT authentication
 var oidcAuthority = builder.Configuration["Oidc:Authority"];
 var oidcAudience = builder.Configuration["Oidc:Audience"];

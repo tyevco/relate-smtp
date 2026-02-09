@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { api } from './client'
 import { DEFAULT_PAGE_SIZE } from '@relate/shared/lib/constants'
-import type { EmailListResponse, EmailDetail, Profile, EmailAddress, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey, Label, CreateLabelRequest, UpdateLabelRequest, EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest, UserPreference, UpdateUserPreferenceRequest } from './types'
+import type { EmailListResponse, EmailDetail, Profile, EmailAddress, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey, Label, CreateLabelRequest, UpdateLabelRequest, EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest, UserPreference, UpdateUserPreferenceRequest, OutboundEmailListResponse, OutboundEmailDetail, CreateDraftRequest, UpdateDraftRequest, SendEmailRequest, ReplyRequest, ForwardRequest } from './types'
 
 // Email hooks
 export function useEmails(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
@@ -453,5 +453,127 @@ export function useSentFromAddresses() {
   return useQuery({
     queryKey: ['emails', 'sent', 'addresses'],
     queryFn: () => api.get<string[]>('/emails/sent/addresses'),
+  })
+}
+
+// Outbound email hooks
+export function useDrafts(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
+  return useQuery({
+    queryKey: ['outbound', 'drafts', page, pageSize],
+    queryFn: () => api.get<OutboundEmailListResponse>(`/outbound/drafts?page=${page}&pageSize=${pageSize}`),
+  })
+}
+
+export function useDraft(id: string) {
+  return useQuery({
+    queryKey: ['outbound', 'draft', id],
+    queryFn: () => api.get<OutboundEmailDetail>(`/outbound/drafts/${id}`),
+    enabled: !!id,
+  })
+}
+
+export function useCreateDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: CreateDraftRequest) =>
+      api.post<OutboundEmailDetail>('/outbound/drafts', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outbound', 'drafts'] })
+    },
+  })
+}
+
+export function useUpdateDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateDraftRequest }) =>
+      api.put<OutboundEmailDetail>(`/outbound/drafts/${id}`, data),
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['outbound', 'draft', variables.id], data)
+      queryClient.invalidateQueries({ queryKey: ['outbound', 'drafts'] })
+    },
+  })
+}
+
+export function useDeleteDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/outbound/drafts/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outbound', 'drafts'] })
+    },
+  })
+}
+
+export function useSendEmail() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: SendEmailRequest) =>
+      api.post<OutboundEmailDetail>('/outbound/send', data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outbound'] })
+    },
+  })
+}
+
+export function useSendDraft() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<OutboundEmailDetail>(`/outbound/drafts/${id}/send`, {}),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outbound'] })
+    },
+  })
+}
+
+export function useReplyToEmail() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ emailId, data }: { emailId: string; data: ReplyRequest }) =>
+      api.post<OutboundEmailDetail>(`/outbound/reply/${emailId}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outbound'] })
+    },
+  })
+}
+
+export function useForwardEmail() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ emailId, data }: { emailId: string; data: ForwardRequest }) =>
+      api.post<OutboundEmailDetail>(`/outbound/forward/${emailId}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outbound'] })
+    },
+  })
+}
+
+export function useOutbox(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
+  return useQuery({
+    queryKey: ['outbound', 'outbox', page, pageSize],
+    queryFn: () => api.get<OutboundEmailListResponse>(`/outbound/outbox?page=${page}&pageSize=${pageSize}`),
+  })
+}
+
+export function useOutboundSent(page = 1, pageSize = DEFAULT_PAGE_SIZE) {
+  return useQuery({
+    queryKey: ['outbound', 'sent', page, pageSize],
+    queryFn: () => api.get<OutboundEmailListResponse>(`/outbound/sent?page=${page}&pageSize=${pageSize}`),
+  })
+}
+
+export function useOutboundEmail(id: string) {
+  return useQuery({
+    queryKey: ['outbound', 'email', id],
+    queryFn: () => api.get<OutboundEmailDetail>(`/outbound/${id}`),
+    enabled: !!id,
   })
 }

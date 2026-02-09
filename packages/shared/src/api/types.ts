@@ -200,3 +200,109 @@ export interface UpdateUserPreferenceRequest {
   digestFrequency?: 'daily' | 'weekly'
   digestTime?: string
 }
+
+// Outbound email types
+export type OutboundEmailStatus = 'Draft' | 'Queued' | 'Sending' | 'Sent' | 'PartialFailure' | 'Failed'
+export type OutboundRecipientStatus = 'Pending' | 'Sending' | 'Sent' | 'Failed' | 'Deferred'
+
+export interface OutboundEmailListItem {
+  id: string
+  fromAddress: string
+  fromDisplayName: string | null
+  subject: string
+  status: OutboundEmailStatus
+  createdAt: string
+  queuedAt: string | null
+  sentAt: string | null
+  recipientCount: number
+  attachmentCount: number
+}
+
+export interface OutboundRecipient {
+  id: string
+  address: string
+  displayName: string | null
+  type: 'To' | 'Cc' | 'Bcc'
+  status: OutboundRecipientStatus
+  statusMessage: string | null
+  deliveredAt: string | null
+}
+
+export interface OutboundAttachment {
+  id: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+}
+
+export interface OutboundEmailDetail {
+  id: string
+  fromAddress: string
+  fromDisplayName: string | null
+  subject: string
+  textBody: string | null
+  htmlBody: string | null
+  status: OutboundEmailStatus
+  messageId: string | null
+  inReplyTo: string | null
+  originalEmailId: string | null
+  createdAt: string
+  queuedAt: string | null
+  sentAt: string | null
+  retryCount: number
+  lastError: string | null
+  recipients: OutboundRecipient[]
+  attachments: OutboundAttachment[]
+}
+
+export interface OutboundEmailListResponse {
+  items: OutboundEmailListItem[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+
+export interface CreateDraftRequest {
+  fromAddress: string
+  fromDisplayName?: string
+  subject: string
+  textBody?: string
+  htmlBody?: string
+  recipients: RecipientRequest[]
+}
+
+export interface RecipientRequest {
+  address: string
+  displayName?: string
+  type: 'To' | 'Cc' | 'Bcc'
+}
+
+export interface UpdateDraftRequest {
+  fromAddress?: string
+  fromDisplayName?: string
+  subject?: string
+  textBody?: string
+  htmlBody?: string
+  recipients?: RecipientRequest[]
+}
+
+export interface SendEmailRequest {
+  fromAddress: string
+  fromDisplayName?: string
+  subject: string
+  textBody?: string
+  htmlBody?: string
+  recipients: RecipientRequest[]
+}
+
+export interface ReplyRequest {
+  textBody?: string
+  htmlBody?: string
+  replyAll: boolean
+}
+
+export interface ForwardRequest {
+  textBody?: string
+  htmlBody?: string
+  recipients: RecipientRequest[]
+}
