@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using MimeKit.Utils;
 using Relate.Smtp.Api.Models;
 using Relate.Smtp.Api.Services;
 using Relate.Smtp.Core.Entities;

@@ -4,6 +4,7 @@ using MailKit.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using MimeKit.Utils;
 using Relate.Smtp.Core.Entities;
 
 namespace Relate.Smtp.Infrastructure.Services;
@@ -31,7 +32,7 @@ public class SmtpDeliveryService
         OutboundEmail email,
         CancellationToken cancellationToken = default)
     {
-        var message = BuildMimeMessage(email);
+        using var message = BuildMimeMessage(email);
         var results = new List<RecipientDeliveryResult>();
         var opts = _options.Value;
 
@@ -141,7 +142,9 @@ public class SmtpDeliveryService
 
             try
             {
+#pragma warning disable CA2000 // SmtpClient is disposed by the using declaration
                 using var client = new SmtpClient();
+#pragma warning restore CA2000
                 client.Timeout = opts.SmtpTimeoutSeconds * 1000;
 
                 // Try STARTTLS first, fall back to no encryption
@@ -149,7 +152,7 @@ public class SmtpDeliveryService
                     .ConfigureAwait(false);
 
                 // Build a message with only this domain's recipients
-                var domainMessage = CloneMessageForRecipients(message, recipients);
+                using var domainMessage = CloneMessageForRecipients(message, recipients);
                 await client.SendAsync(domainMessage, cancellationToken).ConfigureAwait(false);
                 await client.DisconnectAsync(true, cancellationToken).ConfigureAwait(false);
 
@@ -190,7 +193,7 @@ public class SmtpDeliveryService
                 RecipientId = recipient.Id,
                 Address = recipient.Address,
                 Success = false,
-                MxHost = mxHosts.FirstOrDefault() ?? domain,
+                MxHost = mxHosts.Count > 0 ? mxHosts[0] : domain,
                 ErrorMessage = $"All MX hosts for {domain} failed"
             });
         }
