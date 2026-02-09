@@ -14,6 +14,7 @@ public class ImapSession
     public string ConnectionId { get; init; } = Guid.NewGuid().ToString();
     public DateTime ConnectedAt { get; init; } = DateTime.UtcNow;
     public DateTime LastActivityAt { get; set; } = DateTime.UtcNow;
+    public string ClientIp { get; init; } = "unknown";
 
     public ImapState State { get; set; } = ImapState.NotAuthenticated;
     public string? Username { get; set; }

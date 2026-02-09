@@ -106,6 +106,9 @@ public class Pop3ServerHostedService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var handler = scope.ServiceProvider.GetRequiredService<Handlers.Pop3CommandHandler>();
 
+        // Extract client IP for rate limiting
+        var clientIp = client.Client.RemoteEndPoint?.ToString()?.Split(':')[0] ?? "unknown";
+
         SslStream? sslStream = null;
         X509Certificate2? cert = null;
 
@@ -129,7 +132,7 @@ public class Pop3ServerHostedService : BackgroundService
                 _logger.LogDebug("SSL/TLS handshake completed");
             }
 
-            await handler.HandleSessionAsync(stream, ct);
+            await handler.HandleSessionAsync(stream, clientIp, ct);
         }
         catch (OperationCanceledException)
         {

@@ -25,13 +25,13 @@ public class Pop3CommandHandler
         _options = options.Value;
     }
 
-    public async Task HandleSessionAsync(Stream stream, CancellationToken ct)
+    public async Task HandleSessionAsync(Stream stream, string clientIp, CancellationToken ct)
     {
         using var reader = new StreamReader(stream, Encoding.UTF8, leaveOpen: false);
         // Use UTF8 without BOM - MailKit and other clients don't expect BOM in protocol greetings
         using var writer = new StreamWriter(stream, new UTF8Encoding(false), leaveOpen: false) { AutoFlush = true };
 
-        var session = new Pop3Session();
+        var session = new Pop3Session { ClientIp = clientIp };
         _logger.LogInformation("POP3 session started: {ConnectionId}", session.ConnectionId);
 
         try
@@ -162,7 +162,7 @@ public class Pop3CommandHandler
 
         var password = command.Arguments[0];
         var (authenticated, userId) = await _authenticator.AuthenticateAsync(
-            session.Username, password, ct);
+            session.Username, password, session.ClientIp, ct);
 
         if (!authenticated || !userId.HasValue)
         {

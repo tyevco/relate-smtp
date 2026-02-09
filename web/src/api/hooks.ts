@@ -35,7 +35,17 @@ export function useSearchEmails(
   if (filters.isRead !== undefined) params.set('isRead', filters.isRead.toString())
 
   return useQuery({
-    queryKey: ['emails', 'search', filters, page, pageSize],
+    queryKey: [
+      'emails',
+      'search',
+      filters.query ?? '',
+      filters.fromDate ?? '',
+      filters.toDate ?? '',
+      filters.hasAttachments ?? null,
+      filters.isRead ?? null,
+      page,
+      pageSize
+    ],
     queryFn: () => api.get<EmailListResponse>(`/emails/search?${params.toString()}`),
     enabled: !!filters.query || filters.hasAttachments !== undefined || filters.isRead !== undefined,
   })

@@ -18,6 +18,25 @@ interface ApiClientConfig {
 }
 
 /**
+ * Validate that a server URL uses HTTPS.
+ * Allows HTTP only for localhost during development.
+ */
+function validateServerUrl(url: string): void {
+  const lowercaseUrl = url.toLowerCase();
+  const isHttps = lowercaseUrl.startsWith("https://");
+  const isLocalhost =
+    lowercaseUrl.startsWith("http://localhost") ||
+    lowercaseUrl.startsWith("http://127.0.0.1");
+
+  if (!isHttps && !isLocalhost) {
+    throw new Error(
+      `Security error: Server URL must use HTTPS. Got: ${url}. ` +
+      `HTTP is only allowed for localhost during development.`
+    );
+  }
+}
+
+/**
  * Create an API request function for a specific account configuration
  */
 function createApiRequest(config: ApiClientConfig) {
@@ -92,6 +111,9 @@ function createApiRequest(config: ApiClientConfig) {
  * Create a complete API client for a specific configuration
  */
 function createApiClient(config: ApiClientConfig) {
+  // Validate HTTPS requirement for all API clients
+  validateServerUrl(config.baseUrl);
+
   const request = createApiRequest(config);
 
   return {

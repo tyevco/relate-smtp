@@ -25,6 +25,25 @@ export interface OidcResult {
 }
 
 /**
+ * Validate that a server URL uses HTTPS.
+ * Allows HTTP only for localhost during development.
+ */
+function validateServerUrl(url: string): void {
+  const lowercaseUrl = url.toLowerCase();
+  const isHttps = lowercaseUrl.startsWith("https://");
+  const isLocalhost =
+    lowercaseUrl.startsWith("http://localhost") ||
+    lowercaseUrl.startsWith("http://127.0.0.1");
+
+  if (!isHttps && !isLocalhost) {
+    throw new Error(
+      `Security error: Server URL must use HTTPS. Got: ${url}. ` +
+      `HTTP is only allowed for localhost during development.`
+    );
+  }
+}
+
+/**
  * Parse JSON response with better error handling
  */
 async function parseJsonResponse<T>(response: Response, url: string): Promise<T> {
@@ -45,6 +64,9 @@ async function parseJsonResponse<T>(response: Response, url: string): Promise<T>
 export async function discoverServer(
   serverUrl: string
 ): Promise<{ discovery: ServerDiscovery; oidcConfig?: OidcConfig }> {
+  // Validate HTTPS requirement
+  validateServerUrl(serverUrl);
+
   // Normalize URL
   const baseUrl = serverUrl.replace(/\/$/, "");
   const discoveryUrl = `${baseUrl}/api/discovery`;

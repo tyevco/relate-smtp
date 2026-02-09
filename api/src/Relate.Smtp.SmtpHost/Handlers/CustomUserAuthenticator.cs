@@ -6,8 +6,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Relate.Smtp.SmtpHost.Handlers;
 
@@ -16,6 +14,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<CustomUserAuthenticator> _logger;
     private readonly IBackgroundTaskQueue _backgroundTaskQueue;
+    private readonly IAuthenticationRateLimiter _rateLimiter;
     private static readonly MemoryCache _authCache = new(new MemoryCacheOptions
     {
         SizeLimit = 10000,
@@ -26,18 +25,13 @@ public class CustomUserAuthenticator : IUserAuthenticator
     public CustomUserAuthenticator(
         IServiceProvider serviceProvider,
         ILogger<CustomUserAuthenticator> logger,
-        IBackgroundTaskQueue backgroundTaskQueue)
+        IBackgroundTaskQueue backgroundTaskQueue,
+        IAuthenticationRateLimiter rateLimiter)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _backgroundTaskQueue = backgroundTaskQueue;
-    }
-
-    private static string GenerateCacheKey(string email, string password)
-    {
-        var input = $"{email.ToLowerInvariant()}:{password}";
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
-        return Convert.ToBase64String(hash);
+        _rateLimiter = rateLimiter;
     }
 
     public async Task<bool> AuthenticateAsync(
@@ -51,8 +45,22 @@ public class CustomUserAuthenticator : IUserAuthenticator
 
         ProtocolMetrics.SmtpAuthAttempts.Add(1);
 
+        // Get client IP for rate limiting
+        var clientIp = context.Properties.TryGetValue("ClientIP", out var ip) ? ip?.ToString() ?? "unknown" : "unknown";
+
+        // Check rate limit before authentication
+        var rateLimitResult = _rateLimiter.CheckRateLimit(clientIp, "smtp");
+        if (rateLimitResult.IsBlocked)
+        {
+            _logger.LogWarning("SMTP authentication rate limited for {User} from {IP}", user, clientIp);
+            activity?.SetTag("smtp.auth.rate_limited", true);
+            activity?.SetTag("smtp.auth.success", false);
+            ProtocolMetrics.SmtpAuthFailures.Add(1);
+            return false;
+        }
+
         var normalizedEmail = user.ToLowerInvariant();
-        var cacheKey = GenerateCacheKey(normalizedEmail, password);
+        var cacheKey = _rateLimiter.GenerateCacheKey(normalizedEmail, password);
 
         // Check cache first
         if (_authCache.TryGetValue(cacheKey, out CacheEntry? cached) && cached != null)
@@ -87,6 +95,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
             activity?.SetTag("smtp.auth.success", false);
             activity?.SetTag("smtp.auth.failure_reason", "user_not_found");
             ProtocolMetrics.SmtpAuthFailures.Add(1);
+            _rateLimiter.RecordFailure(clientIp, "smtp");
             CacheResult(cacheKey, Guid.Empty, false);
             return false;
         }
@@ -103,6 +112,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
                     activity?.SetTag("smtp.auth.success", false);
                     activity?.SetTag("smtp.auth.failure_reason", "missing_scope");
                     ProtocolMetrics.SmtpAuthFailures.Add(1);
+                    _rateLimiter.RecordFailure(clientIp, "smtp");
                     CacheResult(cacheKey, Guid.Empty, false);
                     return false;
                 }
@@ -118,6 +128,9 @@ public class CustomUserAuthenticator : IUserAuthenticator
                 // Queue last used timestamp update for background processing
                 _backgroundTaskQueue.QueueLastUsedAtUpdate(apiKey.Id, DateTimeOffset.UtcNow);
 
+                // Clear rate limit on success
+                _rateLimiter.RecordSuccess(clientIp, "smtp");
+
                 CacheResult(cacheKey, apiKey.Id, true);
                 return true;
             }
@@ -127,6 +140,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
         activity?.SetTag("smtp.auth.success", false);
         activity?.SetTag("smtp.auth.failure_reason", "invalid_key");
         ProtocolMetrics.SmtpAuthFailures.Add(1);
+        _rateLimiter.RecordFailure(clientIp, "smtp");
         CacheResult(cacheKey, Guid.Empty, false);
         return false;
     }

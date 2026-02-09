@@ -30,6 +30,9 @@ public static class DependencyInjection
         services.AddSingleton<IBackgroundTaskQueue>(sp => sp.GetRequiredService<BackgroundTaskQueue>());
         services.AddHostedService<BackgroundTaskQueueHostedService>();
 
+        // Authentication rate limiter for brute force protection
+        services.AddSingleton<IAuthenticationRateLimiter, AuthenticationRateLimiter>();
+
         return services;
     }
 }

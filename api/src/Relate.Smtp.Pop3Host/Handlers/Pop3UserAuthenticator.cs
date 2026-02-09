@@ -4,8 +4,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Relate.Smtp.Pop3Host.Handlers;
 
@@ -14,6 +12,7 @@ public class Pop3UserAuthenticator
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<Pop3UserAuthenticator> _logger;
     private readonly IBackgroundTaskQueue _backgroundTaskQueue;
+    private readonly IAuthenticationRateLimiter _rateLimiter;
     private static readonly MemoryCache _authCache = new(new MemoryCacheOptions
     {
         SizeLimit = 10000,
@@ -24,23 +23,19 @@ public class Pop3UserAuthenticator
     public Pop3UserAuthenticator(
         IServiceProvider serviceProvider,
         ILogger<Pop3UserAuthenticator> logger,
-        IBackgroundTaskQueue backgroundTaskQueue)
+        IBackgroundTaskQueue backgroundTaskQueue,
+        IAuthenticationRateLimiter rateLimiter)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _backgroundTaskQueue = backgroundTaskQueue;
-    }
-
-    private static string GenerateCacheKey(string email, string password)
-    {
-        var input = $"{email.ToLowerInvariant()}:{password}";
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
-        return Convert.ToBase64String(hash);
+        _rateLimiter = rateLimiter;
     }
 
     public async Task<(bool IsAuthenticated, Guid? UserId)> AuthenticateAsync(
         string username,
         string password,
+        string clientIp,
         CancellationToken ct)
     {
         using var activity = TelemetryConfiguration.Pop3ActivitySource.StartActivity("pop3.auth.validate");
@@ -48,8 +43,19 @@ public class Pop3UserAuthenticator
 
         ProtocolMetrics.Pop3AuthAttempts.Add(1);
 
+        // Check rate limit before authentication
+        var rateLimitResult = _rateLimiter.CheckRateLimit(clientIp, "pop3");
+        if (rateLimitResult.IsBlocked)
+        {
+            _logger.LogWarning("POP3 authentication rate limited for {User} from {IP}", username, clientIp);
+            activity?.SetTag("pop3.auth.rate_limited", true);
+            activity?.SetTag("pop3.auth.success", false);
+            ProtocolMetrics.Pop3AuthFailures.Add(1);
+            return (false, null);
+        }
+
         var normalizedEmail = username.ToLowerInvariant();
-        var cacheKey = GenerateCacheKey(normalizedEmail, password);
+        var cacheKey = _rateLimiter.GenerateCacheKey(normalizedEmail, password);
 
         // Check cache (30-second TTL)
         if (_authCache.TryGetValue(cacheKey, out CacheEntry? cached) && cached != null)
@@ -81,6 +87,7 @@ public class Pop3UserAuthenticator
             activity?.SetTag("pop3.auth.success", false);
             activity?.SetTag("pop3.auth.failure_reason", "user_not_found");
             ProtocolMetrics.Pop3AuthFailures.Add(1);
+            _rateLimiter.RecordFailure(clientIp, "pop3");
             CacheResult(cacheKey, false, null, Guid.Empty);
             return (false, null);
         }
@@ -97,6 +104,7 @@ public class Pop3UserAuthenticator
                     activity?.SetTag("pop3.auth.success", false);
                     activity?.SetTag("pop3.auth.failure_reason", "missing_scope");
                     ProtocolMetrics.Pop3AuthFailures.Add(1);
+                    _rateLimiter.RecordFailure(clientIp, "pop3");
                     CacheResult(cacheKey, false, null, Guid.Empty);
                     return (false, null);
                 }
@@ -104,6 +112,7 @@ public class Pop3UserAuthenticator
                 _logger.LogInformation("POP3 user authenticated: {Email} using key: {KeyName}", username, apiKey.Name);
                 activity?.SetTag("pop3.auth.success", true);
                 activity?.SetTag("pop3.auth.key_name", apiKey.Name);
+                _rateLimiter.RecordSuccess(clientIp, "pop3");
                 CacheResult(cacheKey, true, user.Id, apiKey.Id);
                 _backgroundTaskQueue.QueueLastUsedAtUpdate(apiKey.Id, DateTimeOffset.UtcNow);
                 return (true, user.Id);
@@ -114,6 +123,7 @@ public class Pop3UserAuthenticator
         activity?.SetTag("pop3.auth.success", false);
         activity?.SetTag("pop3.auth.failure_reason", "invalid_key");
         ProtocolMetrics.Pop3AuthFailures.Add(1);
+        _rateLimiter.RecordFailure(clientIp, "pop3");
         CacheResult(cacheKey, false, null, Guid.Empty);
         return (false, null);
     }
