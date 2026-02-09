@@ -80,7 +80,7 @@ public class MxMailboxFilterTests
         return contextMock;
     }
 
-    private static IMailbox CreateMailbox(string user, string host)
+    private static Mailbox CreateMailbox(string user, string host)
     {
         return new Mailbox(user, host);
     }
