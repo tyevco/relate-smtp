@@ -95,7 +95,10 @@ describe('OIDC Module', () => {
 
       const result = await discoverServer('https://api.example.com')
 
-      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/api/discovery')
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/api/discovery',
+        expect.objectContaining({ signal: expect.any(Object) })
+      )
       expect(result.discovery).toEqual(mockDiscovery)
       expect(result.oidcConfig).toBeUndefined()
     })
@@ -183,7 +186,10 @@ describe('OIDC Module', () => {
 
       await discoverServer('https://api.example.com/')
 
-      expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/api/discovery')
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.example.com/api/discovery',
+        expect.objectContaining({ signal: expect.any(Object) })
+      )
     })
 
     it('throws error when discovery fails', async () => {

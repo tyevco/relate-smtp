@@ -63,24 +63,27 @@ public class ImapSessionTests
     }
 
     [Fact]
-    public void NewSession_HasNonZeroUidValidity()
+    public void NewSession_HasZeroUidValidity()
     {
         // Act
         var session = new ImapSession();
 
-        // Assert - UIDVALIDITY should be a non-zero timestamp-based value
-        session.UidValidity.ShouldBeGreaterThan(0u);
+        // Assert - UIDVALIDITY is 0 until mailbox is selected
+        // It gets set to a user-specific value during SELECT command
+        session.UidValidity.ShouldBe(0u);
     }
 
     [Fact]
-    public void MultipleSessions_HaveSameUidValidity()
+    public void UidValidity_CanBeSet()
     {
-        // Act - Sessions created in the same app instance should share UIDVALIDITY
-        var session1 = new ImapSession();
-        var session2 = new ImapSession();
+        // Arrange
+        var session = new ImapSession();
+
+        // Act - Simulates what happens during SELECT
+        session.UidValidity = 12345u;
 
         // Assert
-        session1.UidValidity.ShouldBe(session2.UidValidity);
+        session.UidValidity.ShouldBe(12345u);
     }
 
     [Fact]

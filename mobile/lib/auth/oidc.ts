@@ -44,6 +44,24 @@ function validateServerUrl(url: string): void {
 }
 
 /**
+ * Fetch with timeout to prevent indefinite hangs
+ */
+async function fetchWithTimeout(url: string, timeoutMs = 10000): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new Error(`Request to ${url} timed out after ${timeoutMs}ms`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
  * Parse JSON response with better error handling
  */
 async function parseJsonResponse<T>(response: Response, url: string): Promise<T> {
@@ -74,8 +92,11 @@ export async function discoverServer(
   // Fetch server discovery
   let discoveryResponse: Response;
   try {
-    discoveryResponse = await fetch(discoveryUrl);
+    discoveryResponse = await fetchWithTimeout(discoveryUrl);
   } catch (err) {
+    if (err instanceof Error && err.message.includes("timed out")) {
+      throw err;
+    }
     throw new Error(
       `Cannot connect to server at ${baseUrl}. Please check the URL and your network connection.`
     );
@@ -97,7 +118,7 @@ export async function discoverServer(
   let oidcConfig: OidcConfig | undefined;
   if (discovery.oidcEnabled) {
     const configUrl = `${baseUrl}/config/config.json`;
-    const configResponse = await fetch(configUrl);
+    const configResponse = await fetchWithTimeout(configUrl);
     if (configResponse.ok) {
       const config = await parseJsonResponse<{
         oidcAuthority?: string;

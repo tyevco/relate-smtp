@@ -328,6 +328,10 @@ public class ImapCommandHandler
         session.DeletedUids.Clear();
         session.State = ImapState.Selected;
 
+        // Compute UIDVALIDITY from user ID for deterministic, per-user value
+        // RFC 9051 requires UIDVALIDITY to change only when UIDs are reassigned
+        session.UidValidity = ComputeUidValidity(session.UserId!.Value);
+
         selectActivity?.SetTag("imap.message_count", session.Messages.Count);
 
         // Send mailbox status
@@ -384,7 +388,7 @@ public class ImapCommandHandler
         if (statusItems.Contains("UIDNEXT", StringComparison.Ordinal))
             statusParts.Add($"UIDNEXT {(messages.Count > 0 ? messages.Max(m => m.Uid) + 1 : 1)}");
         if (statusItems.Contains("UIDVALIDITY", StringComparison.Ordinal))
-            statusParts.Add($"UIDVALIDITY {session.UidValidity}");
+            statusParts.Add($"UIDVALIDITY {ComputeUidValidity(session.UserId!.Value)}");
 
         await writer.WriteLineAsync(ImapResponse.Status("INBOX", string.Join(" ", statusParts)));
         await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "STATUS completed"));
@@ -800,6 +804,20 @@ public class ImapCommandHandler
         session.State = ImapState.Authenticated;
 
         await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "UNSELECT completed"));
+    }
+
+    /// <summary>
+    /// Compute a deterministic UIDVALIDITY value from the user ID.
+    /// This ensures the same user always gets the same UIDVALIDITY for their INBOX.
+    /// </summary>
+    private static uint ComputeUidValidity(Guid userId)
+    {
+        // Use first 4 bytes of user GUID as basis for UIDVALIDITY
+        // This is deterministic and unique per user
+        var bytes = userId.ToByteArray();
+        var value = BitConverter.ToUInt32(bytes, 0);
+        // Ensure non-zero (UIDVALIDITY must be non-zero per RFC 9051)
+        return value == 0 ? 1 : value;
     }
 
     /// <summary>

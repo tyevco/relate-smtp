@@ -48,6 +48,8 @@ export function useSearchEmails(
     ],
     queryFn: () => api.get<EmailListResponse>(`/emails/search?${params.toString()}`),
     enabled: !!filters.query || filters.hasAttachments !== undefined || filters.isRead !== undefined,
+    staleTime: 30000, // 30 seconds - prevents refetching when filters change rapidly
+    gcTime: 300000, // 5 minutes - keeps cached results for back navigation
   })
 }
 
