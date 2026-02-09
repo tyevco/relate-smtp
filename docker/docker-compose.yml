@@ -56,11 +56,16 @@ services:
       - Smtp__ServerName=${SMTP_SERVER_NAME:-localhost}
       - Smtp__Port=587
       - Smtp__RequireAuthentication=true
+      - Smtp__Mx__Enabled=${SMTP_MX_ENABLED:-false}
+      - Smtp__Mx__Port=25
+      - Smtp__Mx__HostedDomains__0=${SMTP_MX_HOSTED_DOMAIN:-}
+      - Smtp__Mx__ValidateRecipients=${SMTP_MX_VALIDATE_RECIPIENTS:-true}
       - Api__BaseUrl=http://api:8080
       - Internal__ApiKey=${INTERNAL_API_KEY:-}
     ports:
       - "587:587"
       - "465:465"
+      - "25:25"
     networks:
       - relate-network
     restart: unless-stopped
