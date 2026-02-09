@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import {
   User,
   Key,
+  Shield,
   Settings as SettingsIcon,
   Users,
   ChevronRight,
@@ -135,6 +136,13 @@ export default function SettingsScreen() {
               title="Preferences"
               subtitle="Theme, notifications, display"
               onPress={() => router.push("/(main)/preferences")}
+            />
+            <View className="mx-4 h-px bg-border" />
+            <MenuItem
+              icon={<Shield size={20} color="#64748b" />}
+              title="Security"
+              subtitle="Certificate pinning, TLS settings"
+              onPress={() => router.push("/(main)/security")}
             />
           </View>
 

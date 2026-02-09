@@ -15,8 +15,9 @@ import {
   performOidcAuth,
   getPlatform,
 } from "@/lib/auth/oidc";
-import { createTempApiClient } from "@/lib/api/client";
+import { createTempApiClient, CertificatePinError } from "@/lib/api/client";
 import type { CreatedApiKey, Profile } from "@/lib/api/types";
+import { extractDomain, removePin } from "@/lib/security/certificate-pinning";
 
 type Step = "url" | "discovering" | "authenticating" | "creating-key";
 
@@ -100,6 +101,30 @@ export default function AddAccountScreen() {
       router.replace("/(main)/(tabs)/inbox");
     } catch (err) {
       console.error("Add account error:", err);
+
+      if (err instanceof CertificatePinError) {
+        // Certificate pin mismatch — warn the user and offer to re-pin
+        const domain = err.domain;
+        Alert.alert(
+          "Certificate Changed",
+          `${err.message}\n\nIf you trust this server, you can reset the stored certificate and try again.`,
+          [
+            { text: "Cancel", style: "cancel", onPress: () => setStep("url") },
+            {
+              text: "Reset & Retry",
+              style: "destructive",
+              onPress: async () => {
+                await removePin(domain);
+                setStep("url");
+                // Retry the connection automatically
+                handleConnect();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
       setError(
         err instanceof Error
           ? err.message
