@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as SplashScreen from "expo-splash-screen";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { BiometricGate } from "@/components/ui/biometric-gate";
 import "../global.css";
 
 // Prevent auto-hiding splash screen
@@ -32,10 +33,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <ErrorBoundary>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(auth)" />
-              <Stack.Screen name="(main)" />
-            </Stack>
+            <BiometricGate>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(auth)" />
+                <Stack.Screen name="(main)" />
+              </Stack>
+            </BiometricGate>
           </ErrorBoundary>
           <StatusBar style="auto" />
         </GestureHandlerRootView>

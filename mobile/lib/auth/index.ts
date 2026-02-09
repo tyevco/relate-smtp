@@ -6,3 +6,6 @@ export * from "./secure-storage";
 
 // OIDC
 export * from "./oidc";
+
+// Biometric Authentication
+export * from "./biometric";
