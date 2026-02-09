@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import {
   ArrowLeft,
   Shield,
@@ -10,7 +10,6 @@ import {
   Trash2,
   RefreshCw,
 } from "lucide-react-native";
-import { useFocusEffect } from "expo-router";
 import { useAccounts } from "@/lib/auth/account-store";
 import {
   extractDomain,
