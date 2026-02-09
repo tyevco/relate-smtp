@@ -297,6 +297,26 @@ export const handlers = [
     })
   }),
 
+  http.post(`${BASE_URL}/profile/addresses/:id/send-verification`, () => {
+    return HttpResponse.json({ message: 'Verification code sent' })
+  }),
+
+  http.post(`${BASE_URL}/profile/addresses/:id/verify`, async ({ request }) => {
+    const body = (await request.json()) as { code: string }
+    if (body.code === '123456') {
+      return HttpResponse.json({
+        id: crypto.randomUUID(),
+        address: 'verified@example.com',
+        isVerified: true,
+        addedAt: new Date().toISOString(),
+      })
+    }
+    return HttpResponse.json(
+      { error: 'Invalid verification code' },
+      { status: 400 }
+    )
+  }),
+
   http.delete(`${BASE_URL}/profile/addresses/:id`, () => {
     return new HttpResponse(null, { status: 204 })
   }),

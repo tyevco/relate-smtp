@@ -11,6 +11,8 @@ public interface IUserRepository
     Task<User> AddAsync(User user, CancellationToken cancellationToken = default);
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
     Task<UserEmailAddress> AddEmailAddressAsync(UserEmailAddress address, CancellationToken cancellationToken = default);
+    Task<UserEmailAddress?> GetEmailAddressByIdAsync(Guid addressId, CancellationToken cancellationToken = default);
+    Task UpdateEmailAddressAsync(UserEmailAddress address, CancellationToken cancellationToken = default);
     Task RemoveEmailAddressAsync(Guid addressId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetAllEmailAddressesAsync(Guid userId, CancellationToken cancellationToken = default);
 }

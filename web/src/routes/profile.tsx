@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuth } from 'react-oidc-context'
 import { getConfig } from '@/config'
-import { useProfile, useUpdateProfile, useAddEmailAddress, useRemoveEmailAddress } from '@/api/hooks'
+import { useProfile, useUpdateProfile, useAddEmailAddress, useRemoveEmailAddress, useSendVerification, useVerifyEmailAddress } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Trash2, Plus, Check, X } from 'lucide-react'
+import { Trash2, Plus, Check, X, ShieldCheck } from 'lucide-react'
 
 export const Route = createFileRoute('/profile')({
   component: ProfilePage,
@@ -20,11 +20,16 @@ function ProfilePage() {
   const updateProfile = useUpdateProfile()
   const addAddress = useAddEmailAddress()
   const removeAddress = useRemoveEmailAddress()
+  const sendVerification = useSendVerification()
+  const verifyAddress = useVerifyEmailAddress()
 
   const [isEditingName, setIsEditingName] = useState(false)
   const [displayName, setDisplayName] = useState('')
   const [newAddress, setNewAddress] = useState('')
   const [isAddingAddress, setIsAddingAddress] = useState(false)
+  const [verifyingAddressId, setVerifyingAddressId] = useState<string | null>(null)
+  const [verificationCode, setVerificationCode] = useState('')
+  const [verificationError, setVerificationError] = useState('')
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -49,6 +54,33 @@ function ProfilePage() {
         },
       })
     }
+  }
+
+  const handleSendVerification = (addressId: string) => {
+    setVerificationError('')
+    setVerificationCode('')
+    sendVerification.mutate(addressId, {
+      onSuccess: () => {
+        setVerifyingAddressId(addressId)
+      },
+    })
+  }
+
+  const handleVerify = () => {
+    if (!verifyingAddressId || !verificationCode.trim()) return
+    setVerificationError('')
+    verifyAddress.mutate(
+      { addressId: verifyingAddressId, code: verificationCode.trim() },
+      {
+        onSuccess: () => {
+          setVerifyingAddressId(null)
+          setVerificationCode('')
+        },
+        onError: () => {
+          setVerificationError('Invalid or expired verification code')
+        },
+      }
+    )
   }
 
   if (isLoading) {
@@ -162,23 +194,80 @@ function ProfilePage() {
 
               {/* Additional addresses */}
               {profile.additionalAddresses.map((addr) => (
-                <div key={addr.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 rounded border gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm break-all">{addr.address}</span>
-                    {addr.isVerified ? (
-                      <Badge variant="secondary" className="text-xs">Verified</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs">Unverified</Badge>
-                    )}
+                <div key={addr.id} className="space-y-2">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 rounded border gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm break-all">{addr.address}</span>
+                      {addr.isVerified ? (
+                        <Badge variant="secondary" className="text-xs">Verified</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-xs">Unverified</Badge>
+                      )}
+                    </div>
+                    <div className="flex gap-1">
+                      {!addr.isVerified && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSendVerification(addr.id)}
+                          disabled={sendVerification.isPending}
+                          className="min-h-[44px] text-xs"
+                        >
+                          <ShieldCheck className="h-4 w-4 mr-1" />
+                          Verify
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAddress.mutate(addr.id)}
+                        className="min-h-[44px]"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeAddress.mutate(addr.id)}
-                    className="min-h-[44px]"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {verifyingAddressId === addr.id && (
+                    <div className="flex flex-col gap-2 p-2 ml-2 border-l-2">
+                      <p className="text-xs text-muted-foreground">
+                        Enter the 6-digit verification code sent to {addr.address}
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <Input
+                          value={verificationCode}
+                          onChange={(e) => setVerificationCode(e.target.value)}
+                          placeholder="000000"
+                          maxLength={6}
+                          className="text-sm w-32"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={handleVerify}
+                            disabled={verifyAddress.isPending || verificationCode.trim().length !== 6}
+                            className="min-h-[44px]"
+                          >
+                            Submit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setVerifyingAddressId(null)
+                              setVerificationCode('')
+                              setVerificationError('')
+                            }}
+                            className="min-h-[44px]"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                      {verificationError && (
+                        <p className="text-xs text-destructive">{verificationError}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
 

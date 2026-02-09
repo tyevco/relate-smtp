@@ -14,6 +14,9 @@ public class UserEmailAddressConfiguration : IEntityTypeConfiguration<UserEmailA
             .HasMaxLength(320)
             .IsRequired();
 
+        builder.Property(a => a.VerificationToken)
+            .HasMaxLength(6);
+
         builder.HasIndex(a => a.Address);
         builder.HasIndex(a => new { a.UserId, a.Address }).IsUnique();
     }
