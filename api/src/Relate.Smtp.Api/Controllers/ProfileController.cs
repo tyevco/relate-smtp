@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authorization;
@@ -190,6 +191,6 @@ public class ProfileController : ControllerBase
 
     private static string GenerateVerificationCode()
     {
-        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6");
+        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6", CultureInfo.InvariantCulture);
     }
 }
