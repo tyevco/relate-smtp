@@ -78,7 +78,7 @@ LABEL org.opencontainers.image.description="SMTP server for receiving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
 LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
-EXPOSE 587 465
+EXPOSE 25 587 465
 ENTRYPOINT ["dotnet", "Relate.Smtp.SmtpHost.dll"]
 
 # POP3 runtime image

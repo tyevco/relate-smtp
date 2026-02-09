@@ -19,6 +19,42 @@ public class SmtpServerOptions
     public string? CertificatePassword { get; set; }
     public long MaxAttachmentSizeBytes { get; set; } = 25 * 1024 * 1024;  // 25 MB
     public long MaxMessageSizeBytes { get; set; } = 50 * 1024 * 1024;     // 50 MB
+
+    /// <summary>
+    /// MX endpoint configuration for accepting inbound mail from the internet.
+    /// </summary>
+    public MxEndpointOptions Mx { get; set; } = new();
+}
+
+/// <summary>
+/// Configuration for the MX (Mail Exchange) endpoint that accepts unauthenticated
+/// server-to-server mail delivery on port 25.
+/// </summary>
+public class MxEndpointOptions
+{
+    /// <summary>
+    /// Whether the MX endpoint is enabled. Defaults to false.
+    /// </summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>
+    /// The port for the MX endpoint (unauthenticated inbound mail). Defaults to 25.
+    /// </summary>
+    public int Port { get; set; } = 25;
+
+    /// <summary>
+    /// The domains this server is authoritative for. Mail will only be accepted
+    /// for recipients at these domains to prevent open relay.
+    /// Example: ["example.com", "mail.example.com"]
+    /// </summary>
+    public string[] HostedDomains { get; set; } = [];
+
+    /// <summary>
+    /// Whether to validate that recipients exist in the database before accepting mail.
+    /// When true, rejects mail to unknown users at hosted domains during the RCPT TO phase.
+    /// Defaults to true.
+    /// </summary>
+    public bool ValidateRecipients { get; set; } = true;
 }
 
 public class SmtpServerHostedService : BackgroundService
@@ -42,7 +78,7 @@ public class SmtpServerHostedService : BackgroundService
     {
         var optionsBuilder = new SmtpServerOptionsBuilder()
             .ServerName(_options.ServerName)
-            // Plain port with STARTTLS support
+            // Plain port with STARTTLS support (client submission)
             .Endpoint(endpoint =>
             {
                 endpoint.Port(_options.Port, false);
@@ -52,7 +88,7 @@ public class SmtpServerHostedService : BackgroundService
                     endpoint.AllowUnsecureAuthentication();
                 }
             })
-            // Secure port (implicit TLS)
+            // Secure port (implicit TLS, client submission)
             .Endpoint(endpoint =>
             {
                 endpoint.Port(_options.SecurePort, true);
@@ -66,11 +102,38 @@ public class SmtpServerHostedService : BackgroundService
                 }
             });
 
+        // MX endpoint (port 25) - unauthenticated server-to-server delivery
+        if (_options.Mx.Enabled)
+        {
+            if (_options.Mx.HostedDomains.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "Smtp:Mx:HostedDomains must be configured when MX endpoint is enabled. " +
+                    "This prevents the server from acting as an open relay.");
+            }
+
+            optionsBuilder.Endpoint(endpoint =>
+            {
+                endpoint.Port(_options.Mx.Port, false);
+                // No AuthenticationRequired() — MX accepts unauthenticated mail
+                if (!string.IsNullOrEmpty(_options.CertificatePath))
+                {
+                    endpoint.Certificate(LoadCertificate());
+                }
+            });
+
+            _logger.LogInformation(
+                "MX endpoint enabled on port {MxPort} for domains: {Domains}",
+                _options.Mx.Port,
+                string.Join(", ", _options.Mx.HostedDomains));
+        }
+
         var smtpServerOptions = optionsBuilder.Build();
 
         var serviceProvider = new SmtpServer.ComponentModel.ServiceProvider();
         serviceProvider.Add(CreateMessageStore());
         serviceProvider.Add(CreateUserAuthenticator());
+        serviceProvider.Add(CreateMailboxFilter());
 
         _smtpServer = new SmtpServer.SmtpServer(smtpServerOptions, serviceProvider);
 
@@ -125,6 +188,12 @@ public class SmtpServerHostedService : BackgroundService
         var backgroundTaskQueue = _serviceProvider.GetRequiredService<IBackgroundTaskQueue>();
         var rateLimiter = _serviceProvider.GetRequiredService<IAuthenticationRateLimiter>();
         return new CustomUserAuthenticator(_serviceProvider, logger, backgroundTaskQueue, rateLimiter);
+    }
+
+    private MxMailboxFilter CreateMailboxFilter()
+    {
+        var logger = _serviceProvider.GetRequiredService<ILogger<MxMailboxFilter>>();
+        return new MxMailboxFilter(_serviceProvider, logger, _options);
     }
 
     private X509Certificate2 LoadCertificate()
