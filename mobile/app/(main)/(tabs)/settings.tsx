@@ -9,16 +9,29 @@ import {
   ChevronRight,
   LogOut,
   Info,
+  AlertTriangle,
 } from "lucide-react-native";
 import { useProfile } from "@/lib/api/hooks";
 import { useActiveAccount, useAccountStore } from "@/lib/auth/account-store";
 import { Avatar } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 
+const KEY_AGE_WARNING_DAYS = 90;
+
+function isKeyOld(createdAt: string): boolean {
+  const created = new Date(createdAt);
+  const now = new Date();
+  const ageDays = Math.floor(
+    (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  return ageDays >= KEY_AGE_WARNING_DAYS;
+}
+
 export default function SettingsScreen() {
   const account = useActiveAccount();
   const { data: profile } = useProfile();
   const removeAccount = useAccountStore((state) => state.removeAccount);
+  const activeKeyIsOld = account ? isKeyOld(account.createdAt) : false;
 
   const handleLogout = () => {
     Alert.alert(
@@ -74,6 +87,29 @@ export default function SettingsScreen() {
               </View>
             </CardContent>
           </Card>
+
+          {/* Key age warning */}
+          {activeKeyIsOld && (
+            <TouchableOpacity
+              onPress={() => router.push("/(main)/api-keys")}
+              activeOpacity={0.7}
+            >
+              <Card className="mb-6 border-amber-300 bg-amber-50">
+                <CardContent className="flex-row items-center gap-3 py-3">
+                  <AlertTriangle size={20} color="#d97706" />
+                  <View className="flex-1">
+                    <Text className="font-medium text-amber-800">
+                      API key rotation recommended
+                    </Text>
+                    <Text className="text-sm text-amber-700">
+                      Your active API key is over 90 days old. Tap to rotate it.
+                    </Text>
+                  </View>
+                  <ChevronRight size={20} color="#d97706" />
+                </CardContent>
+              </Card>
+            </TouchableOpacity>
+          )}
 
           {/* Menu Items */}
           <Text className="mb-2 px-1 text-sm font-medium text-muted-foreground">
