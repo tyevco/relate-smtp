@@ -75,6 +75,17 @@ public class UserRepository : IUserRepository
         return address;
     }
 
+    public async Task<UserEmailAddress?> GetEmailAddressByIdAsync(Guid addressId, CancellationToken cancellationToken = default)
+    {
+        return await _context.UserEmailAddresses.FindAsync([addressId], cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task UpdateEmailAddressAsync(UserEmailAddress address, CancellationToken cancellationToken = default)
+    {
+        _context.UserEmailAddresses.Update(address);
+        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     public async Task RemoveEmailAddressAsync(Guid addressId, CancellationToken cancellationToken = default)
     {
         var address = await _context.UserEmailAddresses.FindAsync([addressId], cancellationToken).ConfigureAwait(false);

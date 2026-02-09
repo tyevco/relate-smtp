@@ -144,6 +144,31 @@ export function useRemoveEmailAddress() {
   })
 }
 
+export function useSendVerification() {
+  return useMutation({
+    mutationFn: (addressId: string) =>
+      api.post<{ message: string }>(`/profile/addresses/${addressId}/send-verification`, {}),
+    onError: (error) => {
+      console.error('Failed to send verification:', error)
+    },
+  })
+}
+
+export function useVerifyEmailAddress() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ addressId, code }: { addressId: string; code: string }) =>
+      api.post<EmailAddress>(`/profile/addresses/${addressId}/verify`, { code }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['profile'] })
+    },
+    onError: (error) => {
+      console.error('Failed to verify email address:', error)
+    },
+  })
+}
+
 // SMTP Credentials hooks
 export function useSmtpCredentials() {
   return useQuery({

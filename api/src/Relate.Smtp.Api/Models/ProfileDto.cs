@@ -26,6 +26,10 @@ public record AddEmailAddressRequest(
     string Address
 );
 
+public record VerifyEmailAddressRequest(
+    string Code
+);
+
 public static class ProfileMappingExtensions
 {
     public static ProfileDto ToDto(this User user)
