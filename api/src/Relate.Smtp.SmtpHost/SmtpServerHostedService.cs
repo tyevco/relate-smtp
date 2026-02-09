@@ -133,7 +133,7 @@ public class SmtpServerHostedService : BackgroundService
         var serviceProvider = new SmtpServer.ComponentModel.ServiceProvider();
         serviceProvider.Add(CreateMessageStore());
         serviceProvider.Add(CreateUserAuthenticator());
-        serviceProvider.Add(CreateMailboxFilter());
+        serviceProvider.Add((IMailboxFilterFactory)CreateMailboxFilter());
 
         _smtpServer = new SmtpServer.SmtpServer(smtpServerOptions, serviceProvider);
 
