@@ -1,15 +1,57 @@
-import { View, Text, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, TouchableOpacity, ScrollView, Switch, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { ArrowLeft, Sun, Moon, Smartphone, Check } from "lucide-react-native";
+import { ArrowLeft, Sun, Moon, Smartphone, Check, Fingerprint } from "lucide-react-native";
 import { usePreferences, useUpdatePreferences } from "@/lib/api/hooks";
 import { Loading } from "@/components/ui/loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { UserPreference } from "@/lib/api/types";
+import {
+  isBiometricAvailable,
+  getBiometricType,
+  authenticateWithBiometrics,
+  useBiometricStore,
+  useBiometricEnabled,
+} from "@/lib/auth/biometric";
 
 export default function PreferencesScreen() {
   const { data: preferences, isLoading, isError } = usePreferences();
   const updatePreferences = useUpdatePreferences();
+  const biometricEnabled = useBiometricEnabled();
+  const setBiometricEnabled = useBiometricStore((s) => s.setEnabled);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const available = await isBiometricAvailable();
+      setBiometricAvailable(available);
+      if (available) {
+        const type = await getBiometricType();
+        setBiometricLabel(type);
+      }
+    })();
+  }, []);
+
+  const handleBiometricToggle = async () => {
+    if (!biometricEnabled) {
+      // Verify identity before enabling
+      const success = await authenticateWithBiometrics(
+        "Authenticate to enable biometric lock"
+      );
+      if (success) {
+        setBiometricEnabled(true);
+      } else {
+        Alert.alert(
+          "Authentication Failed",
+          "Biometric authentication could not be verified. Please try again."
+        );
+      }
+    } else {
+      setBiometricEnabled(false);
+    }
+  };
 
   const handleThemeChange = (theme: "light" | "dark" | "system") => {
     updatePreferences.mutate({ theme });
@@ -155,6 +197,37 @@ export default function PreferencesScreen() {
             ))}
           </CardContent>
         </Card>
+
+        {/* Security */}
+        {biometricAvailable && (
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row flex-1 items-center gap-3">
+                  <Fingerprint size={20} color="#64748b" />
+                  <View className="flex-1">
+                    <Text className="font-medium text-foreground">
+                      {biometricLabel ?? "Biometric"} Lock
+                    </Text>
+                    <Text className="text-sm text-muted-foreground">
+                      Require {biometricLabel?.toLowerCase() ?? "biometric"} to
+                      open the app
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={biometricEnabled}
+                  onValueChange={handleBiometricToggle}
+                  trackColor={{ false: "#e2e8f0", true: "#1e293b" }}
+                  thumbColor="#ffffff"
+                />
+              </View>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Notifications */}
         <Card>

@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "dev.fourrobots.relatemail",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "Relate Mail uses Face ID to protect access to your email accounts."
       }
     },
     "android": {
@@ -35,6 +36,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-local-authentication",
       "expo-font"
     ],
     "experiments": {
