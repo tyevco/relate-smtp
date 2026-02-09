@@ -46,7 +46,9 @@ public class DeliveryQueueProcessor : BackgroundService
             {
                 break;
             }
+#pragma warning disable CA1031 // Do not catch general exception types - Queue processor must continue on errors
             catch (Exception ex)
+#pragma warning restore CA1031
             {
                 _logger.LogError(ex, "Error processing delivery queue");
             }
@@ -175,7 +177,9 @@ public class DeliveryQueueProcessor : BackgroundService
             await notificationService.NotifyDeliveryStatusChangedAsync(email.UserId, email.Id,
                 email.Status.ToString(), cancellationToken).ConfigureAwait(false);
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Delivery handler must capture all failures for retry logic
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             _logger.LogError(ex, "Unexpected error delivering email {EmailId}", email.Id);
             email.LastError = ex.Message;
