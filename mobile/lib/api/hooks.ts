@@ -180,6 +180,23 @@ export function useRevokeSmtpApiKey() {
   });
 }
 
+export function useRotateSmtpApiKey() {
+  const queryClient = useQueryClient();
+  const account = useActiveAccount();
+
+  return useMutation({
+    mutationFn: async (keyId: string) =>
+      withApi((api) =>
+        api.post<CreatedApiKey>(`/smtp-credentials/${keyId}/rotate`, {})
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["smtp-credentials", account?.id],
+      });
+    },
+  });
+}
+
 // Label hooks
 export function useLabels() {
   const account = useActiveAccount();

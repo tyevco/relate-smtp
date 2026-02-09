@@ -17,6 +17,7 @@ import {
   useSmtpCredentials,
   useCreateSmtpApiKey,
   useRevokeSmtpApiKey,
+  useRotateSmtpApiKey,
   useLabels,
   usePreferences,
   useUpdatePreferences,
@@ -284,6 +285,20 @@ describe('API Hooks', () => {
 
       it('returns mutation result when called', async () => {
         const { result } = renderHook(() => useRevokeSmtpApiKey(), {
+          wrapper: createWrapper(),
+        })
+        expect(result.current).toBeDefined()
+        expect(result.current.mutateAsync).toBeDefined()
+      })
+    })
+
+    describe('useRotateSmtpApiKey', () => {
+      it('is a function', () => {
+        expect(typeof useRotateSmtpApiKey).toBe('function')
+      })
+
+      it('returns mutation result when called', async () => {
+        const { result } = renderHook(() => useRotateSmtpApiKey(), {
           wrapper: createWrapper(),
         })
         expect(result.current).toBeDefined()

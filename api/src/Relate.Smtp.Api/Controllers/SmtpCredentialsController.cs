@@ -148,6 +148,54 @@ public class SmtpCredentialsController : ControllerBase
     }
 
     /// <summary>
+    /// Rotate an existing API key: creates a new key with the same scopes and revokes the old one.
+    /// Returns the new key (plaintext shown only once).
+    /// </summary>
+    [HttpPost("{keyId:guid}/rotate")]
+    public async Task<ActionResult<CreatedSmtpApiKeyDto>> RotateApiKey(
+        Guid keyId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
+        var keys = await _apiKeyRepository.GetActiveKeysForUserAsync(user.Id, cancellationToken);
+
+        var existingKey = keys.FirstOrDefault(k => k.Id == keyId);
+        if (existingKey == null)
+        {
+            return NotFound();
+        }
+
+        // Create new key with same scopes and name
+        var apiKey = _credentialService.GenerateApiKey();
+        var keyHash = _credentialService.HashPassword(apiKey);
+        var keyPrefix = _credentialService.ExtractKeyPrefix(apiKey);
+
+        var newSmtpApiKey = new SmtpApiKey
+        {
+            Id = Guid.NewGuid(),
+            UserId = user.Id,
+            Name = existingKey.Name,
+            KeyHash = keyHash,
+            KeyPrefix = keyPrefix,
+            Scopes = existingKey.Scopes,
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        await _apiKeyRepository.CreateAsync(newSmtpApiKey, cancellationToken);
+
+        // Revoke the old key
+        await _apiKeyRepository.RevokeAsync(keyId, cancellationToken);
+
+        return Ok(new CreatedSmtpApiKeyDto(
+            newSmtpApiKey.Id,
+            newSmtpApiKey.Name,
+            apiKey,
+            _apiKeyRepository.ParseScopes(newSmtpApiKey.Scopes).ToList(),
+            newSmtpApiKey.CreatedAt
+        ));
+    }
+
+    /// <summary>
     /// Create an API key from a mobile device during OIDC bootstrap.
     /// This endpoint is called after successful OIDC authentication to generate
     /// a persistent API key for the mobile app.
