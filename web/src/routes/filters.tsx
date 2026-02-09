@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useFilters, useCreateFilter, useUpdateFilter, useDeleteFilter } from '@/api/hooks'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { ConfirmationDialog } from '@relate/shared/components/ui'
 import { FilterBuilder } from '@/components/filters/filter-builder'
 import { LabelBadge } from '@/components/mail/label-badge'
 import {
@@ -27,6 +28,7 @@ function FiltersPage() {
 
   const [editingFilter, setEditingFilter] = useState<EmailFilter | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [deletingFilterId, setDeletingFilterId] = useState<string | null>(null)
 
   const handleCreate = async (data: CreateEmailFilterRequest | UpdateEmailFilterRequest) => {
     await createFilter.mutateAsync(data as CreateEmailFilterRequest)
@@ -39,11 +41,10 @@ function FiltersPage() {
     setEditingFilter(null)
   }
 
-  const handleDelete = async (id: string) => {
-    // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
-    if (window.confirm('Are you sure you want to delete this filter?')) {
-      await deleteFilter.mutateAsync(id)
-    }
+  const handleDelete = async () => {
+    if (!deletingFilterId) return
+    await deleteFilter.mutateAsync(deletingFilterId)
+    setDeletingFilterId(null)
   }
 
   const handleToggleEnabled = async (filter: EmailFilter) => {
@@ -190,7 +191,7 @@ function FiltersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(filter.id)}
+                      onClick={() => setDeletingFilterId(filter.id)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -201,6 +202,17 @@ function FiltersPage() {
           ))}
         </div>
       )}
+
+      <ConfirmationDialog
+        open={!!deletingFilterId}
+        onOpenChange={(open) => !open && setDeletingFilterId(null)}
+        title="Delete Filter"
+        description="Are you sure you want to delete this filter? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isLoading={deleteFilter.isPending}
+      />
     </div>
   )
 }

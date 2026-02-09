@@ -11,6 +11,7 @@ public class Pop3Session
     public string ConnectionId { get; init; } = Guid.NewGuid().ToString();
     public DateTime ConnectedAt { get; init; } = DateTime.UtcNow;
     public DateTime LastActivityAt { get; set; } = DateTime.UtcNow;
+    public string ClientIp { get; init; } = "unknown";
 
     public Pop3State State { get; set; } = Pop3State.Authorization;
     public string? Username { get; set; }

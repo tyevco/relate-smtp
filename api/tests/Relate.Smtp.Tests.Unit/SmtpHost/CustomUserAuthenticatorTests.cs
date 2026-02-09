@@ -22,6 +22,7 @@ public class CustomUserAuthenticatorTests
     private readonly Mock<IServiceScopeFactory> _serviceScopeFactoryMock;
     private readonly Mock<ILogger<CustomUserAuthenticator>> _loggerMock;
     private readonly Mock<IBackgroundTaskQueue> _backgroundTaskQueueMock;
+    private readonly Mock<IAuthenticationRateLimiter> _rateLimiterMock;
     private readonly CustomUserAuthenticator _authenticator;
     private readonly UserFactory _userFactory;
 
@@ -34,7 +35,14 @@ public class CustomUserAuthenticatorTests
         _serviceScopeFactoryMock = new Mock<IServiceScopeFactory>();
         _loggerMock = new Mock<ILogger<CustomUserAuthenticator>>();
         _backgroundTaskQueueMock = new Mock<IBackgroundTaskQueue>();
+        _rateLimiterMock = new Mock<IAuthenticationRateLimiter>();
         _userFactory = new UserFactory();
+
+        // Setup rate limiter to allow all requests by default
+        _rateLimiterMock.Setup(r => r.CheckRateLimit(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns(new RateLimitResult(false, 0, null));
+        _rateLimiterMock.Setup(r => r.GenerateCacheKey(It.IsAny<string>(), It.IsAny<string>()))
+            .Returns<string, string>((email, password) => $"test:{email}:{password}");
 
         // Setup service provider chain
         var scopedServiceProvider = new Mock<IServiceProvider>();
@@ -51,7 +59,8 @@ public class CustomUserAuthenticatorTests
         _authenticator = new CustomUserAuthenticator(
             _serviceProviderMock.Object,
             _loggerMock.Object,
-            _backgroundTaskQueueMock.Object);
+            _backgroundTaskQueueMock.Object,
+            _rateLimiterMock.Object);
     }
 
     [Fact]

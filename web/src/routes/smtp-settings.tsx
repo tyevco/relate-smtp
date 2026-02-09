@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { ConfirmationDialog } from '@relate/shared/components/ui'
 import { Trash2, Plus, Copy, Check, KeyRound } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -34,6 +35,7 @@ function SmtpSettingsPage() {
   const [selectedScopes, setSelectedScopes] = useState<string[]>(['smtp', 'pop3', 'imap', 'api:read', 'api:write'])
   const [createdKey, setCreatedKey] = useState<{ apiKey: string; name: string; scopes: string[] } | null>(null)
   const [copiedKey, setCopiedKey] = useState(false)
+  const [revokingKey, setRevokingKey] = useState<{ id: string; name: string } | null>(null)
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Cleanup timeout on unmount
@@ -77,11 +79,20 @@ function SmtpSettingsPage() {
         }
         copyTimeoutRef.current = setTimeout(() => setCopiedKey(false), 2000)
       } catch {
-        // Fallback for browsers without clipboard API or when permission denied
-        // eslint-disable-next-line no-alert -- clipboard fallback needs native dialog
-        alert('Failed to copy to clipboard. Please copy the key manually.')
+        // Fallback: Select the input text for manual copying
+        const input = document.querySelector<HTMLInputElement>('input[readonly]')
+        if (input) {
+          input.select()
+          input.setSelectionRange(0, 99999) // For mobile devices
+        }
       }
     }
+  }
+
+  const handleRevokeKey = async () => {
+    if (!revokingKey) return
+    await revokeKey.mutateAsync(revokingKey.id)
+    setRevokingKey(null)
   }
 
   const handleCloseKeyModal = () => {
@@ -309,12 +320,7 @@ function SmtpSettingsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
-                        if (window.confirm(`Revoke API key "${key.name}"? Email clients using this key will stop working.`)) {
-                          revokeKey.mutate(key.id)
-                        }
-                      }}
+                      onClick={() => setRevokingKey({ id: key.id, name: key.name })}
                       className="min-h-[44px] self-end sm:self-auto"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -431,6 +437,17 @@ function SmtpSettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmationDialog
+        open={!!revokingKey}
+        onOpenChange={(open) => !open && setRevokingKey(null)}
+        title="Revoke API Key"
+        description={`Are you sure you want to revoke the API key "${revokingKey?.name}"? Email clients using this key will stop working.`}
+        confirmLabel="Revoke"
+        variant="destructive"
+        onConfirm={handleRevokeKey}
+        isLoading={revokeKey.isPending}
+      />
     </div>
   )
 }

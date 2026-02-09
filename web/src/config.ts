@@ -6,6 +6,25 @@ export interface AppConfig {
   oidcScope: string
 }
 
+/**
+ * Validate that a redirect URI uses HTTPS in production.
+ * Allows HTTP only for localhost during development.
+ */
+function validateRedirectUri(uri: string): string {
+  const url = new URL(uri)
+  const isLocalhost = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
+  const isHttps = url.protocol === 'https:'
+
+  if (!isHttps && !isLocalhost) {
+    throw new Error(
+      `Security error: OIDC redirect URI must use HTTPS in production. ` +
+      `Got: ${uri}. HTTP is only allowed for localhost.`
+    )
+  }
+
+  return uri
+}
+
 let config: AppConfig | null = null
 
 /**
@@ -38,7 +57,11 @@ export async function loadConfig(): Promise<AppConfig> {
         loadedConfig.oidcClientId = import.meta.env.VITE_OIDC_CLIENT_ID || ''
       }
       if (!loadedConfig.oidcRedirectUri) {
-        loadedConfig.oidcRedirectUri = import.meta.env.VITE_OIDC_REDIRECT_URI || window.location.origin
+        loadedConfig.oidcRedirectUri = validateRedirectUri(
+          import.meta.env.VITE_OIDC_REDIRECT_URI || window.location.origin
+        )
+      } else {
+        loadedConfig.oidcRedirectUri = validateRedirectUri(loadedConfig.oidcRedirectUri)
       }
       if (!loadedConfig.oidcScope) {
         loadedConfig.oidcScope = import.meta.env.VITE_OIDC_SCOPE || 'openid profile email'
@@ -55,10 +78,11 @@ export async function loadConfig(): Promise<AppConfig> {
 
   // Fallback to build-time environment variables
   console.warn('Using build-time environment variables for configuration')
+  const fallbackRedirectUri = import.meta.env.VITE_OIDC_REDIRECT_URI || window.location.origin
   config = {
     oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY || '',
     oidcClientId: import.meta.env.VITE_OIDC_CLIENT_ID || '',
-    oidcRedirectUri: import.meta.env.VITE_OIDC_REDIRECT_URI || window.location.origin,
+    oidcRedirectUri: validateRedirectUri(fallbackRedirectUri),
     oidcScope: import.meta.env.VITE_OIDC_SCOPE || 'openid profile email',
   }
 

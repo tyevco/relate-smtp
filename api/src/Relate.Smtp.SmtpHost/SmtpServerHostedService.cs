@@ -123,7 +123,8 @@ public class SmtpServerHostedService : BackgroundService
     {
         var logger = _serviceProvider.GetRequiredService<ILogger<CustomUserAuthenticator>>();
         var backgroundTaskQueue = _serviceProvider.GetRequiredService<IBackgroundTaskQueue>();
-        return new CustomUserAuthenticator(_serviceProvider, logger, backgroundTaskQueue);
+        var rateLimiter = _serviceProvider.GetRequiredService<IAuthenticationRateLimiter>();
+        return new CustomUserAuthenticator(_serviceProvider, logger, backgroundTaskQueue, rateLimiter);
     }
 
     private X509Certificate2 LoadCertificate()

@@ -123,6 +123,10 @@ public class Pop3MessageManager
 
         foreach (var recipient in email.Recipients)
         {
+            // Skip BCC recipients - they should never appear in retrieved messages
+            if (recipient.Type == RecipientType.Bcc)
+                continue;
+
             var mailbox = new MailboxAddress(recipient.DisplayName, recipient.Address);
             switch (recipient.Type)
             {
@@ -131,9 +135,6 @@ public class Pop3MessageManager
                     break;
                 case RecipientType.Cc:
                     message.Cc.Add(mailbox);
-                    break;
-                case RecipientType.Bcc:
-                    message.Bcc.Add(mailbox);
                     break;
             }
         }

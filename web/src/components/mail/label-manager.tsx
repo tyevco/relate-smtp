@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ConfirmationDialog } from '@relate/shared/components/ui'
 import { LabelBadge } from './label-badge'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { Label } from '@/api/types'
@@ -41,6 +42,7 @@ export function LabelManager({ open, onOpenChange }: LabelManagerProps) {
 
   const [editingLabel, setEditingLabel] = useState<Label | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [deletingLabelId, setDeletingLabelId] = useState<string | null>(null)
   const [formData, setFormData] = useState({ name: '', color: PRESET_COLORS[0] })
 
   const handleCreate = async () => {
@@ -70,11 +72,10 @@ export function LabelManager({ open, onOpenChange }: LabelManagerProps) {
     setFormData({ name: '', color: PRESET_COLORS[0] })
   }
 
-  const handleDelete = async (id: string) => {
-    // eslint-disable-next-line no-alert -- TODO: replace with confirmation dialog component
-    if (window.confirm('Are you sure you want to delete this label?')) {
-      await deleteLabel.mutateAsync(id)
-    }
+  const handleDelete = async () => {
+    if (!deletingLabelId) return
+    await deleteLabel.mutateAsync(deletingLabelId)
+    setDeletingLabelId(null)
   }
 
   const startEdit = (label: Label) => {
@@ -127,7 +128,7 @@ export function LabelManager({ open, onOpenChange }: LabelManagerProps) {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => handleDelete(label.id)}
+                    onClick={() => setDeletingLabelId(label.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -193,6 +194,17 @@ export function LabelManager({ open, onOpenChange }: LabelManagerProps) {
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmationDialog
+        open={!!deletingLabelId}
+        onOpenChange={(open) => !open && setDeletingLabelId(null)}
+        title="Delete Label"
+        description="Are you sure you want to delete this label? It will be removed from all emails."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+        isLoading={deleteLabel.isPending}
+      />
     </Dialog>
   )
 }
