@@ -17,7 +17,7 @@ import {
 } from "@/lib/auth/oidc";
 import { createTempApiClient, CertificatePinError } from "@/lib/api/client";
 import type { CreatedApiKey, Profile } from "@/lib/api/types";
-import { extractDomain, removePin } from "@/lib/security/certificate-pinning";
+import { removePin } from "@/lib/security/certificate-pinning";
 
 type Step = "url" | "discovering" | "authenticating" | "creating-key";
 
