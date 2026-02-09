@@ -1,11 +1,5 @@
 import { useAccountStore, useActiveAccount } from "../auth/account-store";
 import { getApiKey } from "../auth/secure-storage";
-import {
-  CertificatePinError,
-  extractDomain,
-  validatePin,
-  pinOnFirstUse,
-} from "../security/certificate-pinning";
 
 export class ApiError extends Error {
   constructor(
@@ -17,14 +11,10 @@ export class ApiError extends Error {
   }
 }
 
-export { CertificatePinError };
-
 interface ApiClientConfig {
   baseUrl: string;
   apiKey?: string;
   jwtToken?: string;
-  /** Skip certificate pin validation (e.g. for initial discovery) */
-  skipPinValidation?: boolean;
 }
 
 /**
@@ -42,50 +32,6 @@ function validateServerUrl(url: string): void {
     throw new Error(
       `Security error: Server URL must use HTTPS. Got: ${url}. ` +
       `HTTP is only allowed for localhost during development.`
-    );
-  }
-}
-
-/**
- * Validate server certificate pin using the X-Certificate-Fingerprint
- * header if provided by the server.
- *
- * This implements a Trust-on-First-Use (TOFU) model:
- * - If the server sends its certificate fingerprint and no pin exists,
- *   the fingerprint is stored automatically.
- * - If a pin exists, the fingerprint is validated against it.
- * - If there is a mismatch, a CertificatePinError is thrown.
- */
-async function checkCertificatePin(
-  baseUrl: string,
-  response: Response
-): Promise<void> {
-  const fingerprint = response.headers?.get("X-Certificate-Fingerprint");
-  if (!fingerprint) {
-    return;
-  }
-
-  const domain = extractDomain(baseUrl);
-  const fingerprints = fingerprint.split(",").map((fp) => fp.trim());
-  const result = await validatePin(domain, fingerprints);
-
-  if (result.error === "NO_PINS_CONFIGURED") {
-    // TOFU: pin the certificate on first use
-    await pinOnFirstUse(domain, fingerprints, {
-      includeSubdomains: false,
-      expiresInDays: 365,
-    });
-    if (__DEV__) {
-      console.log(`[CertPin] Pinned certificate for ${domain} (TOFU)`);
-    }
-    return;
-  }
-
-  if (!result.valid) {
-    throw new CertificatePinError(
-      result.error!,
-      domain,
-      result.message ?? "Certificate pin validation failed"
     );
   }
 }
@@ -132,11 +78,6 @@ function createApiRequest(config: ApiClientConfig) {
       });
 
       clearTimeout(timeoutId);
-
-      // Validate certificate pin unless explicitly skipped
-      if (!config.skipPinValidation) {
-        await checkCertificatePin(config.baseUrl, response);
-      }
 
       if (__DEV__) {
         console.log(`[API] Response: ${response.status} ${response.statusText}`);
@@ -262,14 +203,11 @@ export function createTempApiClient(serverUrl: string, jwtToken: string) {
 }
 
 /**
- * Create an unauthenticated API client for discovery endpoints.
- * Pin validation is skipped for initial discovery requests since
- * pins are established during the TOFU flow on first authenticated use.
+ * Create an unauthenticated API client for discovery endpoints
  */
 export function createPublicApiClient(serverUrl: string) {
   return createApiClient({
     baseUrl: serverUrl,
-    skipPinValidation: true,
   });
 }
 
