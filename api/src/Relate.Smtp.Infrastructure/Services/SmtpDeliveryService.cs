@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using Relate.Smtp.Core.Entities;
-using Relate.Smtp.Core.Interfaces;
 
 namespace Relate.Smtp.Infrastructure.Services;
 
@@ -100,7 +99,9 @@ public class SmtpDeliveryService
                 });
             }
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Relay delivery must capture all failures for per-recipient status
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             sw.Stop();
             _logger.LogError(ex, "Failed to deliver email {EmailId} via relay {RelayHost}",
@@ -169,7 +170,9 @@ public class SmtpDeliveryService
                 // Successfully delivered to this MX host, no need to try others
                 return results;
             }
+#pragma warning disable CA1031 // Do not catch general exception types - MX delivery must try next host on any failure
             catch (Exception ex)
+#pragma warning restore CA1031
             {
                 sw.Stop();
                 _logger.LogWarning(ex, "Failed to deliver to MX host {MxHost} for domain {Domain}, trying next MX",
