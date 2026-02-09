@@ -47,7 +47,7 @@ public class ImapUserAuthenticator
         var rateLimitResult = _rateLimiter.CheckRateLimit(clientIp, "imap");
         if (rateLimitResult.IsBlocked)
         {
-            _logger.LogWarning("IMAP authentication rate limited for {User} from {IP}", username, clientIp);
+            _logger.LogInformation("IMAP authentication rate limited for {User} from {IP}", username, clientIp);
             activity?.SetTag("imap.auth.rate_limited", true);
             activity?.SetTag("imap.auth.success", false);
             ProtocolMetrics.ImapAuthFailures.Add(1);

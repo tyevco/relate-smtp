@@ -47,7 +47,7 @@ public class Pop3UserAuthenticator
         var rateLimitResult = _rateLimiter.CheckRateLimit(clientIp, "pop3");
         if (rateLimitResult.IsBlocked)
         {
-            _logger.LogWarning("POP3 authentication rate limited for {User} from {IP}", username, clientIp);
+            _logger.LogInformation("POP3 authentication rate limited for {User} from {IP}", username, clientIp);
             activity?.SetTag("pop3.auth.rate_limited", true);
             activity?.SetTag("pop3.auth.success", false);
             ProtocolMetrics.Pop3AuthFailures.Add(1);

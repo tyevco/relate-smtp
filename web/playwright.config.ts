@@ -49,7 +49,7 @@ export default defineConfig({
   webServer: {
     // In CI, build is run before tests so we can use preview mode
     // Locally, use dev server for faster iteration
-    command: process.env.CI ? 'npx vite preview --port 5492' : 'npm run dev',
+    command: process.env.CI ? 'npx vite preview --port 5492' : 'npm run dev -- --port 5492',
     url: 'http://localhost:5492',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,

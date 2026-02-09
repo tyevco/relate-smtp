@@ -52,7 +52,7 @@ public class CustomUserAuthenticator : IUserAuthenticator
         var rateLimitResult = _rateLimiter.CheckRateLimit(clientIp, "smtp");
         if (rateLimitResult.IsBlocked)
         {
-            _logger.LogWarning("SMTP authentication rate limited for {User} from {IP}", user, clientIp);
+            _logger.LogInformation("SMTP authentication rate limited for {User} from {IP}", user, clientIp);
             activity?.SetTag("smtp.auth.rate_limited", true);
             activity?.SetTag("smtp.auth.success", false);
             ProtocolMetrics.SmtpAuthFailures.Add(1);

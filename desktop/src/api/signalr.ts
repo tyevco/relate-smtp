@@ -56,8 +56,9 @@ export function onNewEmail(handler: (emailId: string) => void): () => void {
   if (!connection) {
     throw new Error('SignalR connection not established. Call connect() first.')
   }
-  connection.on('NewEmail', handler)
-  return () => connection?.off('NewEmail', handler)
+  const conn = connection
+  conn.on('NewEmail', handler)
+  return () => conn.off('NewEmail', handler)
 }
 
 /**
@@ -68,8 +69,9 @@ export function onEmailUpdated(handler: (emailId: string) => void): () => void {
   if (!connection) {
     throw new Error('SignalR connection not established. Call connect() first.')
   }
-  connection.on('EmailUpdated', handler)
-  return () => connection?.off('EmailUpdated', handler)
+  const conn = connection
+  conn.on('EmailUpdated', handler)
+  return () => conn.off('EmailUpdated', handler)
 }
 
 /**
@@ -80,8 +82,9 @@ export function onEmailDeleted(handler: (emailId: string) => void): () => void {
   if (!connection) {
     throw new Error('SignalR connection not established. Call connect() first.')
   }
-  connection.on('EmailDeleted', handler)
-  return () => connection?.off('EmailDeleted', handler)
+  const conn = connection
+  conn.on('EmailDeleted', handler)
+  return () => conn.off('EmailDeleted', handler)
 }
 
 /**
@@ -92,8 +95,9 @@ export function onUnreadCountChanged(handler: (count: number) => void): () => vo
   if (!connection) {
     throw new Error('SignalR connection not established. Call connect() first.')
   }
-  connection.on('UnreadCountChanged', handler)
-  return () => connection?.off('UnreadCountChanged', handler)
+  const conn = connection
+  conn.on('UnreadCountChanged', handler)
+  return () => conn.off('UnreadCountChanged', handler)
 }
 
 /**
