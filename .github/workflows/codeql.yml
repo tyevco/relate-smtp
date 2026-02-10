@@ -30,6 +30,7 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.language == 'csharp' && 'manual' || 'none' }}
 
       - name: Setup .NET
         if: matrix.language == 'csharp'
@@ -44,10 +45,6 @@ jobs:
       - name: Build .NET
         if: matrix.language == 'csharp'
         run: dotnet build api/ --no-restore
-
-      - name: Autobuild
-        if: matrix.language != 'csharp'
-        uses: github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
