@@ -59,7 +59,7 @@ public abstract class ProtocolAuthenticator
         var rateLimitResult = _rateLimiter.CheckRateLimit(clientIp, ProtocolName);
         if (rateLimitResult.IsBlocked)
         {
-            _logger.LogInformation("{Protocol} authentication rate limited for {User} from {IP}", ProtocolName.ToUpperInvariant(), username, clientIp);
+            _logger.LogWarning("{Protocol} authentication rate limited for {User} from {IP}", ProtocolName.ToUpperInvariant(), username, clientIp);
             activity?.SetTag($"{ProtocolName}.auth.rate_limited", true);
             activity?.SetTag($"{ProtocolName}.auth.success", false);
             AuthFailuresCounter.Add(1);
@@ -72,7 +72,10 @@ public abstract class ProtocolAuthenticator
         // Check cache (30-second TTL)
         if (AuthCache.TryGetValue(cacheKey, out CacheEntry? cached) && cached != null)
         {
-            _logger.LogDebug("{Protocol} authentication cache hit for: {Email}", ProtocolName.ToUpperInvariant(), username);
+            if (_logger.IsEnabled(LogLevel.Debug))
+            {
+                _logger.LogDebug("{Protocol} authentication cache hit for: {Email}", ProtocolName.ToUpperInvariant(), username);
+            }
             activity?.SetTag($"{ProtocolName}.auth.cache_hit", true);
             activity?.SetTag($"{ProtocolName}.auth.success", cached.IsAuthenticated);
 
@@ -122,8 +125,11 @@ public abstract class ProtocolAuthenticator
                     return (false, null);
                 }
 
-                _logger.LogInformation("{Protocol} user authenticated: {Email} using key: {KeyName}",
-                    ProtocolName.ToUpperInvariant(), username, apiKey.Name);
+                if (_logger.IsEnabled(LogLevel.Information))
+                {
+                    _logger.LogInformation("{Protocol} user authenticated: {Email} using key: {KeyName}",
+                        ProtocolName.ToUpperInvariant(), username, apiKey.Name);
+                }
                 activity?.SetTag($"{ProtocolName}.auth.success", true);
                 activity?.SetTag($"{ProtocolName}.auth.key_name", apiKey.Name);
                 _rateLimiter.RecordSuccess(clientIp, ProtocolName);

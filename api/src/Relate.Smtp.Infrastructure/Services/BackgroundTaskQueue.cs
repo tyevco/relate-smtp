@@ -114,7 +114,10 @@ public sealed class BackgroundTaskQueueHostedService : BackgroundService
 
         if (count > 0)
         {
-            _logger.LogInformation("Processed {Count} pending background tasks before shutdown", count);
+            if (_logger.IsEnabled(LogLevel.Information))
+            {
+                _logger.LogInformation("Processed {Count} pending background tasks before shutdown", count);
+            }
         }
 
         await base.StopAsync(cancellationToken);

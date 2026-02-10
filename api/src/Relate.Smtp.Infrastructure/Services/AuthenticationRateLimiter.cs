@@ -207,9 +207,12 @@ public sealed class AuthenticationRateLimiter : IAuthenticationRateLimiter, IDis
             .SetAbsoluteExpiration(_options.LockoutWindow);
         _rateLimitCache.Set(key, entry, options);
 
-        _logger.LogDebug(
-            "{Protocol} auth failure recorded for {IP}: {FailedAttempts} total failures",
-            protocol.ToUpperInvariant(), ipAddress, entry.FailedAttempts);
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            _logger.LogDebug(
+                "{Protocol} auth failure recorded for {IP}: {FailedAttempts} total failures",
+                protocol.ToUpperInvariant(), ipAddress, entry.FailedAttempts);
+        }
     }
 
     public void RecordSuccess(string ipAddress, string protocol)
