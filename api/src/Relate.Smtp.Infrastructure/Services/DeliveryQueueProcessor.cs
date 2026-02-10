@@ -33,11 +33,8 @@ public class DeliveryQueueProcessor : BackgroundService
             return;
         }
 
-        if (_logger.IsEnabled(LogLevel.Information))
-        {
-            _logger.LogInformation("Outbound mail delivery processor started with max concurrency {MaxConcurrency}",
-                opts.MaxConcurrency);
-        }
+        _logger.LogInformation("Outbound mail delivery processor started with max concurrency {MaxConcurrency}",
+            opts.MaxConcurrency);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -87,10 +84,7 @@ public class DeliveryQueueProcessor : BackgroundService
             return;
         }
 
-        if (_logger.IsEnabled(LogLevel.Information))
-        {
-            _logger.LogInformation("Processing {Count} queued emails for delivery", queuedEmails.Count);
-        }
+        _logger.LogInformation("Processing {Count} queued emails for delivery", queuedEmails.Count);
 
         var tasks = queuedEmails.Select(email =>
             DeliverEmailAsync(email, repository, deliveryService, notificationService, cancellationToken));
@@ -162,10 +156,7 @@ public class DeliveryQueueProcessor : BackgroundService
             {
                 email.Status = OutboundEmailStatus.Sent;
                 email.SentAt = DateTimeOffset.UtcNow;
-                if (_logger.IsEnabled(LogLevel.Information))
-                {
-                    _logger.LogInformation("Email {EmailId} delivered successfully to all recipients", email.Id);
-                }
+                _logger.LogInformation("Email {EmailId} delivered successfully to all recipients", email.Id);
             }
             else if (allFailed)
             {

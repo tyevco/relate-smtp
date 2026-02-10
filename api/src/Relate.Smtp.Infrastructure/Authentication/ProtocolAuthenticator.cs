@@ -72,10 +72,7 @@ public abstract class ProtocolAuthenticator
         // Check cache (30-second TTL)
         if (AuthCache.TryGetValue(cacheKey, out CacheEntry? cached) && cached != null)
         {
-            if (_logger.IsEnabled(LogLevel.Debug))
-            {
-                _logger.LogDebug("{Protocol} authentication cache hit for: {Email}", ProtocolName.ToUpperInvariant(), username);
-            }
+            _logger.LogDebug("{Protocol} authentication cache hit for: {Email}", ProtocolName.ToUpperInvariant(), username);
             activity?.SetTag($"{ProtocolName}.auth.cache_hit", true);
             activity?.SetTag($"{ProtocolName}.auth.success", cached.IsAuthenticated);
 
@@ -125,11 +122,8 @@ public abstract class ProtocolAuthenticator
                     return (false, null);
                 }
 
-                if (_logger.IsEnabled(LogLevel.Information))
-                {
-                    _logger.LogInformation("{Protocol} user authenticated: {Email} using key: {KeyName}",
-                        ProtocolName.ToUpperInvariant(), username, apiKey.Name);
-                }
+                _logger.LogInformation("{Protocol} user authenticated: {Email} using key: {KeyName}",
+                    ProtocolName.ToUpperInvariant(), username, apiKey.Name);
                 activity?.SetTag($"{ProtocolName}.auth.success", true);
                 activity?.SetTag($"{ProtocolName}.auth.key_name", apiKey.Name);
                 _rateLimiter.RecordSuccess(clientIp, ProtocolName);
