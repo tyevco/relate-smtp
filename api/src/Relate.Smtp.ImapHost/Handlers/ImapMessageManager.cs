@@ -68,7 +68,10 @@ public class ImapMessageManager
                 SizeBytes = email.SizeBytes,
                 MessageId = email.MessageId,
                 Flags = flags,
-                InternalDate = email.ReceivedAt
+                InternalDate = email.ReceivedAt,
+                Subject = email.Subject,
+                FromAddress = email.FromAddress,
+                FromDisplayName = email.FromDisplayName
             });
         }
 

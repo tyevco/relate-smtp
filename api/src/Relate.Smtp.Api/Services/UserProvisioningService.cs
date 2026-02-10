@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 
@@ -8,15 +9,18 @@ public class UserProvisioningService
 {
     private readonly IUserRepository _userRepository;
     private readonly IEmailRepository _emailRepository;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<UserProvisioningService> _logger;
 
     public UserProvisioningService(
         IUserRepository userRepository,
         IEmailRepository emailRepository,
+        IConfiguration configuration,
         ILogger<UserProvisioningService> logger)
     {
         _userRepository = userRepository;
         _emailRepository = emailRepository;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -33,8 +37,7 @@ public class UserProvisioningService
             var userById = await _userRepository.GetByIdAsync(userId, cancellationToken);
             if (userById != null)
             {
-                userById.LastLoginAt = DateTimeOffset.UtcNow;
-                await _userRepository.UpdateAsync(userById, cancellationToken);
+                await _userRepository.UpdateLastLoginAsync(userById.Id, cancellationToken);
 
                 var userAddresses = new List<string> { userById.Email };
                 userAddresses.AddRange(userById.AdditionalAddresses.Select(a => a.Address));
@@ -47,12 +50,18 @@ public class UserProvisioningService
         var issuer = principal.FindFirstValue("iss")
             ?? throw new InvalidOperationException("User issuer claim not found");
 
+        var expectedIssuer = _configuration["Oidc:Authority"];
+        if (!string.IsNullOrEmpty(expectedIssuer) && !string.Equals(issuer, expectedIssuer, StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning("Rejected token with unexpected issuer: {Issuer}, expected: {Expected}", issuer, expectedIssuer);
+            return null!;
+        }
+
         var existingUser = await _userRepository.GetByOidcSubjectAsync(issuer, subject, cancellationToken);
 
         if (existingUser != null)
         {
-            existingUser.LastLoginAt = DateTimeOffset.UtcNow;
-            await _userRepository.UpdateAsync(existingUser, cancellationToken);
+            await _userRepository.UpdateLastLoginAsync(existingUser.Id, cancellationToken);
 
             // Link any unlinked emails to this user (in case emails arrived after user was created)
             // Include both primary email and any additional addresses

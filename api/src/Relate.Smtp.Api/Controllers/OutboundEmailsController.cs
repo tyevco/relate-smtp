@@ -9,6 +9,7 @@ using Relate.Smtp.Api.Services;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Services;
+using System.Net.Mail;
 
 namespace Relate.Smtp.Api.Controllers;
 
@@ -194,6 +195,21 @@ public class OutboundEmailsController : ControllerBase
             return BadRequest(new { error = "At least one recipient is required" });
         }
 
+        if (request.Recipients.Count > 100)
+        {
+            return BadRequest(new { error = "Maximum 100 recipients allowed per email" });
+        }
+
+        if (!MailAddress.TryCreate(request.FromAddress, out _))
+            return BadRequest(new { error = "Invalid from address format" });
+        if ((request.Subject?.Length ?? 0) > 998)
+            return BadRequest(new { error = "Subject exceeds maximum length" });
+        foreach (var r in request.Recipients)
+        {
+            if (!MailAddress.TryCreate(r.Address, out _))
+                return BadRequest(new { error = $"Invalid recipient address: {r.Address}" });
+        }
+
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
         var opts = _outboundOptions.Value;
 
@@ -203,7 +219,7 @@ public class OutboundEmailsController : ControllerBase
             UserId = user.Id,
             FromAddress = request.FromAddress,
             FromDisplayName = request.FromDisplayName,
-            Subject = request.Subject,
+            Subject = request.Subject ?? string.Empty,
             TextBody = request.TextBody,
             HtmlBody = request.HtmlBody,
             Status = OutboundEmailStatus.Queued,
@@ -250,6 +266,11 @@ public class OutboundEmailsController : ControllerBase
         if (draft.Recipients.Count == 0)
         {
             return BadRequest(new { error = "At least one recipient is required" });
+        }
+
+        if (draft.Recipients.Count > 100)
+        {
+            return BadRequest(new { error = "Maximum 100 recipients allowed per email" });
         }
 
         var opts = _outboundOptions.Value;
@@ -367,6 +388,11 @@ public class OutboundEmailsController : ControllerBase
         if (request.Recipients.Count == 0)
         {
             return BadRequest(new { error = "At least one recipient is required" });
+        }
+
+        if (request.Recipients.Count > 100)
+        {
+            return BadRequest(new { error = "Maximum 100 recipients allowed per email" });
         }
 
         var opts = _outboundOptions.Value;

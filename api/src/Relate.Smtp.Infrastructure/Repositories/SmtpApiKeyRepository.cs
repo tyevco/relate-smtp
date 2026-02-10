@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Relate.Smtp.Core.Entities;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Data;
@@ -9,10 +10,12 @@ namespace Relate.Smtp.Infrastructure.Repositories;
 public class SmtpApiKeyRepository : ISmtpApiKeyRepository
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<SmtpApiKeyRepository> _logger;
 
-    public SmtpApiKeyRepository(AppDbContext context)
+    public SmtpApiKeyRepository(AppDbContext context, ILogger<SmtpApiKeyRepository> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<SmtpApiKey>> GetActiveKeysForUserAsync(Guid userId, CancellationToken ct = default)
@@ -99,6 +102,46 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
         return null; // Key not found
     }
 
+    public async Task<SmtpApiKey?> GetByKeyAsync(string rawKey, CancellationToken cancellationToken = default)
+    {
+        // Extract prefix for efficient lookup (first 12 characters)
+        var prefix = rawKey.Length >= 12 ? rawKey[..12] : rawKey;
+
+        // O(1) lookup by prefix instead of loading all keys
+        var candidates = await _context.SmtpApiKeys
+            .Include(k => k.User)
+            .Where(k => k.RevokedAt == null && k.KeyPrefix == prefix)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        // BCrypt verify only the matching candidates
+        foreach (var key in candidates)
+        {
+            if (BCrypt.Net.BCrypt.Verify(rawKey, key.KeyHash))
+            {
+                return key;
+            }
+        }
+
+        // Fallback for legacy keys without prefix (backward compatibility)
+        if (candidates.Count == 0)
+        {
+            var legacyKeys = await _context.SmtpApiKeys
+                .Include(k => k.User)
+                .Where(k => k.RevokedAt == null && k.KeyPrefix == null)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+            foreach (var key in legacyKeys)
+            {
+                if (BCrypt.Net.BCrypt.Verify(rawKey, key.KeyHash))
+                {
+                    return key;
+                }
+            }
+        }
+
+        return null; // Key not found
+    }
+
     public IReadOnlyList<string> ParseScopes(string scopesJson)
     {
         if (string.IsNullOrWhiteSpace(scopesJson) || scopesJson == "[]")
@@ -111,9 +154,10 @@ public class SmtpApiKeyRepository : ISmtpApiKeyRepository
             return JsonSerializer.Deserialize<List<string>>(scopesJson) ?? new List<string>();
         }
 #pragma warning disable CA1031 // Do not catch general exception types - Intentionally catching all JSON parsing errors for graceful fallback
-        catch (JsonException)
+        catch (JsonException ex)
 #pragma warning restore CA1031
         {
+            _logger.LogError(ex, "Failed to parse scopes JSON for API key: {ScopesJson}", scopesJson);
             return Array.Empty<string>();
         }
     }

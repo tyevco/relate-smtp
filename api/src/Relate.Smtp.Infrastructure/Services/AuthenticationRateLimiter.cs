@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Security.Cryptography;
@@ -87,6 +88,7 @@ public sealed class AuthenticationRateLimiter : IAuthenticationRateLimiter, IDis
 
     public AuthenticationRateLimiter(
         IConfiguration configuration,
+        IHostEnvironment environment,
         ILogger<AuthenticationRateLimiter> logger)
     {
         _logger = logger;
@@ -103,6 +105,11 @@ public sealed class AuthenticationRateLimiter : IAuthenticationRateLimiter, IDis
         var salt = configuration["Security:AuthenticationSalt"];
         if (string.IsNullOrEmpty(salt))
         {
+            if (environment.IsProduction())
+                throw new InvalidOperationException(
+                    "Security:AuthenticationSalt must be configured in production. " +
+                    "Generate with: openssl rand -base64 32");
+
             // Generate a random key for this instance if no salt configured
             // This is less ideal but still better than no salt
             _hmacKey = RandomNumberGenerator.GetBytes(32);

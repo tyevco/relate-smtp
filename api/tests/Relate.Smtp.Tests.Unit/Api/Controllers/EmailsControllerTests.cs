@@ -31,6 +31,7 @@ public class EmailsControllerTests
         _userProvisioningServiceMock = new Mock<UserProvisioningService>(
             Mock.Of<IUserRepository>(),
             Mock.Of<IEmailRepository>(),
+            Mock.Of<Microsoft.Extensions.Configuration.IConfiguration>(),
             Mock.Of<Microsoft.Extensions.Logging.ILogger<UserProvisioningService>>());
         _notificationServiceMock = new Mock<IEmailNotificationService>();
 

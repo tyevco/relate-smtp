@@ -60,25 +60,30 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
             return AuthenticateResult.NoResult();
         }
 
-        // Try api:read scope first (most common for external API)
-        var keyEntity = await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "api:read", Context.RequestAborted);
-
-        // If not found with api:read, try api:write
-        keyEntity ??= await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "api:write", Context.RequestAborted);
-
-        // If not found with api:write, try app (first-party mobile/desktop clients)
-        keyEntity ??= await _apiKeyRepository.GetByKeyWithScopeAsync(apiKey, "app", Context.RequestAborted);
+        // Single DB lookup — check scopes in memory
+        var keyEntity = await _apiKeyRepository.GetByKeyAsync(apiKey, Context.RequestAborted);
 
         if (keyEntity == null)
         {
-            return AuthenticateResult.Fail("Invalid API key or missing required scope");
+            return AuthenticateResult.Fail("Invalid API key");
         }
+
+        // Verify key has at least one API-relevant scope
+        var scopes = _apiKeyRepository.ParseScopes(keyEntity.Scopes);
+        if (!scopes.Contains("api:read", StringComparer.OrdinalIgnoreCase) &&
+            !scopes.Contains("api:write", StringComparer.OrdinalIgnoreCase) &&
+            !scopes.Contains("app", StringComparer.OrdinalIgnoreCase))
+        {
+            return AuthenticateResult.Fail("API key missing required scope");
+        }
+
+        // Audit log
+        Logger.LogInformation("API key auth: User={UserId}, IP={IP}", keyEntity.UserId, Context.Connection.RemoteIpAddress);
 
         // Queue LastUsedAt update for background processing
         _backgroundTaskQueue.QueueLastUsedAtUpdate(keyEntity.Id, DateTimeOffset.UtcNow);
 
         // Create claims
-        var scopes = _apiKeyRepository.ParseScopes(keyEntity.Scopes);
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, keyEntity.UserId.ToString()),

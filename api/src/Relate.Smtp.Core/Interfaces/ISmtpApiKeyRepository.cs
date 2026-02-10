@@ -15,6 +15,11 @@ public interface ISmtpApiKeyRepository
     Task<SmtpApiKey?> GetByKeyWithScopeAsync(string rawKey, string requiredScope, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Find active API key by raw key value, returning all scopes without scope filtering.
+    /// </summary>
+    Task<SmtpApiKey?> GetByKeyAsync(string rawKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Parse scopes from JSON array string
     /// </summary>
     IReadOnlyList<string> ParseScopes(string scopesJson);

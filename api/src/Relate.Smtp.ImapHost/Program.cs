@@ -23,6 +23,9 @@ builder.Services.AddInfrastructure(connectionString);
 builder.Services.Configure<ImapServerOptions>(
     builder.Configuration.GetSection("Imap"));
 
+// Register connection registry (singleton for tracking across all connections)
+builder.Services.AddSingleton<Relate.Smtp.Core.Protocol.ConnectionRegistry>();
+
 // Register handlers (scoped per connection)
 builder.Services.AddScoped<ImapUserAuthenticator>();
 builder.Services.AddScoped<ImapCommandHandler>();

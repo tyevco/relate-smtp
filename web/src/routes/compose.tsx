@@ -110,6 +110,8 @@ function ComposePage() {
     }
   }, [auth.isAuthenticated, auth.isLoading, navigate])
 
+  const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+
   const handleSend = async () => {
     setError(null)
 
@@ -121,6 +123,12 @@ function ComposePage() {
 
     if (allRecipients.length === 0) {
       setError('At least one recipient is required')
+      return
+    }
+
+    const invalidRecipients = allRecipients.filter(r => !isValidEmail(r.address))
+    if (invalidRecipients.length > 0) {
+      setError(`Invalid email address: ${invalidRecipients[0].address}`)
       return
     }
 

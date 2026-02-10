@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Relate.Smtp.Infrastructure.Repositories;
 using Relate.Smtp.Tests.Common.Factories;
 using Relate.Smtp.Tests.Common.Fixtures;
@@ -29,7 +30,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -51,7 +52,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -74,7 +75,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         var user1 = _userFactory.CreateSequential();
         var user2 = _userFactory.CreateSequential();
@@ -99,7 +100,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -122,7 +123,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -150,7 +151,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -172,7 +173,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -192,7 +193,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         await using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
         var user = _userFactory.Create();
         await user.AddToDbAsync(context);
 
@@ -219,7 +220,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
         var (apiKey, _) = SmtpApiKeyFactory.CreateForUser(Guid.NewGuid(), "Test", SmtpApiKeyFactory.AllScopes);
 
         using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         // Act
         var result = repository.HasScope(apiKey, scope);
@@ -235,7 +236,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
         var (apiKey, _) = SmtpApiKeyFactory.CreateForUser(Guid.NewGuid(), "Test", SmtpApiKeyFactory.SmtpOnlyScopes);
 
         using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         // Act & Assert
         repository.HasScope(apiKey, "smtp").ShouldBeTrue();
@@ -251,7 +252,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
         apiKey.Scopes = "invalid json";
 
         using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         // Act
         var result = repository.HasScope(apiKey, "smtp");
@@ -267,7 +268,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
         var (apiKey, _) = SmtpApiKeyFactory.CreateForUser(Guid.NewGuid(), "Test", Array.Empty<string>());
 
         using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         // Act
         var result = repository.HasScope(apiKey, "smtp");
@@ -281,7 +282,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         // Act
         var result = repository.ParseScopes("[\"smtp\", \"pop3\", \"imap\"]");
@@ -298,7 +299,7 @@ public class SmtpApiKeyRepositoryTests : IAsyncLifetime
     {
         // Arrange
         using var context = _fixture.CreateDbContext();
-        var repository = new SmtpApiKeyRepository(context);
+        var repository = new SmtpApiKeyRepository(context, NullLogger<SmtpApiKeyRepository>.Instance);
 
         // Act
         var result = repository.ParseScopes("not valid json");

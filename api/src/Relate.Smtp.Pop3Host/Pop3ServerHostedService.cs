@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Relate.Smtp.Infrastructure.Telemetry;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -16,6 +17,7 @@ public class Pop3ServerHostedService : BackgroundService
     private readonly ILogger<Pop3ServerHostedService> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly IOptions<Pop3ServerOptions> _options;
+    private readonly ConcurrentBag<Task> _activeTasks = new();
     private TcpListener? _tcpListener;
     private TcpListener? _sslListener;
 
@@ -72,7 +74,7 @@ public class Pop3ServerHostedService : BackgroundService
                 _logger.LogDebug("Connection accepted from {Endpoint} (SSL: {UseSsl})", endpoint, useSsl);
 
                 // Handle client in background
-                _ = Task.Run(async () =>
+                var task = Task.Run(async () =>
                 {
                     try
                     {
@@ -85,6 +87,7 @@ public class Pop3ServerHostedService : BackgroundService
                         _logger.LogError(ex, "Unhandled exception in client handler for {Endpoint}", endpoint);
                     }
                 }, ct);
+                _activeTasks.Add(task);
             }
             catch (OperationCanceledException)
             {
@@ -126,7 +129,7 @@ public class Pop3ServerHostedService : BackgroundService
                     cert,
                     clientCertificateRequired: false,
                     enabledSslProtocols: SslProtocols.Tls12 | SslProtocols.Tls13,
-                    checkCertificateRevocation: false);
+                    checkCertificateRevocation: _options.Value.CheckCertificateRevocation);
 #pragma warning restore CA5398
                 stream = sslStream;
                 _logger.LogDebug("SSL/TLS handshake completed");
@@ -182,6 +185,14 @@ public class Pop3ServerHostedService : BackgroundService
         _logger.LogInformation("Stopping POP3 server...");
         _tcpListener?.Stop();
         _sslListener?.Stop();
+
+        var pending = _activeTasks.Where(t => !t.IsCompleted).ToArray();
+        if (pending.Length > 0)
+        {
+            _logger.LogInformation("Waiting for {Count} active client connections to complete...", pending.Length);
+            await Task.WhenAny(Task.WhenAll(pending), Task.Delay(TimeSpan.FromSeconds(30), cancellationToken));
+        }
+
         await base.StopAsync(cancellationToken);
         _logger.LogInformation("POP3 server stopped");
     }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 using MimeKit;
 using Relate.Smtp.Api.Models;
 using Relate.Smtp.Api.Services;
@@ -17,6 +18,19 @@ namespace Relate.Smtp.Api.Controllers;
 [EnableRateLimiting("api")]
 public class EmailsController : ControllerBase
 {
+    private const int MaxExportEmails = 50_000;
+    private static readonly MemoryCache ExportRateCache = new(new MemoryCacheOptions());
+
+    private static readonly HashSet<string> SafeMimeTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml",
+        "application/pdf", "text/plain", "text/csv", "text/html",
+        "application/zip", "application/gzip", "application/x-tar",
+        "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "message/rfc822"
+    };
+
     private readonly IEmailRepository _emailRepository;
     private readonly UserProvisioningService _userProvisioningService;
     private readonly IEmailNotificationService _notificationService;
@@ -43,9 +57,13 @@ public class EmailsController : ControllerBase
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
 
         var skip = (page - 1) * pageSize;
-        var emails = await _emailRepository.GetByUserIdAsync(user.Id, skip, pageSize, cancellationToken);
-        var totalCount = await _emailRepository.GetCountByUserIdAsync(user.Id, cancellationToken);
-        var unreadCount = await _emailRepository.GetUnreadCountByUserIdAsync(user.Id, cancellationToken);
+        var emailsTask = _emailRepository.GetByUserIdAsync(user.Id, skip, pageSize, cancellationToken);
+        var countTask = _emailRepository.GetCountByUserIdAsync(user.Id, cancellationToken);
+        var unreadTask = _emailRepository.GetUnreadCountByUserIdAsync(user.Id, cancellationToken);
+        await Task.WhenAll(emailsTask, countTask, unreadTask);
+        var emails = emailsTask.Result;
+        var totalCount = countTask.Result;
+        var unreadCount = unreadTask.Result;
 
         var items = emails.Select(e => e.ToListItemDto(user.Id)).ToList();
 
@@ -99,7 +117,7 @@ public class EmailsController : ControllerBase
         }
 
         // Check if user has access to this email
-        if (!email.Recipients.Any(r => r.UserId == user.Id))
+        if (!email.Recipients.Any(r => r.UserId == user.Id) && email.SentByUserId != user.Id)
         {
             return NotFound();
         }
@@ -157,7 +175,7 @@ public class EmailsController : ControllerBase
             return NotFound();
         }
 
-        if (!email.Recipients.Any(r => r.UserId == user.Id))
+        if (!email.Recipients.Any(r => r.UserId == user.Id) && email.SentByUserId != user.Id)
         {
             return NotFound();
         }
@@ -188,7 +206,7 @@ public class EmailsController : ControllerBase
             return NotFound();
         }
 
-        if (!email.Recipients.Any(r => r.UserId == user.Id))
+        if (!email.Recipients.Any(r => r.UserId == user.Id) && email.SentByUserId != user.Id)
         {
             return NotFound();
         }
@@ -199,7 +217,11 @@ public class EmailsController : ControllerBase
             return NotFound();
         }
 
-        return File(attachment.Content, attachment.ContentType, attachment.FileName);
+        var contentType = SafeMimeTypes.Contains(attachment.ContentType)
+            ? attachment.ContentType
+            : "application/octet-stream";
+        Response.Headers.ContentDisposition = $"attachment; filename=\"{attachment.FileName}\"";
+        return File(attachment.Content, contentType, attachment.FileName);
     }
 
     [HttpGet("{id:guid}/export/eml")]
@@ -213,7 +235,7 @@ public class EmailsController : ControllerBase
             return NotFound();
         }
 
-        if (!email.Recipients.Any(r => r.UserId == user.Id))
+        if (!email.Recipients.Any(r => r.UserId == user.Id) && email.SentByUserId != user.Id)
         {
             return NotFound();
         }
@@ -280,6 +302,28 @@ public class EmailsController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
+
+        // Rate limit: 1 export per user per 10 minutes
+        var rateLimitKey = $"mbox_export_{user.Id}";
+        if (ExportRateCache.TryGetValue(rateLimitKey, out _))
+        {
+            Response.StatusCode = StatusCodes.Status429TooManyRequests;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = "Export rate limit exceeded. Please wait 10 minutes between exports." }, cancellationToken);
+            return;
+        }
+
+        // Check email count in date range
+        var count = await _emailRepository.GetCountByUserIdAsync(user.Id, cancellationToken);
+        if (count > MaxExportEmails)
+        {
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+            Response.ContentType = "application/json";
+            await Response.WriteAsJsonAsync(new { error = $"Export limited to {MaxExportEmails:N0} emails. Use date filters to narrow the range." }, cancellationToken);
+            return;
+        }
+
+        ExportRateCache.Set(rateLimitKey, true, TimeSpan.FromMinutes(10));
 
         Response.ContentType = "application/mbox";
         Response.Headers.ContentDisposition = $"attachment; filename=\"emails_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mbox\"";

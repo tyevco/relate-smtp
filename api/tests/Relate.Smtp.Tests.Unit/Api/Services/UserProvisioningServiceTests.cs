@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Relate.Smtp.Api.Services;
@@ -15,6 +16,7 @@ public class UserProvisioningServiceTests
 {
     private readonly Mock<IUserRepository> _userRepositoryMock;
     private readonly Mock<IEmailRepository> _emailRepositoryMock;
+    private readonly Mock<IConfiguration> _configurationMock;
     private readonly Mock<ILogger<UserProvisioningService>> _loggerMock;
     private readonly UserProvisioningService _service;
     private readonly UserFactory _userFactory;
@@ -23,12 +25,14 @@ public class UserProvisioningServiceTests
     {
         _userRepositoryMock = new Mock<IUserRepository>();
         _emailRepositoryMock = new Mock<IEmailRepository>();
+        _configurationMock = new Mock<IConfiguration>();
         _loggerMock = new Mock<ILogger<UserProvisioningService>>();
         _userFactory = new UserFactory();
 
         _service = new UserProvisioningService(
             _userRepositoryMock.Object,
             _emailRepositoryMock.Object,
+            _configurationMock.Object,
             _loggerMock.Object);
     }
 
@@ -51,7 +55,7 @@ public class UserProvisioningServiceTests
 
         // Assert
         result.ShouldBe(existingUser);
-        _userRepositoryMock.Verify(r => r.UpdateAsync(existingUser, It.IsAny<CancellationToken>()), Times.Once);
+        _userRepositoryMock.Verify(r => r.UpdateLastLoginAsync(existingUser.Id, It.IsAny<CancellationToken>()), Times.Once);
         _emailRepositoryMock.Verify(r => r.LinkEmailsToUserAsync(
             existingUser.Id,
             It.Is<IEnumerable<string>>(e => e.Contains(existingUser.Email)),

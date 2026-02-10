@@ -9,6 +9,15 @@ const WEB_ENCRYPTION_KEY = "_ek";
 /**
  * Get or generate encryption key for web platform.
  * Key is stored in sessionStorage and cleared when browser closes.
+ *
+ * SECURITY NOTE: sessionStorage on mobile web browsers is less secure than native
+ * Keychain/Keystore. It can be accessed by:
+ * - JavaScript running in the same origin
+ * - Browser extensions (if installed)
+ * - Potentially by other apps with sufficient privileges (device-specific)
+ *
+ * Users should be encouraged to use the native apps for production use, where
+ * credentials are stored in OS-level secure storage (iOS Keychain/Android Keystore).
  */
 function getWebEncryptionKey(): Uint8Array {
   if (typeof sessionStorage === "undefined") {

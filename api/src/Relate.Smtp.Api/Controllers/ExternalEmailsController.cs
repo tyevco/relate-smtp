@@ -1,8 +1,8 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Relate.Smtp.Api.Authentication;
 using Relate.Smtp.Api.Authorization;
+using Relate.Smtp.Api.Extensions;
 using Relate.Smtp.Api.Models;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Core.Models;
@@ -218,16 +218,5 @@ public class ExternalEmailsController : ControllerBase
         return NoContent();
     }
 
-    private Guid GetUserId()
-    {
-        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? User.FindFirst("sub")?.Value;
-
-        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-        {
-            throw new InvalidOperationException("User ID not found in claims");
-        }
-
-        return userId;
-    }
+    private Guid GetUserId() => User.GetUserId();
 }

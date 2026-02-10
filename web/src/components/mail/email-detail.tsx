@@ -1,32 +1,12 @@
 import { format } from 'date-fns'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowLeft, Paperclip, Trash2, Download, Reply, ReplyAll, Forward } from 'lucide-react'
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '@relate/shared/lib/sanitize'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { AttachmentPreview } from './attachment-preview'
 import { ExportDialog } from './export-dialog'
 import type { EmailDetail as EmailDetailType } from '@/api/types'
-
-// Allowed tags for email HTML content sanitization
-const EMAIL_ALLOWED_TAGS = [
-  'p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'img',
-  'table', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'div', 'span',
-  'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
-  'hr', 'sub', 'sup', 'small', 'mark', 'del', 'ins', 'address',
-]
-
-// Allowed attributes for email HTML content sanitization
-const EMAIL_ALLOWED_ATTRS = ['href', 'src', 'alt', 'class', 'style', 'target', 'rel', 'width', 'height']
-
-function sanitizeHtml(html: string | null | undefined): string {
-  if (!html) return ''
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: EMAIL_ALLOWED_TAGS,
-    ALLOWED_ATTR: EMAIL_ALLOWED_ATTRS,
-    ALLOW_DATA_ATTR: false,
-  })
-}
 
 interface EmailDetailViewProps {
   email: EmailDetailType

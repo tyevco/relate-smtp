@@ -10,6 +10,7 @@ public interface IUserRepository
     Task<User?> GetByEmailWithApiKeysAsync(string email, CancellationToken cancellationToken = default);
     Task<User> AddAsync(User user, CancellationToken cancellationToken = default);
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
+    Task UpdateLastLoginAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<UserEmailAddress> AddEmailAddressAsync(UserEmailAddress address, CancellationToken cancellationToken = default);
     Task<UserEmailAddress?> GetEmailAddressByIdAsync(Guid addressId, CancellationToken cancellationToken = default);
     Task UpdateEmailAddressAsync(UserEmailAddress address, CancellationToken cancellationToken = default);

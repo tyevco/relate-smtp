@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Relate.Smtp.Core.Protocol;
 using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.Pop3Host.Protocol;
 using System.Text;
@@ -12,17 +13,20 @@ public class Pop3CommandHandler
     private readonly Pop3UserAuthenticator _authenticator;
     private readonly Pop3MessageManager _messageManager;
     private readonly Pop3ServerOptions _options;
+    private readonly ConnectionRegistry _connectionRegistry;
 
     public Pop3CommandHandler(
         ILogger<Pop3CommandHandler> logger,
         Pop3UserAuthenticator authenticator,
         Pop3MessageManager messageManager,
-        IOptions<Pop3ServerOptions> options)
+        IOptions<Pop3ServerOptions> options,
+        ConnectionRegistry connectionRegistry)
     {
         _logger = logger;
         _authenticator = authenticator;
         _messageManager = messageManager;
         _options = options.Value;
+        _connectionRegistry = connectionRegistry;
     }
 
     public async Task HandleSessionAsync(Stream stream, string clientIp, CancellationToken ct)
@@ -49,7 +53,17 @@ public class Pop3CommandHandler
                     break;
                 }
 
-                var line = await reader.ReadLineAsync(ct);
+                string? line;
+                try
+                {
+                    line = await BoundedStreamReader.ReadLineBoundedAsync(reader, 8192, ct);
+                }
+                catch (InvalidOperationException)
+                {
+                    _logger.LogWarning("Client sent line exceeding maximum length, disconnecting: {ConnectionId}", session.ConnectionId);
+                    await writer.WriteLineAsync(Pop3Response.Error("Line too long"));
+                    break;
+                }
                 if (line == null) break;
 
                 session.LastActivityAt = DateTime.UtcNow;
@@ -77,6 +91,9 @@ public class Pop3CommandHandler
         }
         finally
         {
+            if (session.UserId.HasValue)
+                _connectionRegistry.RemoveConnection(session.UserId.Value);
+
             _logger.LogInformation("POP3 session ended: {ConnectionId}", session.ConnectionId);
             try
             {
@@ -168,6 +185,12 @@ public class Pop3CommandHandler
         {
             _logger.LogWarning("Authentication failed for: {Username}", session.Username);
             return Pop3Response.Error("Authentication failed");
+        }
+
+        if (!_connectionRegistry.TryAddConnection(userId.Value, _options.MaxConnectionsPerUser))
+        {
+            _logger.LogWarning("Connection limit reached for user: {Username}", session.Username);
+            return Pop3Response.Error("Too many connections");
         }
 
         session.UserId = userId.Value;

@@ -9,7 +9,7 @@ const SAFE_TAGS = [
 ]
 
 const SAFE_ATTRS = [
-  'href', 'src', 'alt', 'class', 'style', 'target', 'rel',
+  'href', 'src', 'alt', 'class', 'target', 'rel',
   'width', 'height', 'title', 'colspan', 'rowspan', 'scope',
 ]
 

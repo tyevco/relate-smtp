@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { api } from './client'
+import { logger } from '@/lib/logger'
 import { DEFAULT_PAGE_SIZE } from '@relate/shared/lib/constants'
 import type { EmailListResponse, EmailDetail, Profile, EmailAddress, SmtpCredentials, CreateApiKeyRequest, CreatedApiKey, Label, CreateLabelRequest, UpdateLabelRequest, EmailFilter, CreateEmailFilterRequest, UpdateEmailFilterRequest, UserPreference, UpdateUserPreferenceRequest, OutboundEmailListResponse, OutboundEmailDetail, CreateDraftRequest, UpdateDraftRequest, SendEmailRequest, ReplyRequest, ForwardRequest } from './types'
 
@@ -72,7 +73,7 @@ export function useMarkEmailRead() {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
     onError: (error) => {
-      console.error('Failed to update email read status:', error)
+      logger.error('Failed to update email read status:', error)
     },
   })
 }
@@ -86,7 +87,7 @@ export function useDeleteEmail() {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
     onError: (error) => {
-      console.error('Failed to delete email:', error)
+      logger.error('Failed to delete email:', error)
     },
   })
 }
@@ -109,7 +110,7 @@ export function useUpdateProfile() {
       queryClient.setQueryData(['profile'], data)
     },
     onError: (error) => {
-      console.error('Failed to update profile:', error)
+      logger.error('Failed to update profile:', error)
     },
   })
 }
@@ -124,7 +125,7 @@ export function useAddEmailAddress() {
       queryClient.invalidateQueries({ queryKey: ['profile'] })
     },
     onError: (error) => {
-      console.error('Failed to add email address:', error)
+      logger.error('Failed to add email address:', error)
     },
   })
 }
@@ -139,7 +140,7 @@ export function useRemoveEmailAddress() {
       queryClient.invalidateQueries({ queryKey: ['profile'] })
     },
     onError: (error) => {
-      console.error('Failed to remove email address:', error)
+      logger.error('Failed to remove email address:', error)
     },
   })
 }
@@ -149,7 +150,7 @@ export function useSendVerification() {
     mutationFn: (addressId: string) =>
       api.post<{ message: string }>(`/profile/addresses/${addressId}/send-verification`, {}),
     onError: (error) => {
-      console.error('Failed to send verification:', error)
+      logger.error('Failed to send verification:', error)
     },
   })
 }
@@ -164,7 +165,7 @@ export function useVerifyEmailAddress() {
       queryClient.invalidateQueries({ queryKey: ['profile'] })
     },
     onError: (error) => {
-      console.error('Failed to verify email address:', error)
+      logger.error('Failed to verify email address:', error)
     },
   })
 }
@@ -187,7 +188,7 @@ export function useCreateSmtpApiKey() {
       queryClient.invalidateQueries({ queryKey: ['smtp-credentials'] })
     },
     onError: (error) => {
-      console.error('Failed to create API key:', error)
+      logger.error('Failed to create API key:', error)
     },
   })
 }
@@ -202,7 +203,7 @@ export function useRevokeSmtpApiKey() {
       queryClient.invalidateQueries({ queryKey: ['smtp-credentials'] })
     },
     onError: (error) => {
-      console.error('Failed to revoke API key:', error)
+      logger.error('Failed to revoke API key:', error)
     },
   })
 }
@@ -225,7 +226,7 @@ export function useCreateLabel() {
       queryClient.invalidateQueries({ queryKey: ['labels'] })
     },
     onError: (error) => {
-      console.error('Failed to create label:', error)
+      logger.error('Failed to create label:', error)
     },
   })
 }
@@ -240,7 +241,7 @@ export function useUpdateLabel() {
       queryClient.invalidateQueries({ queryKey: ['labels'] })
     },
     onError: (error) => {
-      console.error('Failed to update label:', error)
+      logger.error('Failed to update label:', error)
     },
   })
 }
@@ -255,7 +256,7 @@ export function useDeleteLabel() {
       queryClient.invalidateQueries({ queryKey: ['labels'] })
     },
     onError: (error) => {
-      console.error('Failed to delete label:', error)
+      logger.error('Failed to delete label:', error)
     },
   })
 }
@@ -270,7 +271,7 @@ export function useAddLabelToEmail() {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
     onError: (error) => {
-      console.error('Failed to add label to email:', error)
+      logger.error('Failed to add label to email:', error)
     },
   })
 }
@@ -285,7 +286,7 @@ export function useRemoveLabelFromEmail() {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
     onError: (error) => {
-      console.error('Failed to remove label from email:', error)
+      logger.error('Failed to remove label from email:', error)
     },
   })
 }
@@ -316,7 +317,7 @@ export function useCreateFilter() {
       queryClient.invalidateQueries({ queryKey: ['filters'] })
     },
     onError: (error) => {
-      console.error('Failed to create filter:', error)
+      logger.error('Failed to create filter:', error)
     },
   })
 }
@@ -331,7 +332,7 @@ export function useUpdateFilter() {
       queryClient.invalidateQueries({ queryKey: ['filters'] })
     },
     onError: (error) => {
-      console.error('Failed to update filter:', error)
+      logger.error('Failed to update filter:', error)
     },
   })
 }
@@ -346,7 +347,7 @@ export function useDeleteFilter() {
       queryClient.invalidateQueries({ queryKey: ['filters'] })
     },
     onError: (error) => {
-      console.error('Failed to delete filter:', error)
+      logger.error('Failed to delete filter:', error)
     },
   })
 }
@@ -377,7 +378,7 @@ export function useUpdatePreferences() {
       queryClient.setQueryData(['preferences'], data)
     },
     onError: (error) => {
-      console.error('Failed to update preferences:', error)
+      logger.error('Failed to update preferences:', error)
     },
   })
 }
@@ -407,7 +408,7 @@ export function useBulkMarkRead() {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
     onError: (error) => {
-      console.error('Failed to bulk update read status:', error)
+      logger.error('Failed to bulk update read status:', error)
     },
   })
 }
@@ -422,7 +423,7 @@ export function useBulkDelete() {
       queryClient.invalidateQueries({ queryKey: ['emails'] })
     },
     onError: (error) => {
-      console.error('Failed to bulk delete emails:', error)
+      logger.error('Failed to bulk delete emails:', error)
     },
   })
 }

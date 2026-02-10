@@ -29,6 +29,7 @@ public class ProfileControllerTests
         _userProvisioningServiceMock = new Mock<UserProvisioningService>(
             Mock.Of<IUserRepository>(),
             Mock.Of<IEmailRepository>(),
+            Mock.Of<Microsoft.Extensions.Configuration.IConfiguration>(),
             Mock.Of<Microsoft.Extensions.Logging.ILogger<UserProvisioningService>>());
 
         _userFactory = new UserFactory();
@@ -90,7 +91,7 @@ public class ProfileControllerTests
         capturedAddress.ShouldNotBeNull();
         capturedAddress.IsVerified.ShouldBeFalse();
         capturedAddress.VerificationToken.ShouldNotBeNullOrWhiteSpace();
-        capturedAddress.VerificationToken!.Length.ShouldBe(6);
+        capturedAddress.VerificationToken!.Length.ShouldBe(8);
         capturedAddress.VerificationTokenExpiresAt.ShouldNotBeNull();
         capturedAddress.VerificationTokenExpiresAt!.Value.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
     }
@@ -176,177 +177,18 @@ public class ProfileControllerTests
     }
 
     [Fact]
-    public async Task SendVerification_UnverifiedAddress_ReturnsOk()
-    {
-        // Arrange
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "unverified@example.com",
-            IsVerified = false,
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        // Act
-        var result = await _controller.SendVerification(address.Id);
-
-        // Assert
-        result.ShouldBeOfType<OkObjectResult>();
-        _userRepositoryMock.Verify(r => r.UpdateEmailAddressAsync(
-            It.Is<UserEmailAddress>(a =>
-                a.Id == address.Id &&
-                a.VerificationToken != null &&
-                a.VerificationToken.Length == 6 &&
-                a.VerificationTokenExpiresAt != null),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task SendVerification_AlreadyVerified_ReturnsBadRequest()
-    {
-        // Arrange
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "verified@example.com",
-            IsVerified = true,
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        // Act
-        var result = await _controller.SendVerification(address.Id);
-
-        // Assert
-        result.ShouldBeOfType<BadRequestObjectResult>();
-    }
-
-    [Fact]
-    public async Task SendVerification_NonExistentAddress_ReturnsNotFound()
+    public async Task SendVerification_Returns501NotImplemented()
     {
         // Act
         var result = await _controller.SendVerification(Guid.NewGuid());
 
-        // Assert
-        result.ShouldBeOfType<NotFoundResult>();
+        // Assert — endpoint is intentionally disabled until outbound email is wired up
+        var statusResult = result.ShouldBeOfType<ObjectResult>();
+        statusResult.StatusCode.ShouldBe(StatusCodes.Status501NotImplemented);
     }
 
     [Fact]
-    public async Task VerifyEmailAddress_ValidCode_VerifiesAndReturnsAddress()
-    {
-        // Arrange
-        var token = "123456";
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "pending@example.com",
-            IsVerified = false,
-            VerificationToken = token,
-            VerificationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(23),
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        var request = new VerifyEmailAddressRequest(token);
-
-        // Act
-        var result = await _controller.VerifyEmailAddress(address.Id, request);
-
-        // Assert
-        var okResult = result.Result.ShouldBeOfType<OkObjectResult>();
-        var response = okResult.Value.ShouldBeOfType<EmailAddressDto>();
-        response.IsVerified.ShouldBeTrue();
-        response.Address.ShouldBe("pending@example.com");
-
-        _userRepositoryMock.Verify(r => r.UpdateEmailAddressAsync(
-            It.Is<UserEmailAddress>(a =>
-                a.Id == address.Id &&
-                a.IsVerified == true &&
-                a.VerificationToken == null &&
-                a.VerificationTokenExpiresAt == null),
-            It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task VerifyEmailAddress_InvalidCode_ReturnsBadRequest()
-    {
-        // Arrange
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "pending@example.com",
-            IsVerified = false,
-            VerificationToken = "123456",
-            VerificationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(23),
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        var request = new VerifyEmailAddressRequest("999999");
-
-        // Act
-        var result = await _controller.VerifyEmailAddress(address.Id, request);
-
-        // Assert
-        result.Result.ShouldBeOfType<BadRequestObjectResult>();
-        _userRepositoryMock.Verify(r => r.UpdateEmailAddressAsync(It.IsAny<UserEmailAddress>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task VerifyEmailAddress_ExpiredToken_ReturnsBadRequest()
-    {
-        // Arrange
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "pending@example.com",
-            IsVerified = false,
-            VerificationToken = "123456",
-            VerificationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(-1),
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        var request = new VerifyEmailAddressRequest("123456");
-
-        // Act
-        var result = await _controller.VerifyEmailAddress(address.Id, request);
-
-        // Assert
-        result.Result.ShouldBeOfType<BadRequestObjectResult>();
-    }
-
-    [Fact]
-    public async Task VerifyEmailAddress_AlreadyVerified_ReturnsBadRequest()
-    {
-        // Arrange
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "verified@example.com",
-            IsVerified = true,
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        var request = new VerifyEmailAddressRequest("123456");
-
-        // Act
-        var result = await _controller.VerifyEmailAddress(address.Id, request);
-
-        // Assert
-        result.Result.ShouldBeOfType<BadRequestObjectResult>();
-    }
-
-    [Fact]
-    public async Task VerifyEmailAddress_NonExistentAddress_ReturnsNotFound()
+    public async Task VerifyEmailAddress_Returns501NotImplemented()
     {
         // Arrange
         var request = new VerifyEmailAddressRequest("123456");
@@ -354,45 +196,8 @@ public class ProfileControllerTests
         // Act
         var result = await _controller.VerifyEmailAddress(Guid.NewGuid(), request);
 
-        // Assert
-        result.Result.ShouldBeOfType<NotFoundResult>();
-    }
-
-    [Fact]
-    public async Task VerifyEmailAddress_EmptyCode_ReturnsBadRequest()
-    {
-        // Arrange
-        var request = new VerifyEmailAddressRequest("");
-
-        // Act
-        var result = await _controller.VerifyEmailAddress(Guid.NewGuid(), request);
-
-        // Assert
-        result.Result.ShouldBeOfType<BadRequestObjectResult>();
-    }
-
-    [Fact]
-    public async Task VerifyEmailAddress_NullToken_ReturnsBadRequest()
-    {
-        // Arrange
-        var address = new UserEmailAddress
-        {
-            Id = Guid.NewGuid(),
-            UserId = _testUser.Id,
-            Address = "pending@example.com",
-            IsVerified = false,
-            VerificationToken = null,
-            VerificationTokenExpiresAt = null,
-            AddedAt = DateTimeOffset.UtcNow
-        };
-        _testUser.AdditionalAddresses.Add(address);
-
-        var request = new VerifyEmailAddressRequest("123456");
-
-        // Act
-        var result = await _controller.VerifyEmailAddress(address.Id, request);
-
-        // Assert
-        result.Result.ShouldBeOfType<BadRequestObjectResult>();
+        // Assert — endpoint is intentionally disabled until outbound email is wired up
+        var statusResult = result.Result.ShouldBeOfType<ObjectResult>();
+        statusResult.StatusCode.ShouldBe(StatusCodes.Status501NotImplemented);
     }
 }

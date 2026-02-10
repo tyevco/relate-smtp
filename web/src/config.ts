@@ -1,3 +1,5 @@
+import { logger } from './lib/logger'
+
 // Runtime configuration loaded from /config.json
 export interface AppConfig {
   oidcAuthority: string
@@ -38,11 +40,16 @@ export async function loadConfig(): Promise<AppConfig> {
   let response: Response | null = null
   let fetchError: Error | null = null
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10_000)
+
   try {
-    response = await fetch('/config/config.json')
+    response = await fetch('/config/config.json', { signal: controller.signal })
   } catch (error) {
     fetchError = error instanceof Error ? error : new Error('Network error while fetching config')
-    console.error('Failed to fetch config.json (network error):', fetchError.message)
+    logger.error('Failed to fetch config.json (network error):', fetchError.message)
+  } finally {
+    clearTimeout(timeoutId)
   }
 
   if (response && response.ok) {
@@ -70,14 +77,14 @@ export async function loadConfig(): Promise<AppConfig> {
       config = loadedConfig
       return config
     } catch (parseError) {
-      console.error('Failed to parse config.json (invalid JSON):', parseError)
+      logger.error('Failed to parse config.json (invalid JSON):', parseError)
     }
   } else if (response && !response.ok) {
-    console.error(`Failed to load config.json: HTTP ${response.status} ${response.statusText}`)
+    logger.error(`Failed to load config.json: HTTP ${response.status} ${response.statusText}`)
   }
 
   // Fallback to build-time environment variables
-  console.warn('Using build-time environment variables for configuration')
+  logger.warn('Using build-time environment variables for configuration')
   const fallbackRedirectUri = import.meta.env.VITE_OIDC_REDIRECT_URI || window.location.origin
   config = {
     oidcAuthority: import.meta.env.VITE_OIDC_AUTHORITY || '',

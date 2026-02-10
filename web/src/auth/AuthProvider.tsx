@@ -1,6 +1,7 @@
 import { AuthProvider as OidcAuthProvider, type AuthProviderProps } from 'react-oidc-context';
 import { WebStorageStateStore } from 'oidc-client-ts';
 import { getConfig } from '../config';
+import { logger } from '../lib/logger';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Get runtime configuration
@@ -50,14 +51,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Error handler for OIDC failures
   const handleSigninError = (error: Error) => {
-    console.error('OIDC sign-in error:', error);
+    logger.error('OIDC sign-in error:', error);
     // Display user-friendly message based on error type
     const message = error.message.includes('network')
       ? 'Network error during authentication. Please check your connection.'
       : error.message.includes('expired')
       ? 'Your session has expired. Please sign in again.'
       : 'Authentication failed. Please try again.';
-    console.error(message);
+    logger.error(message);
   };
 
   const oidcConfigWithHandlers = {

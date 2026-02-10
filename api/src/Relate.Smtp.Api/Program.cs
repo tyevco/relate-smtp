@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -72,9 +73,10 @@ else
     var devKey = builder.Configuration["Jwt:DevelopmentKey"];
     if (string.IsNullOrEmpty(devKey))
     {
-        // Generate a stable development key based on machine name
-        devKey = $"dev-key-{Environment.MachineName}-relate-mail-development-only-key-32chars!";
-        Console.WriteLine("WARNING: Using auto-generated development JWT key. Set Jwt:DevelopmentKey for consistent tokens across restarts.");
+        // Generate a random key — tokens are invalidated on restart
+        var keyBytes = RandomNumberGenerator.GetBytes(32);
+        devKey = Convert.ToBase64String(keyBytes);
+        Console.WriteLine("WARNING: Using random dev JWT key — tokens invalidated on restart. Set Jwt:DevelopmentKey for persistent tokens.");
     }
 
     builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

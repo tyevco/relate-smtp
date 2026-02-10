@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
+using Relate.Smtp.Api.Extensions;
 using Relate.Smtp.Api.Models;
 using Relate.Smtp.Api.Services;
 using Relate.Smtp.Core.Entities;
@@ -92,17 +93,7 @@ public class PushSubscriptionsController : ControllerBase
         return NoContent();
     }
 
-    private Guid GetUserId()
-    {
-        var userIdClaim = User.FindFirst("sub") ?? User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-
-        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
-        {
-            throw new UnauthorizedAccessException("User ID not found in token");
-        }
-
-        return userId;
-    }
+    private Guid GetUserId() => User.GetUserId();
 
     private static PushSubscriptionDto MapToDto(PushSubscription subscription)
     {

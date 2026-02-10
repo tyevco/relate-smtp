@@ -1,9 +1,11 @@
+using Relate.Smtp.Core.Protocol;
+
 namespace Relate.Smtp.ImapHost.Protocol;
 
 /// <summary>
 /// Maintains state for an IMAP session
 /// </summary>
-public class ImapSession
+public class ImapSession : ProtocolSession
 {
     /// <summary>
     /// Maximum number of messages that can be marked for deletion in a single session.
@@ -11,14 +13,7 @@ public class ImapSession
     /// </summary>
     public const int MaxDeletedMessages = 10000;
 
-    public string ConnectionId { get; init; } = Guid.NewGuid().ToString();
-    public DateTime ConnectedAt { get; init; } = DateTime.UtcNow;
-    public DateTime LastActivityAt { get; set; } = DateTime.UtcNow;
-    public string ClientIp { get; init; } = "unknown";
-
     public ImapState State { get; set; } = ImapState.NotAuthenticated;
-    public string? Username { get; set; }
-    public Guid? UserId { get; set; }
 
     // Mailbox state (when Selected)
     public string? SelectedMailbox { get; set; }
@@ -35,9 +30,6 @@ public class ImapSession
 
     // UIDVALIDITY for the mailbox - set based on mailbox creation/modification time during SELECT
     public uint UidValidity { get; set; }
-
-    public bool IsTimedOut(TimeSpan timeout) =>
-        DateTime.UtcNow - LastActivityAt > timeout;
 
     /// <summary>
     /// Returns true if the deleted UIDs collection has reached its maximum size.
@@ -84,6 +76,21 @@ public class ImapMessage
     /// Internal date (received date)
     /// </summary>
     public DateTimeOffset InternalDate { get; set; }
+
+    /// <summary>
+    /// Email subject (for ENVELOPE)
+    /// </summary>
+    public string? Subject { get; set; }
+
+    /// <summary>
+    /// From address (for ENVELOPE)
+    /// </summary>
+    public string? FromAddress { get; set; }
+
+    /// <summary>
+    /// From display name (for ENVELOPE)
+    /// </summary>
+    public string? FromDisplayName { get; set; }
 }
 
 /// <summary>

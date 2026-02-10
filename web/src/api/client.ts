@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger'
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 export class ApiError extends Error {
@@ -39,7 +41,7 @@ async function getAuthHeader(): Promise<Record<string, string>> {
         return { Authorization: `Bearer ${accessToken}` };
       }
     } catch (error) {
-      console.error('Failed to parse user token:', error);
+      logger.error('Failed to parse user token:', error);
     }
   }
 

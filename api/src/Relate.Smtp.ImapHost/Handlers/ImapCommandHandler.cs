@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Relate.Smtp.Core.Protocol;
 using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.ImapHost.Protocol;
 using System.Text;
@@ -12,17 +13,20 @@ public class ImapCommandHandler
     private readonly ImapUserAuthenticator _authenticator;
     private readonly ImapMessageManager _messageManager;
     private readonly ImapServerOptions _options;
+    private readonly ConnectionRegistry _connectionRegistry;
 
     public ImapCommandHandler(
         ILogger<ImapCommandHandler> logger,
         ImapUserAuthenticator authenticator,
         ImapMessageManager messageManager,
-        IOptions<ImapServerOptions> options)
+        IOptions<ImapServerOptions> options,
+        ConnectionRegistry connectionRegistry)
     {
         _logger = logger;
         _authenticator = authenticator;
         _messageManager = messageManager;
         _options = options.Value;
+        _connectionRegistry = connectionRegistry;
     }
 
     public async Task HandleSessionAsync(Stream stream, string clientIp, CancellationToken ct)
@@ -49,7 +53,17 @@ public class ImapCommandHandler
                     break;
                 }
 
-                var line = await reader.ReadLineAsync(ct);
+                string? line;
+                try
+                {
+                    line = await BoundedStreamReader.ReadLineBoundedAsync(reader, 8192, ct);
+                }
+                catch (InvalidOperationException)
+                {
+                    _logger.LogWarning("Client sent line exceeding maximum length, disconnecting: {ConnectionId}", session.ConnectionId);
+                    await writer.WriteLineAsync(ImapResponse.Bye("Line too long"));
+                    break;
+                }
                 if (line == null) break;
 
                 session.LastActivityAt = DateTime.UtcNow;
@@ -67,7 +81,7 @@ public class ImapCommandHandler
                     continue;
                 }
 
-                await ExecuteCommandAsync(command, session, writer, ct);
+                await ExecuteCommandAsync(command, session, reader, writer, ct);
 
                 if (session.State == ImapState.Logout)
                     break;
@@ -85,6 +99,9 @@ public class ImapCommandHandler
         }
         finally
         {
+            if (session.UserId.HasValue)
+                _connectionRegistry.RemoveConnection(session.UserId.Value);
+
             _logger.LogInformation("IMAP session ended: {ConnectionId}", session.ConnectionId);
             try
             {
@@ -102,6 +119,7 @@ public class ImapCommandHandler
     private async Task ExecuteCommandAsync(
         ImapCommand command,
         ImapSession session,
+        StreamReader reader,
         StreamWriter writer,
         CancellationToken ct)
     {
@@ -135,7 +153,7 @@ public class ImapCommandHandler
             switch (session.State)
             {
                 case ImapState.NotAuthenticated:
-                    await HandleNotAuthenticatedCommandAsync(command, session, writer, ct);
+                    await HandleNotAuthenticatedCommandAsync(command, session, reader, writer, ct);
                     break;
                 case ImapState.Authenticated:
                     await HandleAuthenticatedCommandAsync(command, session, writer, ct);
@@ -222,6 +240,7 @@ public class ImapCommandHandler
     private async Task HandleNotAuthenticatedCommandAsync(
         ImapCommand command,
         ImapSession session,
+        StreamReader reader,
         StreamWriter writer,
         CancellationToken ct)
     {
@@ -229,6 +248,9 @@ public class ImapCommandHandler
         {
             case "LOGIN":
                 await HandleLoginAsync(command, session, writer, ct);
+                break;
+            case "AUTHENTICATE":
+                await HandleAuthenticateAsync(command, session, reader, writer, ct);
                 break;
             default:
                 await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "Please authenticate first"));
@@ -260,6 +282,13 @@ public class ImapCommandHandler
             return;
         }
 
+        if (!_connectionRegistry.TryAddConnection(userId.Value, _options.MaxConnectionsPerUser))
+        {
+            _logger.LogWarning("Connection limit reached for user: {Username}", username);
+            await writer.WriteLineAsync(ImapResponse.TaggedNo(command.Tag, "Too many connections"));
+            return;
+        }
+
         session.Username = username;
         session.UserId = userId.Value;
         session.State = ImapState.Authenticated;
@@ -267,6 +296,128 @@ public class ImapCommandHandler
         _logger.LogInformation("User authenticated: {Username}", username);
         await writer.WriteLineAsync(ImapResponse.Capability());
         await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "LOGIN completed"));
+    }
+
+    private async Task HandleAuthenticateAsync(
+        ImapCommand command,
+        ImapSession session,
+        StreamReader reader,
+        StreamWriter writer,
+        CancellationToken ct)
+    {
+        if (command.Arguments.Length < 1)
+        {
+            await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "AUTHENTICATE requires mechanism name"));
+            return;
+        }
+
+        var mechanism = command.Arguments[0].ToUpperInvariant();
+        if (mechanism != "PLAIN")
+        {
+            await writer.WriteLineAsync(ImapResponse.TaggedNo(command.Tag, "Unsupported authentication mechanism"));
+            return;
+        }
+
+        string base64Credentials;
+
+        // Check if credentials were provided inline (SASL-IR: initial response)
+        if (command.Arguments.Length >= 2)
+        {
+            base64Credentials = command.Arguments[1];
+        }
+        else
+        {
+            // Send continuation request
+            await writer.WriteLineAsync("+");
+
+            // Read the Base64-encoded credentials from the client
+            string? credentialLine;
+            try
+            {
+                credentialLine = await BoundedStreamReader.ReadLineBoundedAsync(reader, 8192, ct);
+            }
+            catch (InvalidOperationException)
+            {
+                await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "Credentials too long"));
+                return;
+            }
+
+            if (string.IsNullOrEmpty(credentialLine) || credentialLine == "*")
+            {
+                await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "Authentication cancelled"));
+                return;
+            }
+
+            base64Credentials = credentialLine;
+        }
+
+        // Decode Base64: format is \0username\0password
+        byte[] decoded;
+        try
+        {
+            decoded = Convert.FromBase64String(base64Credentials);
+        }
+        catch (FormatException)
+        {
+            await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "Invalid Base64 encoding"));
+            return;
+        }
+
+        // Parse PLAIN mechanism: [authzid]\0authcid\0passwd
+        var parts = SplitPlainCredentials(decoded);
+        if (parts == null)
+        {
+            await writer.WriteLineAsync(ImapResponse.TaggedBad(command.Tag, "Invalid PLAIN credentials format"));
+            return;
+        }
+
+        var (_, username, password) = parts.Value;
+
+        var (authenticated, userId) = await _authenticator.AuthenticateAsync(username, password, session.ClientIp, ct);
+
+        if (!authenticated || !userId.HasValue)
+        {
+            _logger.LogWarning("AUTHENTICATE PLAIN failed for: {Username}", username);
+            await writer.WriteLineAsync(ImapResponse.TaggedNo(command.Tag, "Authentication failed"));
+            return;
+        }
+
+        if (!_connectionRegistry.TryAddConnection(userId.Value, _options.MaxConnectionsPerUser))
+        {
+            _logger.LogWarning("Connection limit reached for user: {Username}", username);
+            await writer.WriteLineAsync(ImapResponse.TaggedNo(command.Tag, "Too many connections"));
+            return;
+        }
+
+        session.Username = username;
+        session.UserId = userId.Value;
+        session.State = ImapState.Authenticated;
+
+        _logger.LogInformation("User authenticated via AUTHENTICATE PLAIN: {Username}", username);
+        await writer.WriteLineAsync(ImapResponse.Capability());
+        await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "AUTHENTICATE completed"));
+    }
+
+    /// <summary>
+    /// Split PLAIN SASL credentials: [authzid]\0authcid\0passwd
+    /// </summary>
+    private static (string Authzid, string Username, string Password)? SplitPlainCredentials(byte[] data)
+    {
+        var str = Encoding.UTF8.GetString(data);
+        // Find the two NUL separators
+        var firstNull = str.IndexOf('\0');
+        if (firstNull < 0) return null;
+        var secondNull = str.IndexOf('\0', firstNull + 1);
+        if (secondNull < 0) return null;
+
+        var authzid = str[..firstNull];
+        var username = str[(firstNull + 1)..secondNull];
+        var password = str[(secondNull + 1)..];
+
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            return null;
+
+        return (authzid, username, password);
     }
 
     private async Task HandleAuthenticatedCommandAsync(
@@ -549,8 +700,7 @@ public class ImapCommandHandler
 
         if (upperItems.Contains("ENVELOPE", StringComparison.Ordinal))
         {
-            // Simplified envelope - would need full message parsing for complete implementation
-            parts.Add("ENVELOPE NIL");
+            parts.Add(BuildEnvelope(msg));
         }
 
         if (upperItems.Contains("BODY[]", StringComparison.Ordinal) || upperItems.Contains("RFC822", StringComparison.Ordinal))
@@ -635,13 +785,17 @@ public class ImapCommandHandler
             // Track deletions
             if (msg.Flags.HasFlag(ImapFlags.Deleted))
             {
-                // Check limit before adding
-                if (!session.DeletedUids.Contains(msg.Uid) && session.IsDeletedUidsLimitReached)
+                if (!session.DeletedUids.Contains(msg.Uid))
                 {
-                    await writer.WriteLineAsync(ImapResponse.TaggedNo(command.Tag, "Too many messages marked for deletion in this session"));
-                    return;
+                    if (session.IsDeletedUidsLimitReached)
+                    {
+                        await writer.WriteLineAsync(
+                            ImapResponse.TaggedNo(command.Tag,
+                            $"Maximum deleted messages limit reached"));
+                        return;
+                    }
+                    session.DeletedUids.Add(msg.Uid);
                 }
-                session.DeletedUids.Add(msg.Uid);
             }
             else
             {
@@ -659,6 +813,48 @@ public class ImapCommandHandler
         }
 
         await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "STORE completed"));
+    }
+
+    /// <summary>
+    /// Build an RFC 9051 ENVELOPE structure from message metadata.
+    /// Format: (date subject from sender reply-to to cc bcc in-reply-to message-id)
+    /// </summary>
+    private static string BuildEnvelope(ImapMessage msg)
+    {
+        var date = ImapQuote(msg.InternalDate.ToString("r"));
+        var subject = ImapQuote(msg.Subject ?? "");
+        var from = FormatAddressList(msg.FromAddress, msg.FromDisplayName);
+        var messageId = ImapQuote(msg.MessageId);
+
+        // RFC 9051: (date subject from sender reply-to to cc bcc in-reply-to message-id)
+        // sender and reply-to default to from when not specified
+        return $"ENVELOPE ({date} {subject} {from} {from} {from} NIL NIL NIL NIL {messageId})";
+    }
+
+    private static string ImapQuote(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return "NIL";
+        // Escape backslashes and quotes inside the string
+        var escaped = value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+        return $"\"{escaped}\"";
+    }
+
+    private static string FormatAddressList(string? address, string? displayName)
+    {
+        if (string.IsNullOrEmpty(address))
+            return "NIL";
+
+        // RFC 9051 address: (personal-name at-domain-list mailbox-name host-name)
+        var atIndex = address.IndexOf('@');
+        var mailbox = atIndex >= 0 ? address[..atIndex] : address;
+        var host = atIndex >= 0 ? address[(atIndex + 1)..] : "";
+
+        var personal = ImapQuote(displayName);
+        var mailboxQuoted = ImapQuote(mailbox);
+        var hostQuoted = ImapQuote(host);
+
+        return $"(({personal} NIL {mailboxQuoted} {hostQuoted}))";
     }
 
     private static ImapFlags ParseFlagsFromString(string flagsStr)

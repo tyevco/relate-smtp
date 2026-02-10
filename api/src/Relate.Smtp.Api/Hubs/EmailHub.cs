@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
@@ -7,6 +8,7 @@ namespace Relate.Smtp.Api.Hubs;
 /// SignalR hub for real-time email notifications.
 /// Clients connect and are automatically added to a group named after their user ID.
 /// </summary>
+[Authorize]
 public class EmailHub : Hub
 {
     private readonly ILogger<EmailHub> _logger;

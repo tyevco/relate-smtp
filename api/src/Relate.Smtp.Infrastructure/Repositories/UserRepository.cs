@@ -68,6 +68,14 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task UpdateLastLoginAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await _context.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.LastLoginAt, DateTimeOffset.UtcNow), cancellationToken)
+            .ConfigureAwait(false);
+    }
+
     public async Task<UserEmailAddress> AddEmailAddressAsync(UserEmailAddress address, CancellationToken cancellationToken = default)
     {
         _context.UserEmailAddresses.Add(address);

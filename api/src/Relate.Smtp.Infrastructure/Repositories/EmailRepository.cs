@@ -112,16 +112,18 @@ public class EmailRepository : IEmailRepository
             .Include(e => e.Recipients)
             .Where(e => e.Recipients.Any(r => r.UserId == userId));
 
-        // Full-text search across From, Subject, and Body
+        // Search across From, Subject, and TextBody (HtmlBody excluded for performance)
+        // TODO: Replace LIKE with full-text search (tsvector/GIN index) for better performance
         if (!string.IsNullOrWhiteSpace(filters.Query))
         {
-            var searchTerm = filters.Query.ToLowerInvariant();
+            var searchTerm = filters.Query.Length > 200
+                ? filters.Query[..200].ToLowerInvariant()
+                : filters.Query.ToLowerInvariant();
             query = query.Where(e =>
                 EF.Functions.Like(e.FromAddress, $"%{searchTerm}%") ||
                 (e.FromDisplayName != null && EF.Functions.Like(e.FromDisplayName, $"%{searchTerm}%")) ||
                 (e.Subject != null && EF.Functions.Like(e.Subject, $"%{searchTerm}%")) ||
-                (e.TextBody != null && EF.Functions.Like(e.TextBody, $"%{searchTerm}%")) ||
-                (e.HtmlBody != null && EF.Functions.Like(e.HtmlBody, $"%{searchTerm}%")));
+                (e.TextBody != null && EF.Functions.Like(e.TextBody, $"%{searchTerm}%")));
         }
 
         // Date range filters
@@ -185,20 +187,30 @@ public class EmailRepository : IEmailRepository
     {
         var addresses = emailAddresses.Select(a => a.ToLowerInvariant()).ToList();
 
-        var recipients = await _context.EmailRecipients
-            // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
-            // EF Core translates ToLower() to SQL LOWER() function
-#pragma warning disable CA1304, CA1309, CA1311, CA1862
-            .Where(r => r.UserId == null && addresses.Any(a => r.Address.ToLower() == a))
-#pragma warning restore CA1304, CA1309, CA1311, CA1862
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-
-        foreach (var recipient in recipients)
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            recipient.UserId = userId;
-        }
+            var recipients = await _context.EmailRecipients
+                // Use ToLower() for PostgreSQL-compatible case-insensitive comparison
+                // EF Core translates ToLower() to SQL LOWER() function
+#pragma warning disable CA1304, CA1309, CA1311, CA1862
+                .Where(r => r.UserId == null && addresses.Any(a => r.Address.ToLower() == a))
+#pragma warning restore CA1304, CA1309, CA1311, CA1862
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var recipient in recipients)
+            {
+                recipient.UserId = userId;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<Email>> GetSentByUserIdAsync(

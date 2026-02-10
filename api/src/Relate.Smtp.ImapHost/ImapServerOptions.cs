@@ -8,6 +8,7 @@ public class ImapServerOptions
     public bool RequireAuthentication { get; set; } = true;
     public string? CertificatePath { get; set; }
     public string? CertificatePassword { get; set; }
+    public bool CheckCertificateRevocation { get; set; } = true;
     public int MaxConnectionsPerUser { get; set; } = 5;
     public TimeSpan SessionTimeout { get; set; } = TimeSpan.FromMinutes(30);
     public int MaxMessagesPerSession { get; set; } = 2000;

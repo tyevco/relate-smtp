@@ -120,77 +120,33 @@ public class ProfileController : ControllerBase
         return NoContent();
     }
 
+    // Intentionally disabled until outbound email sending is wired up.
+    // Re-enable once the platform can deliver verification codes via email.
     [HttpPost("addresses/{addressId:guid}/send-verification")]
-    public async Task<IActionResult> SendVerification(Guid addressId, CancellationToken cancellationToken = default)
+    public Task<IActionResult> SendVerification(Guid addressId, CancellationToken cancellationToken = default)
     {
-        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
-
-        var address = user.AdditionalAddresses.FirstOrDefault(a => a.Id == addressId);
-        if (address == null)
-        {
-            return NotFound();
-        }
-
-        if (address.IsVerified)
-        {
-            return BadRequest(new { error = "Email address is already verified" });
-        }
-
-        address.VerificationToken = GenerateVerificationCode();
-        address.VerificationTokenExpiresAt = DateTimeOffset.UtcNow.AddHours(24);
-        await _userRepository.UpdateEmailAddressAsync(address, cancellationToken);
-
-        // In production, send the verification code to the email address.
-        // For development, the code is returned in the response.
-        return Ok(new { message = "Verification code sent" });
+        return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status501NotImplemented,
+            new { error = "Email verification is not yet available" }));
     }
 
     [HttpPost("addresses/{addressId:guid}/verify")]
-    public async Task<ActionResult<EmailAddressDto>> VerifyEmailAddress(
+    public Task<ActionResult<EmailAddressDto>> VerifyEmailAddress(
         Guid addressId,
         [FromBody] VerifyEmailAddressRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Code))
-        {
-            return BadRequest(new { error = "Verification code is required" });
-        }
-
-        var user = await _userProvisioningService.GetOrCreateUserAsync(User, cancellationToken);
-
-        var address = user.AdditionalAddresses.FirstOrDefault(a => a.Id == addressId);
-        if (address == null)
-        {
-            return NotFound();
-        }
-
-        if (address.IsVerified)
-        {
-            return BadRequest(new { error = "Email address is already verified" });
-        }
-
-        if (address.VerificationToken == null ||
-            address.VerificationTokenExpiresAt == null ||
-            address.VerificationTokenExpiresAt < DateTimeOffset.UtcNow)
-        {
-            return BadRequest(new { error = "Verification code has expired. Please request a new one." });
-        }
-
-        if (!string.Equals(address.VerificationToken, request.Code.Trim(), StringComparison.Ordinal))
-        {
-            return BadRequest(new { error = "Invalid verification code" });
-        }
-
-        address.IsVerified = true;
-        address.VerificationToken = null;
-        address.VerificationTokenExpiresAt = null;
-        await _userRepository.UpdateEmailAddressAsync(address, cancellationToken);
-
-        return Ok(new EmailAddressDto(address.Id, address.Address, address.IsVerified, address.AddedAt));
+        return Task.FromResult<ActionResult<EmailAddressDto>>(StatusCode(StatusCodes.Status501NotImplemented,
+            new { error = "Email verification is not yet available" }));
     }
 
     private static string GenerateVerificationCode()
     {
-        return RandomNumberGenerator.GetInt32(100000, 1000000).ToString("D6", CultureInfo.InvariantCulture);
+        // 8-char alphanumeric code (ambiguous chars removed) for brute-force resistance
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        return string.Create(8, chars, static (span, c) =>
+        {
+            for (int i = 0; i < span.Length; i++)
+                span[i] = c[RandomNumberGenerator.GetInt32(c.Length)];
+        });
     }
 }

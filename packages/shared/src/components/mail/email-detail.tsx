@@ -1,24 +1,9 @@
 import { format } from 'date-fns'
 import { ArrowLeft, Paperclip, Trash2 } from 'lucide-react'
-import DOMPurify from 'dompurify'
+import { sanitizeHtml } from '../../lib/sanitize'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
 import type { EmailDetail as EmailDetailType, EmailAttachment } from '../../api/types'
-
-function sanitizeHtml(html: string | null | undefined): string {
-  if (!html) return ''
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: [
-      'p', 'br', 'b', 'i', 'u', 'strong', 'em', 'a', 'ul', 'ol', 'li', 'img',
-      'table', 'tr', 'td', 'th', 'thead', 'tbody', 'tfoot', 'div', 'span',
-      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre', 'code',
-      'hr', 'sub', 'sup', 'small', 'mark', 'del', 'ins', 'address',
-    ],
-    ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'style', 'target', 'rel', 'width', 'height'],
-    ALLOW_DATA_ATTR: false,
-    FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'input'],
-  })
-}
 
 interface AttachmentItemProps {
   attachment: EmailAttachment

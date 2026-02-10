@@ -23,6 +23,9 @@ builder.Services.AddInfrastructure(connectionString);
 builder.Services.Configure<Pop3ServerOptions>(
     builder.Configuration.GetSection("Pop3"));
 
+// Register connection registry (singleton for tracking across all connections)
+builder.Services.AddSingleton<Relate.Smtp.Core.Protocol.ConnectionRegistry>();
+
 // Register handlers (scoped per connection)
 builder.Services.AddScoped<Pop3UserAuthenticator>();
 builder.Services.AddScoped<Pop3CommandHandler>();
