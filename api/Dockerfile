@@ -45,7 +45,7 @@ RUN dotnet publish src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj -c Relea
 RUN dotnet publish src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj -c Release -o /app/imap
 
 # API runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS api
 WORKDIR /app
 
 COPY --from=build /app/api .
@@ -64,7 +64,7 @@ ENV ASPNETCORE_URLS=http://+:8080
 ENTRYPOINT ["dotnet", "Relate.Smtp.Api.dll"]
 
 # SMTP runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS smtp
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS smtp
 WORKDIR /app
 
 COPY --from=build /app/smtp .
@@ -82,7 +82,7 @@ EXPOSE 25 587 465
 ENTRYPOINT ["dotnet", "Relate.Smtp.SmtpHost.dll"]
 
 # POP3 runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS pop3
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS pop3
 WORKDIR /app
 
 COPY --from=build /app/pop3 .
@@ -100,7 +100,7 @@ EXPOSE 110 995
 ENTRYPOINT ["dotnet", "Relate.Smtp.Pop3Host.dll"]
 
 # IMAP runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS imap
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS imap
 WORKDIR /app
 
 COPY --from=build /app/imap .

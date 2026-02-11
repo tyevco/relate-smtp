@@ -143,16 +143,14 @@ public class CustomMessageStore : MessageStore
             await emailRepository.AddAsync(email, cancellationToken);
 
             // Set activity tags after email is fully processed
-            activity?.SetTag("smtp.from", email.FromAddress);
             activity?.SetTag("smtp.recipients_count", email.Recipients.Count);
             activity?.SetTag("smtp.message_id", email.MessageId);
             activity?.SetTag("smtp.thread_id", email.ThreadId?.ToString());
             activity?.SetTag("smtp.has_attachments", email.Attachments.Count > 0);
 
-            _logger.LogInformation("Email saved: {MessageId} from {From} to {Recipients}",
+            _logger.LogInformation("Email saved: {MessageId} with {RecipientCount} recipients",
                 email.MessageId,
-                email.FromAddress,
-                string.Join(", ", email.Recipients.Select(r => r.Address)));
+                email.Recipients.Count);
 
             // Notify all recipient users via SignalR (if configured)
             var notificationService = scope.ServiceProvider.GetService<IEmailNotificationService>();

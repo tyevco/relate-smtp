@@ -93,7 +93,7 @@ public class UserProvisioningService
         };
 
         await _userRepository.AddAsync(newUser, cancellationToken);
-        _logger.LogInformation("Created new user: {UserId} with email {Email}", newUser.Id, email);
+        _logger.LogInformation("Created new user: {UserId}", newUser.Id);
 
         // Link existing emails to this user
         var addresses = new[] { email };

@@ -99,7 +99,7 @@ public class ImapMessageManager
         var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -131,7 +131,7 @@ public class ImapMessageManager
         var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -154,7 +154,7 @@ public class ImapMessageManager
         var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Email not found or access denied: {EmailId} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -235,7 +235,7 @@ public class ImapMessageManager
         foreach (var emailId in emailIds)
         {
             await emailRepo.DeleteAsync(emailId, ct);
-            _logger.LogInformation("Deleted email: {EmailId}", emailId);
+            _logger.LogInformation("Deleted message: {Id}", emailId);
         }
     }
 
