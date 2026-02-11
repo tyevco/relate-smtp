@@ -327,13 +327,13 @@ public class Pop3CommandHandler
         if (session.State == Pop3State.Transaction && session.DeletedMessages.Any())
         {
             // Apply deletions
-            var emailIds = session.Messages
+            var idsToDelete = session.Messages
                 .Where(m => session.DeletedMessages.Contains(m.MessageNumber))
                 .Select(m => m.EmailId)
                 .ToList();
 
-            await _messageManager.ApplyDeletionsAsync(emailIds, ct);
-            _logger.LogInformation("Applied {Count} deletions", emailIds.Count);
+            await _messageManager.ApplyDeletionsAsync(idsToDelete, ct);
+            _logger.LogInformation("Applied {Count} deletions", idsToDelete.Count);
         }
 
         return Pop3Response.Success("Goodbye");

@@ -193,15 +193,15 @@ public class ImapCommandHandler
         // Apply any pending deletions if in Selected state
         if (session.State == ImapState.Selected && session.DeletedUids.Count > 0)
         {
-            var emailIds = session.Messages
+            var idsToDelete = session.Messages
                 .Where(m => session.DeletedUids.Contains(m.Uid))
                 .Select(m => m.EmailId)
                 .ToList();
 
-            if (emailIds.Count > 0)
+            if (idsToDelete.Count > 0)
             {
-                await _messageManager.ApplyDeletionsAsync(emailIds, ct);
-                _logger.LogInformation("Applied {Count} deletions on logout", emailIds.Count);
+                await _messageManager.ApplyDeletionsAsync(idsToDelete, ct);
+                _logger.LogInformation("Applied {Count} deletions on logout", idsToDelete.Count);
             }
         }
 
@@ -932,11 +932,11 @@ public class ImapCommandHandler
             .OrderByDescending(m => m.SequenceNumber)
             .ToList();
 
-        var emailIds = deletedMessages.Select(m => m.EmailId).ToList();
+        var idsToDelete = deletedMessages.Select(m => m.EmailId).ToList();
 
-        if (emailIds.Count > 0)
+        if (idsToDelete.Count > 0)
         {
-            await _messageManager.ApplyDeletionsAsync(emailIds, ct);
+            await _messageManager.ApplyDeletionsAsync(idsToDelete, ct);
 
             // Send EXPUNGE responses in descending order
             foreach (var msg in deletedMessages)
@@ -953,7 +953,7 @@ public class ImapCommandHandler
             }
 
             session.DeletedUids.Clear();
-            _logger.LogInformation("Expunged {Count} messages", emailIds.Count);
+            _logger.LogInformation("Expunged {Count} messages", idsToDelete.Count);
         }
 
         await writer.WriteLineAsync(ImapResponse.TaggedOk(command.Tag, "EXPUNGE completed"));
@@ -968,15 +968,15 @@ public class ImapCommandHandler
         // CLOSE expunges and returns to Authenticated state
         if (!session.SelectedReadOnly && session.DeletedUids.Count > 0)
         {
-            var emailIds = session.Messages
+            var idsToDelete = session.Messages
                 .Where(m => session.DeletedUids.Contains(m.Uid))
                 .Select(m => m.EmailId)
                 .ToList();
 
-            if (emailIds.Count > 0)
+            if (idsToDelete.Count > 0)
             {
-                await _messageManager.ApplyDeletionsAsync(emailIds, ct);
-                _logger.LogInformation("Expunged {Count} messages on CLOSE", emailIds.Count);
+                await _messageManager.ApplyDeletionsAsync(idsToDelete, ct);
+                _logger.LogInformation("Expunged {Count} messages on CLOSE", idsToDelete.Count);
             }
         }
 
