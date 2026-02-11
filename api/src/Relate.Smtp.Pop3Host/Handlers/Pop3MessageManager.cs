@@ -58,22 +58,22 @@ public class Pop3MessageManager
         return messages;
     }
 
-    public async Task<string> RetrieveMessageAsync(Guid emailId, Guid userId, CancellationToken ct)
+    public async Task<string> RetrieveMessageAsync(Guid messageId, Guid userId, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(messageId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", messageId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
         // Mark as read for this user
         await context.EmailRecipients
-            .Where(r => r.EmailId == emailId && r.UserId == userId && !r.IsRead)
+            .Where(r => r.EmailId == messageId && r.UserId == userId && !r.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, true), ct);
 
         // Build RFC 822 message
@@ -86,15 +86,15 @@ public class Pop3MessageManager
         return message;
     }
 
-    public async Task<string> RetrieveTopAsync(Guid emailId, Guid userId, int lines, CancellationToken ct)
+    public async Task<string> RetrieveTopAsync(Guid messageId, Guid userId, int lines, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(messageId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", messageId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -165,16 +165,16 @@ public class Pop3MessageManager
     }
 
     public async Task ApplyDeletionsAsync(
-        IEnumerable<Guid> emailIds,
+        IEnumerable<Guid> messageIds,
         CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        foreach (var emailId in emailIds)
+        foreach (var messageId in messageIds)
         {
-            await emailRepo.DeleteAsync(emailId, ct);
-            _logger.LogInformation("Deleted message: {Id}", emailId);
+            await emailRepo.DeleteAsync(messageId, ct);
+            _logger.LogInformation("Deleted message: {Id}", messageId);
         }
     }
 }

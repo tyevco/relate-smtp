@@ -39,9 +39,9 @@ public class ImapMessageManager
         var emails = await emailRepo.GetByUserIdAsync(userId, 0, _options.MaxMessagesPerSession, ct);
 
         // Get the recipient records for this user to check read status
-        var emailIds = emails.Select(e => e.Id).ToList();
+        var messageIds = emails.Select(e => e.Id).ToList();
         var recipients = await context.EmailRecipients
-            .Where(r => emailIds.Contains(r.EmailId) && r.UserId == userId)
+            .Where(r => messageIds.Contains(r.EmailId) && r.UserId == userId)
             .ToDictionaryAsync(r => r.EmailId, r => r, ct);
 
         var messages = new List<ImapMessage>();
@@ -90,16 +90,16 @@ public class ImapMessageManager
         return BitConverter.ToUInt32(bytes, 0) & 0x7FFFFFFF;
     }
 
-    public async Task<string> RetrieveMessageAsync(Guid emailId, Guid userId, CancellationToken ct)
+    public async Task<string> RetrieveMessageAsync(Guid messageId, Guid userId, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(messageId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", messageId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -113,25 +113,25 @@ public class ImapMessageManager
         return message;
     }
 
-    public async Task MarkAsSeenAsync(Guid emailId, Guid userId, CancellationToken ct)
+    public async Task MarkAsSeenAsync(Guid messageId, Guid userId, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         await context.EmailRecipients
-            .Where(r => r.EmailId == emailId && r.UserId == userId && !r.IsRead)
+            .Where(r => r.EmailId == messageId && r.UserId == userId && !r.IsRead)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, true), ct);
     }
 
-    public async Task<string> RetrieveHeadersAsync(Guid emailId, Guid userId, CancellationToken ct)
+    public async Task<string> RetrieveHeadersAsync(Guid messageId, Guid userId, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(messageId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", messageId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -146,15 +146,15 @@ public class ImapMessageManager
         return fullMessage[..headerEnd];
     }
 
-    public async Task<string> RetrieveBodyPartAsync(Guid emailId, Guid userId, int lines, CancellationToken ct)
+    public async Task<string> RetrieveBodyPartAsync(Guid messageId, Guid userId, int lines, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        var email = await emailRepo.GetByIdWithUserAccessAsync(emailId, userId, ct);
+        var email = await emailRepo.GetByIdWithUserAccessAsync(messageId, userId, ct);
         if (email == null)
         {
-            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", emailId, userId);
+            _logger.LogWarning("Message not found or access denied: {Id} for user {UserId}", messageId, userId);
             throw new UnauthorizedAccessException("Email not found or access denied");
         }
 
@@ -227,26 +227,26 @@ public class ImapMessageManager
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 
-    public async Task ApplyDeletionsAsync(IEnumerable<Guid> emailIds, CancellationToken ct)
+    public async Task ApplyDeletionsAsync(IEnumerable<Guid> messageIds, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var emailRepo = scope.ServiceProvider.GetRequiredService<IEmailRepository>();
 
-        foreach (var emailId in emailIds)
+        foreach (var messageId in messageIds)
         {
-            await emailRepo.DeleteAsync(emailId, ct);
-            _logger.LogInformation("Deleted message: {Id}", emailId);
+            await emailRepo.DeleteAsync(messageId, ct);
+            _logger.LogInformation("Deleted message: {Id}", messageId);
         }
     }
 
-    public async Task UpdateFlagsAsync(Guid emailId, Guid userId, ImapFlags flags, CancellationToken ct)
+    public async Task UpdateFlagsAsync(Guid messageId, Guid userId, ImapFlags flags, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         var isRead = flags.HasFlag(ImapFlags.Seen);
         await context.EmailRecipients
-            .Where(r => r.EmailId == emailId && r.UserId == userId)
+            .Where(r => r.EmailId == messageId && r.UserId == userId)
             .ExecuteUpdateAsync(s => s.SetProperty(r => r.IsRead, isRead), ct);
     }
 }
