@@ -58,6 +58,7 @@ public class SmtpServerFixture : IAsyncLifetime
 
         // Build and start the host
         _host = Host.CreateDefaultBuilder()
+            .UseEnvironment("Development")
             .ConfigureServices(services =>
             {
                 services.AddInfrastructure(_postgres.ConnectionString);

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Relate.Smtp.Core.Protocol;
 using Relate.Smtp.Pop3Host;
 using Relate.Smtp.Pop3Host.Handlers;
 using Relate.Smtp.Infrastructure;
@@ -59,6 +60,7 @@ public class Pop3ServerFixture : IAsyncLifetime
 
         // Build and start the host
         _host = Host.CreateDefaultBuilder()
+            .UseEnvironment("Development")
             .ConfigureServices(services =>
             {
                 services.AddInfrastructure(_postgres.ConnectionString);
@@ -72,6 +74,7 @@ public class Pop3ServerFixture : IAsyncLifetime
                     options.SessionTimeout = TimeSpan.FromMinutes(5);
                 });
 
+                services.AddSingleton<ConnectionRegistry>();
                 services.AddSingleton<Pop3UserAuthenticator>();
                 services.AddScoped<Pop3CommandHandler>();
                 services.AddScoped<Pop3MessageManager>();

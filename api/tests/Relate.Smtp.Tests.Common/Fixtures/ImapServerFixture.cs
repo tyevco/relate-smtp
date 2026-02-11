@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Relate.Smtp.Core.Protocol;
 using Relate.Smtp.ImapHost;
 using Relate.Smtp.ImapHost.Handlers;
 using Relate.Smtp.Infrastructure;
@@ -59,6 +60,7 @@ public class ImapServerFixture : IAsyncLifetime
 
         // Build and start the host
         _host = Host.CreateDefaultBuilder()
+            .UseEnvironment("Development")
             .ConfigureServices(services =>
             {
                 services.AddInfrastructure(_postgres.ConnectionString);
@@ -72,6 +74,7 @@ public class ImapServerFixture : IAsyncLifetime
                     options.SessionTimeout = TimeSpan.FromMinutes(5);
                 });
 
+                services.AddSingleton<ConnectionRegistry>();
                 services.AddSingleton<ImapUserAuthenticator>();
                 services.AddScoped<ImapCommandHandler>();
                 services.AddScoped<ImapMessageManager>();

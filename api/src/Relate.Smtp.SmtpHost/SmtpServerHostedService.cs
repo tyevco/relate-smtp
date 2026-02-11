@@ -87,9 +87,12 @@ public class SmtpServerHostedService : BackgroundService
                     endpoint.AuthenticationRequired();
                     endpoint.AllowUnsecureAuthentication();
                 }
-            })
-            // Secure port (implicit TLS, client submission)
-            .Endpoint(endpoint =>
+            });
+
+        // Secure port (implicit TLS, client submission) — only if configured
+        if (_options.SecurePort > 0)
+        {
+            optionsBuilder.Endpoint(endpoint =>
             {
                 endpoint.Port(_options.SecurePort, true);
                 if (_options.RequireAuthentication)
@@ -101,6 +104,7 @@ public class SmtpServerHostedService : BackgroundService
                     endpoint.Certificate(LoadCertificate());
                 }
             });
+        }
 
         // MX endpoint (port 25) - unauthenticated server-to-server delivery
         if (_options.Mx.Enabled)
