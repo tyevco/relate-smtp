@@ -1,0 +1,23 @@
+# Default owners for everything in the repo
+*               @four-robots/maintainers
+
+# Backend (.NET API and protocol servers)
+/api/           @four-robots/backend
+
+# Web frontend
+/web/           @four-robots/frontend
+
+# Mobile app
+/mobile/        @four-robots/mobile
+
+# Desktop app
+/desktop/       @four-robots/desktop
+
+# Shared package
+/packages/      @four-robots/frontend @four-robots/mobile
+
+# CI/CD and GitHub configuration
+/.github/       @four-robots/maintainers
+
+# Docker and infrastructure
+/docker/        @four-robots/devops
