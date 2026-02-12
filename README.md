@@ -1,3 +1,9 @@
+[![CI](https://github.com/four-robots/relate-mail/actions/workflows/ci.yml/badge.svg)](https://github.com/four-robots/relate-mail/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/four-robots/relate-mail/actions/workflows/codeql.yml/badge.svg)](https://github.com/four-robots/relate-mail/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/four-robots/relate-mail/badge)](https://scorecard.dev/viewer/?uri=github.com/four-robots/relate-mail)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![GHCR](https://img.shields.io/badge/GHCR-images-blue?logo=github)](https://github.com/orgs/four-robots/packages?repo_name=relate-mail)
+
 # Relate Mail
 
 A full-stack email server and management system with SMTP, POP3, IMAP, and REST API access.
@@ -454,6 +460,15 @@ docker compose logs postgres
 
 ```
 relate-mail/
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml               # Build, lint, test (backend + frontend)
+│   │   ├── codeql.yml           # CodeQL security analysis
+│   │   ├── docker-publish.yml   # Multi-platform GHCR image publishing
+│   │   ├── desktop-build.yml    # Desktop builds (Windows/macOS/Linux)
+│   │   └── mobile-build.yml    # Mobile lint/test + EAS builds
+│   ├── CODEOWNERS               # Code ownership rules
+│   └── FUNDING.yml              # Sponsorship links
 ├── api/                          # Backend (.NET 10.0)
 │   ├── src/
 │   │   ├── Relate.Smtp.Api/     # REST API (serves bundled web frontend)
@@ -472,13 +487,20 @@ relate-mail/
 │   │   └── config.ts            # Runtime configuration
 │   └── public/
 │       └── config.json          # Runtime config template
+├── mobile/                       # React Native (Expo 54) mobile app
+├── desktop/                      # Tauri 2 desktop app (Rust + TypeScript)
+├── packages/
+│   └── shared/                   # @relate/shared npm package (types, components, utils)
 ├── docker/                       # Docker Compose files
 │   ├── docker-compose.yml       # Build locally (includes PostgreSQL)
 │   ├── docker-compose.ghcr.yml  # Use GHCR images
 │   └── .env.example             # Environment template
-├── .github/
-│   └── workflows/
-│       └── docker-publish.yml   # CI/CD workflow
+├── CLAUDE.md                     # Project conventions and architecture guide
+├── CODE_OF_CONDUCT.md            # Community code of conduct
+├── CONTRIBUTING.md               # Contribution guidelines
+├── LICENSE                       # MIT License
+├── SECURITY.md                   # Security policy
+├── SUPPORT.md                    # Support resources
 └── README.md                     # This file
 ```
 
@@ -510,22 +532,15 @@ relate-mail/
 
 ## License
 
-[Your License Here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file.
 
 ## Support
 
-- **Issues**: https://github.com/four-robots/relate-mail/issues
-- **Packages**: https://github.com/four-robots/relate-mail/pkgs
-- **Actions**: https://github.com/four-robots/relate-mail/actions
+See [SUPPORT.md](SUPPORT.md) for ways to get help and report issues.
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests: `dotnet test` (backend), `npm test` (frontend)
-5. Commit with conventional commits: `feat:`, `fix:`, `docs:`, etc.
-6. Push and create a pull request
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, branch naming, testing requirements, and pull request guidelines.
 
 ## Acknowledgments
 

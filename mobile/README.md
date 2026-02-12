@@ -4,7 +4,7 @@ React Native mobile application for Relate Mail, built with Expo.
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 20+
 - npm or yarn
 - Expo CLI (`npm install -g expo-cli`)
 - For iOS development: Xcode (macOS only)
@@ -65,7 +65,7 @@ mobile/
 
 ## Tech Stack
 
-- **Framework**: Expo SDK 52 (managed workflow)
+- **Framework**: Expo SDK 54 (managed workflow)
 - **Navigation**: Expo Router v4
 - **Styling**: NativeWind (Tailwind CSS for React Native)
 - **State Management**: TanStack Query + Zustand

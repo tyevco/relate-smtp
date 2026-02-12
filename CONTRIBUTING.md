@@ -63,7 +63,7 @@ Use descriptive branch names with a type prefix:
 ### Making Changes
 
 1. Create a branch from `main`.
-2. Make your changes, following the [Code Guidelines](docs/CODE_GUIDELINES.md).
+2. Make your changes, following the [Code Guidelines](CLAUDE.md).
 3. Write or update tests as appropriate.
 4. Ensure all checks pass before opening a PR.
 
@@ -97,7 +97,7 @@ Optional longer description.
 
 ## Code Style
 
-Refer to [`docs/CODE_GUIDELINES.md`](docs/CODE_GUIDELINES.md) for coding standards, naming conventions, and architectural patterns used in this project.
+Refer to [`CLAUDE.md`](CLAUDE.md) for coding standards, naming conventions, and architectural patterns used in this project.
 
 ## Questions?
 
