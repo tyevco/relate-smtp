@@ -99,23 +99,52 @@ api/src/
 - Repository interfaces in Core, implementations in Infrastructure
 - `Infrastructure/DependencyInjection.cs` registers all data services
 - All protocol hosts (SMTP/POP3/IMAP) share the same API key authentication with BCrypt hashing and 30s in-memory cache
-- API key scopes: `smtp`, `pop3`, `imap`, `api:read`, `api:write`, `app`
+- API key scopes: `smtp`, `pop3`, `imap`, `api:read`, `api:write`, `app`, `internal`
 - API supports dual auth: OIDC/JWT (first-party) + API key (third-party/mobile/desktop)
 - `ApiKeyAuthenticationHandler` handles Bearer/ApiKey token validation
 - SignalR hub at `/hubs/email` for real-time notifications; SMTP/POP3/IMAP hosts notify via HTTP
 - Auto-migration on startup in development mode
 - Test categories use `[Trait("Category", "Unit|Integration|E2E")]`; E2E uses `FullStackFixture` with Testcontainers
 
+**API Controllers:**
+- `EmailsController` — Inbox CRUD (list, search, read/unread, delete) for authenticated users
+- `ExternalEmailsController` — Same inbox operations scoped to API key auth (`api:read`/`api:write`)
+- `OutboundEmailsController` — Compose, drafts, send, reply, forward, outbox, sent mail
+- `FiltersController` — Email filter rules (conditions + actions) with test endpoint
+- `LabelsController` — Custom labels with color/sort; assign/remove labels on emails
+- `PreferencesController` — User preferences (theme, density, notifications, digest)
+- `ProfileController` — User profile and additional email address management
+- `PushSubscriptionsController` — Web push notification subscriptions (VAPID)
+- `SmtpCredentialsController` — API key generation, revocation, and scope management
+- `DiscoveryController` — Public endpoint advertising server capabilities
+- `InternalNotificationsController` — Service-to-service new-email notifications (requires `internal` scope)
+- `ConfigController` — Runtime frontend configuration
+
+**Outbound email flow:**
+- `OutboundEmail` entity with statuses: Draft → Queued → Sending → Sent / Failed
+- `OutboundRecipient` tracks per-recipient delivery status (To/Cc/Bcc)
+- `OutboundAttachment` for email attachments
+- Background queue processor with retry logic (RetryCount, NextRetryAt, LastError)
+- MX record resolution via `SmtpDeliveryService` for internet mail delivery
+- RFC-compliant Message-Id, In-Reply-To, References headers for threading
+
+**SMTP MX endpoint:**
+- Port 25 accepts unauthenticated inbound mail for configured hosted domains only
+- `MxMailboxFilter` prevents open relay by validating recipient domains
+- Ports 587/465 remain authenticated submission-only
+
 ## Frontend Architecture (React + TypeScript)
 
 **Web (`web/src/`):**
 - TanStack Router with file-based routing in `src/routes/` — `routeTree.gen.ts` is auto-generated, do not edit
+- Routes: index (inbox), compose, drafts, outbox, sent, filters, preferences, profile, smtp-settings, emails.$id, login, callback
 - TanStack Query for server state, Jotai for client state
 - API client in `src/api/client.ts` — fetch wrapper that extracts OIDC tokens from sessionStorage
 - Tailwind CSS 4.1 with CVA for component variants, Lucide React icons, Radix UI primitives
 - Path alias: `@/` maps to `src/`
 - Vite dev server proxies `/api` to `http://localhost:5000`
 - MSW (Mock Service Worker) used for API mocking in tests
+- SignalR client connects to `/hubs/email` for real-time updates
 
 **Mobile (`mobile/app/`):**
 - Expo Router with file-based routing, group routes: `(auth)`, `(main)/(tabs)`, `(main)/emails`
