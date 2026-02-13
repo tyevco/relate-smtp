@@ -10,16 +10,50 @@ A full-stack email server and management system with SMTP, POP3, IMAP, and REST 
 
 ## Features
 
-- **SMTP Server** (ports 587, 465) - Receive emails with per-user API key authentication
-- **POP3 Server** (ports 110, 995) - Retrieve emails via standard POP3 protocol
-- **IMAP Server** (ports 143, 993) - Retrieve emails via IMAP4rev2 protocol (RFC 9051)
+### Email Protocols
+- **SMTP Server** (ports 587, 465) - Authenticated email submission with STARTTLS/SSL
+- **SMTP MX Endpoint** (port 25) - Accept inbound internet mail for hosted domains (open relay prevention)
+- **POP3 Server** (ports 110, 995) - Retrieve emails via standard POP3 protocol (RFC 1939)
+- **IMAP Server** (ports 143, 993) - Full IMAP4rev2 support (RFC 9051) with ENVELOPE, BODYSTRUCTURE, and AUTHENTICATE PLAIN
+
+### Outbound Mail (MTA)
+- **Compose & Send** - Create and send emails with To/Cc/Bcc recipients (up to 100 per email)
+- **Reply & Forward** - Threaded replies (Reply, Reply All) and forwarding with attachment carry-over
+- **Drafts** - Save, edit, and resume email drafts
+- **Outbox** - Track queued, sending, and failed deliveries with retry logic
+- **Sent Mail** - View sent email history with per-address filtering
+- **RFC-compliant Threading** - Maintains Message-Id, In-Reply-To, and References headers
+
+### Email Management
+- **Labels** - Custom color-coded labels with sort ordering; assign to emails manually or via filters
+- **Filters** - Rule-based automation: match on sender, subject, body, or attachments; actions include mark-as-read, assign label, and delete
+- **Filter Testing** - Test filters against recent emails before enabling
+- **Search** - Full-text search across inbox and sent mail
+
+### Web UI
+- **Inbox** - Email list with read/unread status, pagination, and preview
+- **Compose** - Rich compose page with dynamic To/Cc/Bcc, from-address selection, and auto-quoting in replies
+- **Drafts & Outbox** - Manage unsaved and in-flight emails
+- **Filters** - Visual filter builder with condition/action display and enable/disable toggles
+- **Preferences** - Theme (light/dark/system), display density, notification settings, email digest configuration
+- **Profile** - Display name editing, additional email address management with verification
+- **SMTP Settings** - API key generation with scope selection, connection info display, setup wizard
+
+### Real-time & Notifications
+- **SignalR Hub** (`/hubs/email`) - WebSocket-based real-time updates for new emails, read status changes, deletions, and unread counts
+- **Web Push Notifications** - VAPID-based browser push for out-of-tab delivery
+- **Email Digest** - Configurable daily or weekly email summaries
+
+### Platform & Infrastructure
 - **REST API** - Full programmatic email access with scoped permissions
-- **Web UI** - Modern React frontend for email management (bundled with API)
-- **Scoped API Keys** - Granular permissions: `smtp`, `pop3`, `imap`, `api:read`, `api:write`
+- **Scoped API Keys** - Granular permissions: `smtp`, `pop3`, `imap`, `api:read`, `api:write`, `app`
+- **Server Discovery** - `/api/discovery` endpoint advertises enabled features and server capabilities
 - **Protocol Toggles** - Enable/disable SMTP, POP3, IMAP independently
 - **PostgreSQL Database** - Production-ready database with full concurrency support
-- **Docker Ready** - Multi-platform images published to GitHub Container Registry
+- **Docker Ready** - Multi-platform images (amd64/arm64) published to GitHub Container Registry
 - **Runtime Configuration** - Deploy once, configure anywhere (no rebuild needed)
+- **Mobile App** - React Native (Expo 54) with multi-account support, swipe actions, biometric auth
+- **Desktop App** - Tauri 2 native app for Windows, macOS, and Linux with keyboard shortcuts
 
 ## Quick Start
 
@@ -206,9 +240,13 @@ The same Docker images work across dev, staging, and production with different s
 
 **Development mode:** Leave `Oidc__Authority` empty to run without authentication.
 
-## External API
+## API Reference
 
-Programmatic email access with scoped API keys.
+### Authentication
+
+All authenticated endpoints accept either:
+- **OIDC/JWT token:** `Authorization: Bearer {jwt_token}` (first-party web/mobile clients)
+- **API key:** `Authorization: Bearer {api_key}` or `Authorization: ApiKey {api_key}` (third-party integrations)
 
 ### Generate API Key
 
@@ -223,20 +261,77 @@ Programmatic email access with scoped API keys.
    - `api:write` - Modify/delete emails via REST API
 5. Copy the API key (shown only once)
 
-### API Endpoints
+### External Email Endpoints
 
-**Base URL:** `/api/external/emails`
-
-**Authentication:** `Authorization: Bearer {api_key}`
+**Base URL:** `/api/external/emails` | **Auth:** API key with `api:read` / `api:write` scope
 
 | Endpoint | Method | Scope | Description |
 |----------|--------|-------|-------------|
-| `/` | GET | `api:read` | List inbox emails |
-| `/search` | GET | `api:read` | Search emails |
+| `/` | GET | `api:read` | List inbox emails (paginated) |
+| `/search` | GET | `api:read` | Search emails by query string |
 | `/sent` | GET | `api:read` | List sent emails |
 | `/{id}` | GET | `api:read` | Get email details |
 | `/{id}` | PATCH | `api:write` | Mark read/unread |
 | `/{id}` | DELETE | `api:write` | Delete email |
+
+### Outbound Email Endpoints
+
+**Base URL:** `/api/outbound` | **Auth:** OIDC/JWT or API key
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/send` | POST | Send email immediately (To/Cc/Bcc, up to 100 recipients) |
+| `/drafts` | GET | List drafts (paginated) |
+| `/drafts` | POST | Create a new draft |
+| `/drafts/{id}` | GET | Get draft with recipients and attachments |
+| `/drafts/{id}` | PUT | Update draft |
+| `/drafts/{id}` | DELETE | Delete draft |
+| `/drafts/{id}/send` | POST | Send a draft |
+| `/reply/{emailId}` | POST | Reply to an email (supports `replyAll` flag) |
+| `/forward/{emailId}` | POST | Forward an email (copies attachments) |
+| `/outbox` | GET | View queued/sending emails |
+| `/sent` | GET | View sent email history |
+| `/{id}` | GET | Get outbound email detail |
+
+### Labels Endpoints
+
+**Base URL:** `/api/labels` | **Auth:** OIDC/JWT or API key
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | List all labels |
+| `/` | POST | Create label (name, color, sort order) |
+| `/{id}` | PUT | Update label |
+| `/{id}` | DELETE | Delete label |
+| `/emails/{emailId}` | POST | Add label to an email |
+| `/emails/{emailId}/{labelId}` | DELETE | Remove label from an email |
+| `/{labelId}/emails` | GET | List emails with a specific label |
+
+### Filters Endpoints
+
+**Base URL:** `/api/filters` | **Auth:** OIDC/JWT or API key
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | List all filters |
+| `/` | POST | Create filter (conditions + actions) |
+| `/{id}` | PUT | Update filter |
+| `/{id}` | DELETE | Delete filter |
+| `/{id}/test?limit=10` | POST | Test filter against recent emails |
+
+**Filter conditions:** `FromAddressContains`, `SubjectContains`, `BodyContains`, `HasAttachments`
+**Filter actions:** `MarkAsRead`, `AssignLabelId`, `Delete`
+
+### Other Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/discovery` | GET | None | Server capabilities and enabled features |
+| `/api/preferences` | GET/PUT | Yes | User preferences (theme, density, notifications) |
+| `/api/profile` | GET/PUT | Yes | User profile and additional email addresses |
+| `/api/pushSubscriptions` | POST/DELETE | Yes | Web push notification subscriptions |
+| `/api/pushSubscriptions/vapid-public-key` | GET | None | VAPID public key for push setup |
+| `/hubs/email` | WebSocket | JWT | Real-time email notifications (SignalR) |
 
 ### Example: List Emails
 
@@ -252,13 +347,32 @@ curl "http://localhost:8080/api/external/emails/search?q=test&page=1" \
   -H "Authorization: Bearer your_api_key"
 ```
 
-### Example: Mark Email as Read
+### Example: Send an Email
 
 ```bash
-curl -X PATCH http://localhost:8080/api/external/emails/{email_id} \
-  -H "Authorization: Bearer your_api_key" \
+curl -X POST http://localhost:8080/api/outbound/send \
+  -H "Authorization: Bearer your_token" \
   -H "Content-Type: application/json" \
-  -d '{"isRead": true}'
+  -d '{
+    "to": ["recipient@example.com"],
+    "subject": "Hello from Relate Mail",
+    "body": "This is a test email.",
+    "fromAddress": "you@example.com"
+  }'
+```
+
+### Example: Create a Filter
+
+```bash
+curl -X POST http://localhost:8080/api/filters \
+  -H "Authorization: Bearer your_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Auto-read newsletters",
+    "fromAddressContains": "newsletter@",
+    "markAsRead": true,
+    "isEnabled": true
+  }'
 ```
 
 ## Email Client Setup
@@ -288,13 +402,14 @@ Configure email clients to send and receive:
 
 ## GitHub Actions CI/CD
 
-Images are automatically built and published to GHCR on every push.
+Images are automatically built and published to GHCR on every push. Security analysis runs via CodeQL and OpenSSF Scorecard.
 
 ### Workflow Triggers
 
 - **Push to main/develop** - Builds and publishes images
 - **Version tags** (`v1.0.0`) - Creates semantic version tags
 - **Pull requests** - Builds but doesn't publish
+- **Scheduled** - CodeQL and Scorecard run on cron schedules
 - **Manual** - Run from Actions tab
 
 ### Publishing a New Version
@@ -464,29 +579,30 @@ relate-mail/
 │   ├── workflows/
 │   │   ├── ci.yml               # Build, lint, test (backend + frontend)
 │   │   ├── codeql.yml           # CodeQL security analysis
+│   │   ├── scorecard.yml        # OpenSSF Scorecard analysis
 │   │   ├── docker-publish.yml   # Multi-platform GHCR image publishing
 │   │   ├── desktop-build.yml    # Desktop builds (Windows/macOS/Linux)
-│   │   └── mobile-build.yml    # Mobile lint/test + EAS builds
+│   │   └── mobile-build.yml     # Mobile lint/test + EAS builds
 │   ├── CODEOWNERS               # Code ownership rules
 │   └── FUNDING.yml              # Sponsorship links
 ├── api/                          # Backend (.NET 10.0)
 │   ├── src/
-│   │   ├── Relate.Smtp.Api/     # REST API (serves bundled web frontend)
-│   │   ├── Relate.Smtp.SmtpHost # SMTP server
-│   │   ├── Relate.Smtp.Pop3Host # POP3 server
-│   │   ├── Relate.Smtp.ImapHost # IMAP server
-│   │   ├── Relate.Smtp.Core/    # Domain entities
-│   │   └── Relate.Smtp.Infrastructure/ # Data access
+│   │   ├── Relate.Smtp.Api/     # REST API + SignalR hub (serves bundled web frontend)
+│   │   ├── Relate.Smtp.SmtpHost/# SMTP server (submission + MX endpoint)
+│   │   ├── Relate.Smtp.Pop3Host/# POP3 server
+│   │   ├── Relate.Smtp.ImapHost/# IMAP4rev2 server
+│   │   ├── Relate.Smtp.Core/    # Domain entities and interfaces
+│   │   └── Relate.Smtp.Infrastructure/ # EF Core data access + migrations
+│   ├── tests/                    # Unit, integration, and E2E tests
 │   └── Dockerfile                # Multi-stage build (4 targets: api, smtp, pop3, imap)
-├── web/                          # Frontend (React + TypeScript)
-│   ├── src/
-│   │   ├── routes/              # TanStack Router pages
-│   │   ├── components/          # React components
-│   │   ├── auth/                # OIDC authentication
-│   │   ├── api/                 # API client
-│   │   └── config.ts            # Runtime configuration
-│   └── public/
-│       └── config.json          # Runtime config template
+├── web/                          # Web frontend (React + TypeScript)
+│   └── src/
+│       ├── routes/              # TanStack Router pages (inbox, compose, drafts, outbox,
+│       │                        #   sent, filters, preferences, profile, smtp-settings)
+│       ├── components/          # React components
+│       ├── auth/                # OIDC authentication
+│       ├── api/                 # API client
+│       └── config.ts            # Runtime configuration
 ├── mobile/                       # React Native (Expo 54) mobile app
 ├── desktop/                      # Tauri 2 desktop app (Rust + TypeScript)
 ├── packages/
@@ -495,6 +611,7 @@ relate-mail/
 │   ├── docker-compose.yml       # Build locally (includes PostgreSQL)
 │   ├── docker-compose.ghcr.yml  # Use GHCR images
 │   └── .env.example             # Environment template
+├── CHANGELOG.md                  # Version history and release notes
 ├── CLAUDE.md                     # Project conventions and architecture guide
 ├── CODE_OF_CONDUCT.md            # Community code of conduct
 ├── CONTRIBUTING.md               # Contribution guidelines
@@ -509,26 +626,41 @@ relate-mail/
 **Backend:**
 - .NET 10.0 (ASP.NET Core, Worker Services)
 - Entity Framework Core with PostgreSQL
+- SignalR (real-time WebSocket communication)
 - BCrypt.Net-Next (password hashing)
-- SmtpServer library (SMTP protocol)
+- SmtpServer library 11.1.0 (SMTP protocol)
 - Custom POP3 implementation (RFC 1939)
 - Custom IMAP4rev2 implementation (RFC 9051)
-- MimeKit (email parsing)
+- MimeKit (email composition and parsing)
+- Web Push (VAPID-based browser notifications)
 
-**Frontend:**
-- React 19
-- TypeScript
+**Web Frontend:**
+- React 19 + TypeScript
 - Vite (build tool)
-- TanStack Router (routing)
-- TanStack Query (data fetching)
-- Tailwind CSS (styling)
+- TanStack Router (file-based routing)
+- TanStack Query (server state) + Jotai (client state)
+- Tailwind CSS 4.1 + CVA (component variants)
+- Radix UI (accessible primitives) + Lucide React (icons)
 - react-oidc-context (authentication)
+- MSW (API mocking in tests)
+
+**Mobile:**
+- React Native (Expo SDK 54)
+- Expo Router v4 (file-based routing)
+- TanStack Query + Zustand (state management)
+- NativeWind (Tailwind CSS for React Native)
+- Detox (E2E testing)
+
+**Desktop:**
+- Tauri 2 (Rust + TypeScript)
+- Native window management and credential storage
 
 **Infrastructure:**
-- Docker (multi-stage builds)
+- Docker (multi-stage builds, multi-platform amd64/arm64)
 - GitHub Actions (CI/CD)
 - GitHub Container Registry (image hosting)
 - nginx (web server)
+- CodeQL + OpenSSF Scorecard (security analysis)
 
 ## License
 

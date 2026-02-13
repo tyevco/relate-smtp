@@ -4,9 +4,9 @@ React Native mobile application for Relate Mail, built with Expo.
 
 ## Prerequisites
 
-- Node.js 20+
-- npm or yarn
-- Expo CLI (`npm install -g expo-cli`)
+- Node.js 22+
+- npm
+- Expo CLI (`npx expo`)
 - For iOS development: Xcode (macOS only)
 - For Android development: Android Studio with SDK
 
@@ -61,6 +61,9 @@ mobile/
 - **Email Management**: View inbox, sent mail, search emails
 - **Swipe Actions**: Swipe to delete or mark read/unread
 - **Real-time Updates**: SignalR integration for live email notifications
+- **Biometric Authentication**: Optional fingerprint/Face ID lock
+- **SSL Certificate Pinning**: Enhanced security for API connections
+- **API Key Rotation**: In-app key rotation with expiry notifications
 - **Responsive Design**: Works on phones, tablets, and desktop
 
 ## Tech Stack

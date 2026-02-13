@@ -4,7 +4,7 @@ A desktop email client for Relate Mail built with Tauri, React, and TypeScript.
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22+
 - Rust (latest stable)
 - Windows 10/11 (primary platform)
 - Tauri CLI prerequisites: https://tauri.app/v2/guides/getting-started/prerequisites
@@ -50,10 +50,14 @@ This creates:
 ## Features
 
 - **Email inbox** - View and manage received emails
+- **Compose & reply** - Full email composition with To/Cc/Bcc
 - **Keyboard shortcuts** - Ctrl+R (refresh), Delete (delete), Escape (back), / (search)
+- **System tray** - Minimize to tray with notification badges
+- **Desktop notifications** - Native OS notifications for new emails
 - **Dark mode** - Follows system preference
 - **Secure credential storage** - API keys stored in Windows Credential Manager
-- **Native window** - Native title bar and window controls
+- **Native window** - Native title bar and window controls with state persistence
+- **User preferences** - Theme, display density, and notification settings
 
 ## Architecture
 
