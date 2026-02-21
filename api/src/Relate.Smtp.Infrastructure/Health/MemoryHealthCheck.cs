@@ -12,11 +12,11 @@ public class MemoryHealthCheck : IHealthCheck
         HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var gcInfo = GC.GetGCMemoryInfo();
-        var process = Process.GetCurrentProcess();
+        using var process = Process.GetCurrentProcess();
 
-        var workingSet = process.WorkingSet64;
-        var heapSize = GC.GetTotalMemory(forceFullCollection: false);
-        var totalAvailable = gcInfo.TotalAvailableMemoryBytes;
+        long workingSet = process.WorkingSet64;
+        long heapSize = GC.GetTotalMemory(forceFullCollection: false);
+        long totalAvailable = gcInfo.TotalAvailableMemoryBytes;
 
         var data = new Dictionary<string, object>
         {

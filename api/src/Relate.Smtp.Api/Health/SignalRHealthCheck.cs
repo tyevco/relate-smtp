@@ -28,7 +28,9 @@ public class SignalRHealthCheck : IHealthCheck
             return Task.FromResult(HealthCheckResult.Healthy(
                 "SignalR EmailHub is available"));
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Health checks must report all failures as unhealthy
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             return Task.FromResult(HealthCheckResult.Unhealthy(
                 "Failed to resolve SignalR EmailHub", ex));

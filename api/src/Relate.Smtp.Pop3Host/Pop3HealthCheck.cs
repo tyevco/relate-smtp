@@ -40,7 +40,9 @@ public class Pop3HealthCheck : IHealthCheck
             return HealthCheckResult.Healthy(
                 $"POP3 server accepting connections on port {_options.Port}");
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Health checks must report all failures as unhealthy
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             return HealthCheckResult.Unhealthy(
                 $"POP3 server on port {_options.Port} is not responding", ex);

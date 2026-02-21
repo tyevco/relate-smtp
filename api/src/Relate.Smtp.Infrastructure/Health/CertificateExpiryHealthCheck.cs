@@ -73,7 +73,9 @@ public class CertificateExpiryHealthCheck : IHealthCheck
                 $"Certificate valid for {daysUntilExpiry:F0} days (expires {cert.NotAfter:d})",
                 data: data));
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Health checks must report all failures as unhealthy
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             return Task.FromResult(HealthCheckResult.Unhealthy(
                 $"Failed to load certificate from {_certificatePath}", ex));
