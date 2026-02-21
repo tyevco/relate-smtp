@@ -1,9 +1,15 @@
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Relate.Smtp.Infrastructure;
 using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.Pop3Host;
 using Relate.Smtp.Pop3Host.Handlers;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateSlimBuilder(args);
+
+// Configure health check endpoint URL (avoids port conflict with other services)
+var healthUrl = builder.Configuration["HealthCheck:Url"] ?? "http://localhost:8082";
+builder.WebHost.UseUrls(healthUrl);
 
 // Add infrastructure services (database + repositories)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -37,5 +43,29 @@ builder.Services.AddHostedService<Pop3ServerHostedService>();
 // Add OpenTelemetry
 builder.Services.AddRelateTelemetry(builder.Configuration, "relate-mail-pop3");
 
-var host = builder.Build();
-host.Run();
+var app = builder.Build();
+
+// Health check endpoint
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = new
+        {
+            status = report.Status.ToString(),
+            totalDuration = report.TotalDuration.TotalMilliseconds,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                duration = e.Value.Duration.TotalMilliseconds,
+                description = e.Value.Description,
+                exception = e.Value.Exception?.Message
+            })
+        };
+        await context.Response.WriteAsJsonAsync(result);
+    }
+});
+
+app.Run();
