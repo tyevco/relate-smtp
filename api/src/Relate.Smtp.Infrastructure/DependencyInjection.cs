@@ -17,6 +17,10 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString);
         });
 
+        // Health checks
+        services.AddHealthChecks()
+            .AddDbContextCheck<AppDbContext>(name: "database");
+
         services.AddScoped<IEmailRepository, EmailRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISmtpApiKeyRepository, SmtpApiKeyRepository>();

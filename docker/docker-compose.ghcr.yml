@@ -33,7 +33,7 @@ services:
       - relate-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/discovery || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -56,6 +56,7 @@ services:
       - Smtp__Mx__ValidateRecipients=${SMTP_MX_VALIDATE_RECIPIENTS:-true}
       - Api__BaseUrl=http://api:8080
       - Internal__ApiKey=${INTERNAL_API_KEY:-}
+      - HealthCheck__Url=http://+:8081
     ports:
       - "587:587"
       - "465:465"
@@ -64,7 +65,7 @@ services:
       - relate-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/587' || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8081/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -81,6 +82,7 @@ services:
       - Pop3__Port=110
       - Pop3__SecurePort=995
       - Pop3__RequireAuthentication=true
+      - HealthCheck__Url=http://+:8082
     ports:
       - "110:110"
       - "995:995"
@@ -88,7 +90,7 @@ services:
       - relate-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/110' || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8082/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -105,6 +107,7 @@ services:
       - Imap__Port=143
       - Imap__SecurePort=993
       - Imap__RequireAuthentication=true
+      - HealthCheck__Url=http://+:8083
     ports:
       - "143:143"
       - "993:993"
@@ -112,7 +115,7 @@ services:
       - relate-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '</dev/tcp/localhost/143' || exit 1"]
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8083/healthz || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

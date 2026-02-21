@@ -78,7 +78,8 @@ LABEL org.opencontainers.image.description="SMTP server for receiving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
 LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
-EXPOSE 25 587 465
+EXPOSE 25 587 465 8081
+ENV HealthCheck__Url=http://+:8081
 ENTRYPOINT ["dotnet", "Relate.Smtp.SmtpHost.dll"]
 
 # POP3 runtime image
@@ -96,7 +97,8 @@ LABEL org.opencontainers.image.description="POP3 server for retrieving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
 LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
-EXPOSE 110 995
+EXPOSE 110 995 8082
+ENV HealthCheck__Url=http://+:8082
 ENTRYPOINT ["dotnet", "Relate.Smtp.Pop3Host.dll"]
 
 # IMAP runtime image
@@ -114,5 +116,6 @@ LABEL org.opencontainers.image.description="IMAP server for retrieving emails"
 LABEL org.opencontainers.image.vendor="Relate Mail"
 LABEL org.opencontainers.image.source="https://github.com/four-robots/relate-mail"
 
-EXPOSE 143 993
+EXPOSE 143 993 8083
+ENV HealthCheck__Url=http://+:8083
 ENTRYPOINT ["dotnet", "Relate.Smtp.ImapHost.dll"]
