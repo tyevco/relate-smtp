@@ -25,6 +25,10 @@ if (string.IsNullOrEmpty(connectionString))
 }
 builder.Services.AddInfrastructure(connectionString);
 
+// Register POP3 protocol health check
+builder.Services.AddHealthChecks()
+    .AddCheck<Pop3HealthCheck>("pop3", tags: ["protocol"]);
+
 // Configure POP3 server options
 builder.Services.Configure<Pop3ServerOptions>(
     builder.Configuration.GetSection("Pop3"));
