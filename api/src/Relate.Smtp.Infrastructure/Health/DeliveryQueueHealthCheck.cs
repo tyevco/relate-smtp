@@ -67,7 +67,9 @@ public class DeliveryQueueHealthCheck : IHealthCheck
                 $"{queuedCount} emails queued, no stalled deliveries",
                 data: data);
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Health checks must report all failures as unhealthy
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             return HealthCheckResult.Unhealthy(
                 "Failed to query delivery queue status", ex);

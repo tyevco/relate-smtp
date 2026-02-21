@@ -40,7 +40,9 @@ public class ImapHealthCheck : IHealthCheck
             return HealthCheckResult.Healthy(
                 $"IMAP server accepting connections on port {_options.Port}");
         }
+#pragma warning disable CA1031 // Do not catch general exception types - Health checks must report all failures as unhealthy
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             return HealthCheckResult.Unhealthy(
                 $"IMAP server on port {_options.Port} is not responding", ex);
