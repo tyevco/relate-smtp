@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Relate.Smtp.Infrastructure;
+using Relate.Smtp.Infrastructure.Health;
 using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.ImapHost;
 using Relate.Smtp.ImapHost.Handlers;
@@ -41,6 +42,18 @@ builder.Services.AddScoped<ImapUserAuthenticator>();
 builder.Services.AddScoped<ImapCommandHandler>();
 builder.Services.AddScoped<ImapMessageManager>();
 
+// TLS certificate expiry health check
+builder.Services.AddHealthChecks()
+    .Add(new HealthCheckRegistration(
+        "certificate",
+        sp =>
+        {
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ImapServerOptions>>().Value;
+            return new CertificateExpiryHealthCheck(options.CertificatePath, options.CertificatePassword);
+        },
+        failureStatus: HealthStatus.Degraded,
+        tags: ["tls"]));
+
 // Register hosted service
 builder.Services.AddHostedService<ImapServerHostedService>();
 
@@ -65,7 +78,9 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions
                 status = e.Value.Status.ToString(),
                 duration = e.Value.Duration.TotalMilliseconds,
                 description = e.Value.Description,
-                exception = e.Value.Exception?.Message
+                exception = e.Value.Exception?.Message,
+                tags = e.Value.Tags,
+                data = e.Value.Data.Count > 0 ? e.Value.Data : null
             })
         };
         await context.Response.WriteAsJsonAsync(result);

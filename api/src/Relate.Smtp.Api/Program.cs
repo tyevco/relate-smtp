@@ -11,10 +11,12 @@ using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Relate.Smtp.Api.Authentication;
+using Relate.Smtp.Api.Health;
 using Relate.Smtp.Api.Hubs;
 using Relate.Smtp.Api.Services;
 using Relate.Smtp.Infrastructure;
 using Relate.Smtp.Infrastructure.Data;
+using Relate.Smtp.Infrastructure.Health;
 using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
 
@@ -35,6 +37,12 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 builder.Services.AddInfrastructure(connectionString);
+
+// API-specific health checks
+builder.Services.AddHealthChecks()
+    .AddCheck<SignalRHealthCheck>("signalr", tags: ["api"])
+    .AddCheck<DeliveryQueueHealthCheck>("delivery-queue", tags: ["api"]);
+
 builder.Services.AddScoped<UserProvisioningService>();
 builder.Services.AddScoped<SmtpCredentialService>();
 builder.Services.AddScoped<EmailFilterService>();
@@ -271,7 +279,9 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions
                 status = e.Value.Status.ToString(),
                 duration = e.Value.Duration.TotalMilliseconds,
                 description = e.Value.Description,
-                exception = e.Value.Exception?.Message
+                exception = e.Value.Exception?.Message,
+                tags = e.Value.Tags,
+                data = e.Value.Data.Count > 0 ? e.Value.Data : null
             })
         };
         await context.Response.WriteAsJsonAsync(result);

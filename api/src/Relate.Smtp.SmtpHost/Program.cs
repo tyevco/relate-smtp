@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Relate.Smtp.Infrastructure;
+using Relate.Smtp.Infrastructure.Health;
 using Relate.Smtp.Infrastructure.Services;
 using Relate.Smtp.Infrastructure.Telemetry;
 using Relate.Smtp.SmtpHost;
@@ -27,9 +28,10 @@ if (string.IsNullOrEmpty(connectionString))
 
 builder.Services.AddInfrastructure(connectionString);
 
-// Register SMTP protocol health check
+// Register SMTP-specific health checks
 builder.Services.AddHealthChecks()
-    .AddCheck<SmtpHealthCheck>("smtp", tags: ["protocol"]);
+    .AddCheck<SmtpHealthCheck>("smtp", tags: ["protocol"])
+    .AddCheck<DnsResolutionHealthCheck>("dns-mx", tags: ["smtp"]);
 
 // Configure HTTP client for notification service
 var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
@@ -48,6 +50,18 @@ builder.Services.AddHttpClient<IEmailNotificationService, HttpEmailNotificationS
 // Configure SMTP server options
 builder.Services.Configure<SmtpServerOptions>(
     builder.Configuration.GetSection("Smtp"));
+
+// TLS certificate expiry health check
+builder.Services.AddHealthChecks()
+    .Add(new HealthCheckRegistration(
+        "certificate",
+        sp =>
+        {
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<SmtpServerOptions>>().Value;
+            return new CertificateExpiryHealthCheck(options.CertificatePath, options.CertificatePassword);
+        },
+        failureStatus: HealthStatus.Degraded,
+        tags: ["tls"]));
 
 // Add SMTP server hosted service
 builder.Services.AddHostedService<SmtpServerHostedService>();
@@ -73,7 +87,9 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions
                 status = e.Value.Status.ToString(),
                 duration = e.Value.Duration.TotalMilliseconds,
                 description = e.Value.Description,
-                exception = e.Value.Exception?.Message
+                exception = e.Value.Exception?.Message,
+                tags = e.Value.Tags,
+                data = e.Value.Data.Count > 0 ? e.Value.Data : null
             })
         };
         await context.Response.WriteAsJsonAsync(result);

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Relate.Smtp.Core.Interfaces;
 using Relate.Smtp.Infrastructure.Data;
+using Relate.Smtp.Infrastructure.Health;
 using Relate.Smtp.Infrastructure.Repositories;
 using Relate.Smtp.Infrastructure.Services;
 
@@ -19,7 +20,10 @@ public static class DependencyInjection
 
         // Health checks
         services.AddHealthChecks()
-            .AddDbContextCheck<AppDbContext>(name: "database");
+            .AddDbContextCheck<AppDbContext>(name: "database")
+            .AddCheck<DiskSpaceHealthCheck>("disk-space", tags: ["system"])
+            .AddCheck<MemoryHealthCheck>("memory", tags: ["system"])
+            .AddCheck<ConnectionPoolHealthCheck>("connection-pool", tags: ["database"]);
 
         services.AddScoped<IEmailRepository, EmailRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
