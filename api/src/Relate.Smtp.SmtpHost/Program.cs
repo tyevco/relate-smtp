@@ -27,6 +27,10 @@ if (string.IsNullOrEmpty(connectionString))
 
 builder.Services.AddInfrastructure(connectionString);
 
+// Register SMTP protocol health check
+builder.Services.AddHealthChecks()
+    .AddCheck<SmtpHealthCheck>("smtp", tags: ["protocol"]);
+
 // Configure HTTP client for notification service
 var apiBaseUrl = builder.Configuration["Api:BaseUrl"] ?? "http://localhost:5000";
 var internalApiKey = builder.Configuration["Internal:ApiKey"];

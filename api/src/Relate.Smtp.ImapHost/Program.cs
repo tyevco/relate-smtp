@@ -25,6 +25,10 @@ if (string.IsNullOrEmpty(connectionString))
 }
 builder.Services.AddInfrastructure(connectionString);
 
+// Register IMAP protocol health check
+builder.Services.AddHealthChecks()
+    .AddCheck<ImapHealthCheck>("imap", tags: ["protocol"]);
+
 // Configure IMAP server options
 builder.Services.Configure<ImapServerOptions>(
     builder.Configuration.GetSection("Imap"));
