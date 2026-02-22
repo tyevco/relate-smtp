@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Relate.Smtp.Infrastructure;
 using Relate.Smtp.Infrastructure.Health;
@@ -88,3 +91,7 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions
 });
 
 app.Run();
+
+// Prevent CS0433 ambiguity: keep Program internal so test projects
+// only see the API's public Program for WebApplicationFactory<Program>.
+internal partial class Program;
