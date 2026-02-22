@@ -29,7 +29,7 @@ public class SmtpHealthCheck : IHealthCheck
             using var writer = new StreamWriter(stream) { AutoFlush = true };
 
             var greeting = await reader.ReadLineAsync(cts.Token);
-            if (greeting == null || !greeting.StartsWith("220"))
+            if (greeting == null || !greeting.StartsWith("220", StringComparison.Ordinal))
             {
                 return HealthCheckResult.Unhealthy(
                     $"SMTP server on port {_options.Port} returned unexpected greeting: {greeting}");
