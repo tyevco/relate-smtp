@@ -29,7 +29,7 @@ public class ImapHealthCheck : IHealthCheck
             using var writer = new StreamWriter(stream) { AutoFlush = true };
 
             var greeting = await reader.ReadLineAsync(cts.Token);
-            if (greeting == null || !greeting.StartsWith("* OK"))
+            if (greeting == null || !greeting.StartsWith("* OK", StringComparison.Ordinal))
             {
                 return HealthCheckResult.Unhealthy(
                     $"IMAP server on port {_options.Port} returned unexpected greeting: {greeting}");
