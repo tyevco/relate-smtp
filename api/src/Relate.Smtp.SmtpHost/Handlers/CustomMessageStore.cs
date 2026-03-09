@@ -114,7 +114,7 @@ public class CustomMessageStore : MessageStore
             // Add attachments
             foreach (var attachment in message.Attachments)
             {
-                if (attachment is MimePart mimePart)
+                if (attachment is MimePart mimePart && mimePart.Content is not null)
                 {
                     using var attachmentStream = new MemoryStream();
                     await mimePart.Content.DecodeToAsync(attachmentStream, cancellationToken);

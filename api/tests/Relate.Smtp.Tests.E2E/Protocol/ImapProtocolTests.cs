@@ -145,7 +145,7 @@ public class ImapProtocolTests : IAsyncLifetime
         // Assert
         message.ShouldNotBeNull();
         message.Subject.ShouldBe("IMAP Test Email");
-        message.TextBody.ShouldContain("email body for IMAP retrieval");
+        message.TextBody!.ShouldContain("email body for IMAP retrieval");
 
         await client.DisconnectAsync(true);
     }
