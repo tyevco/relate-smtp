@@ -26,7 +26,7 @@
 		<PackageReference Include="Shouldly" Version="4.3.0" />
 
 		<!-- Protocol Testing -->
-		<PackageReference Include="MailKit" Version="4.14.1" />
+		<PackageReference Include="MailKit" Version="4.15.1" />
 
 		<!-- ASP.NET Core Testing -->
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.2" />
