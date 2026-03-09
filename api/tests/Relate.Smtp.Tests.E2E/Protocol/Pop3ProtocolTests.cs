@@ -118,7 +118,7 @@ public class Pop3ProtocolTests : IAsyncLifetime
         // Assert
         message.ShouldNotBeNull();
         message.Subject.ShouldBe("POP3 Test Email");
-        message.TextBody.ShouldContain("email body for POP3 retrieval");
+        message.TextBody!.ShouldContain("email body for POP3 retrieval");
 
         await client.DisconnectAsync(true);
     }
