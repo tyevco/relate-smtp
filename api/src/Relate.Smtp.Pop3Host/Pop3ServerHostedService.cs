@@ -93,6 +93,16 @@ public class Pop3ServerHostedService : BackgroundService
             {
                 break;
             }
+            catch (InvalidOperationException)
+            {
+                // Listener was stopped (e.g. during shutdown) — exit gracefully
+                break;
+            }
+            catch (SocketException) when (ct.IsCancellationRequested)
+            {
+                // Listener was torn down during shutdown — exit gracefully
+                break;
+            }
 #pragma warning disable CA1031 // Do not catch general exception types - Accept loop must continue on errors
             catch (Exception ex)
 #pragma warning restore CA1031
