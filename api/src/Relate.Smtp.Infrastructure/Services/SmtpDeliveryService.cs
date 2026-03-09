@@ -263,10 +263,11 @@ public class SmtpDeliveryService
     private static MimeMessage CloneMessageForRecipients(MimeMessage original, List<OutboundRecipient> recipients)
     {
         var message = new MimeMessage();
-        message.MessageId = original.MessageId;
+        if (original.MessageId is not null)
+            message.MessageId = original.MessageId;
         foreach (var from in original.From)
             message.From.Add(from);
-        message.Subject = original.Subject;
+        message.Subject = original.Subject ?? string.Empty;
         message.Date = original.Date;
 
         if (!string.IsNullOrEmpty(original.InReplyTo))
