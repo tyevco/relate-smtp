@@ -55,7 +55,7 @@ A full-page email detail view accessed at `/emails/:id`. Useful for deep-linking
 - Action buttons: Reply, Reply All, Forward, Delete
 
 ::: info Screenshot
-![Screenshot: Email detail](./screenshots/web-email-detail.png)
+**[Screenshot placeholder: Email detail]**
 
 _TODO: Add screenshot of the full-page email detail view_
 :::
@@ -81,7 +81,7 @@ The email composition form for writing new messages, replies, and forwards.
 - Send and Save as Draft actions
 
 ::: info Screenshot
-![Screenshot: Compose form](./screenshots/web-compose.png)
+**[Screenshot placeholder: Compose form]**
 
 _TODO: Add screenshot of the compose form with recipient fields expanded_
 :::

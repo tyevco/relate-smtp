@@ -85,7 +85,7 @@ npm run dev:web
 The Vite dev server starts on **http://localhost:5492** and automatically proxies `/api` requests to `http://localhost:5000` (the REST API). Open a browser and navigate to `http://localhost:5492` to see the web interface.
 
 ::: info Screenshot
-![Screenshot: Web app inbox view](./screenshots/dev-web-inbox.png)
+**[Screenshot placeholder: Web app inbox view]**
 
 _TODO: Add screenshot of the web app running in development mode_
 :::

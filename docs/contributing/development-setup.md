@@ -160,7 +160,7 @@ The Vite dev server starts on `http://localhost:5492` and proxies `/api` request
 Open `http://localhost:5492` in your browser. You should see the Relate Mail web interface.
 
 ::: info Screenshot
-![Screenshot: Development environment](./screenshots/dev-environment.png)
+**[Screenshot placeholder: Development environment]**
 
 _TODO: Add screenshot of the Relate Mail web interface running in development mode_
 :::

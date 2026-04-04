@@ -124,7 +124,7 @@ These screens are pushed onto the main stack (not tabs):
 - **`security.tsx`** -- Toggle biometric authentication, view certificate pinning status.
 
 ::: info Screenshot
-![Screenshot: Mobile tab navigation](./screenshots/mobile-tabs.png)
+**[Screenshot placeholder: Mobile tab navigation]**
 
 _TODO: Add screenshot of the bottom tab navigation showing inbox, sent, and settings tabs_
 :::

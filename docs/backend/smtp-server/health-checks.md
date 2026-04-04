@@ -232,7 +232,7 @@ Health check results are included in the OpenTelemetry metrics pipeline. You can
 - **database check unhealthy** -- PostgreSQL is unreachable
 
 ::: info Screenshot
-![Screenshot: Health check dashboard](./screenshots/smtp-health-dashboard.png)
+**[Screenshot placeholder: Health check dashboard]**
 
 _TODO: Add screenshot of a Grafana dashboard showing SMTP health check metrics over time_
 :::

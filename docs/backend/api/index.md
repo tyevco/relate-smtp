@@ -112,7 +112,7 @@ The API listens on port **5000** (HTTP) by default. In the Docker deployment, it
 The Vite development server proxies `/api` requests to `http://localhost:5000`, so during development the web frontend and API appear to share the same origin.
 
 ::: info Screenshot
-![Screenshot: API health check response](./screenshots/api-healthz.png)
+**[Screenshot placeholder: API health check response]**
 
 _TODO: Add screenshot of the /healthz endpoint JSON response_
 :::

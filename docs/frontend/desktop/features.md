@@ -17,7 +17,7 @@ The app creates a system tray icon with a context menu on launch.
 **Minimize to tray:** When enabled in settings, closing the window hides it to the system tray instead of quitting the app. The window can be restored by clicking the tray icon or selecting "Inbox" from the tray menu. This is controlled by the `minimize_to_tray` setting and handled in the Rust backend's window close event handler.
 
 ::: info Screenshot
-![Screenshot: System tray](./screenshots/desktop-tray.png)
+**[Screenshot placeholder: System tray]**
 
 _TODO: Add screenshot of the system tray icon with its context menu and unread badge_
 :::

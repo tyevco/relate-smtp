@@ -3,7 +3,7 @@
 Relate Mail is composed of four backend services and three frontend clients, all sharing a single PostgreSQL database. This page describes the high-level design, the reasoning behind key architectural decisions, and how the components communicate.
 
 ::: info Screenshot
-![Screenshot: Architecture diagram](./screenshots/architecture-diagram.png)
+**[Screenshot placeholder: Architecture diagram]**
 
 _TODO: Add screenshot of high-level architecture diagram showing backend services, database, and clients_
 :::

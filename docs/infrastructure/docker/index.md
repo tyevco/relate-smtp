@@ -99,7 +99,7 @@ docker compose up --build -d
 This uses the multi-stage Dockerfile at `api/Dockerfile` to build all four images. See [Dockerfile Reference](./dockerfile) for details on the build stages.
 
 ::: info Screenshot
-![Screenshot: Docker services running](./screenshots/docker-services.png)
+**[Screenshot placeholder: Docker services running]**
 
 _TODO: Add screenshot of Docker services running in a terminal or Docker Desktop_
 :::

@@ -3,7 +3,7 @@
 The Core layer defines 18 entities that model the email domain. This page documents each entity, its fields, relationships, and enumerations.
 
 ::: info Screenshot
-![Screenshot: Entity Relationship Diagram](./screenshots/entity-relationship-diagram.png)
+**[Screenshot placeholder: Entity Relationship Diagram]**
 
 _TODO: Add screenshot of entity relationship diagram showing all entities and their connections_
 :::
