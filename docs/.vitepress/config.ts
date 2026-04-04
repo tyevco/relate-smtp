@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Relate Mail',
   description: 'Documentation for the Relate Mail full-stack email platform',
-  base: '/',
+  base: '/relate-mail/',
   ignoreDeadLinks: [
     /^https?:\/\/localhost/,
   ],
