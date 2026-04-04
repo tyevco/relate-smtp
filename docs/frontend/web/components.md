@@ -105,7 +105,7 @@ A form dialog for creating and editing email filter rules. Includes:
 - **Label selector** for the "assign label" action
 
 ::: info Screenshot
-![Screenshot: Filter builder](./screenshots/web-filter-builder.png)
+**[Screenshot placeholder: Filter builder]**
 
 _TODO: Add screenshot of the filter builder dialog with conditions and actions filled in_
 :::

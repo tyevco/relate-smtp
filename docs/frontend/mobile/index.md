@@ -93,7 +93,7 @@ npm run build:android   # EAS cloud build for Android
 ```
 
 ::: info Screenshot
-![Screenshot: Mobile inbox](./screenshots/mobile-inbox.png)
+**[Screenshot placeholder: Mobile inbox]**
 
 _TODO: Add screenshot of the mobile inbox view showing the email list with swipe actions and account switcher_
 :::

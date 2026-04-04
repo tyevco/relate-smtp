@@ -47,7 +47,7 @@ This pulls and starts five containers:
 The API container automatically runs database migrations on startup.
 
 ::: info Screenshot
-![Screenshot: Docker services running](./screenshots/docker-services.png)
+**[Screenshot placeholder: Docker services running]**
 
 _TODO: Add screenshot of `docker compose ps` showing all services healthy_
 :::

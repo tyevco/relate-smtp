@@ -95,7 +95,7 @@ The Expo config plugin modifies the native project configuration during `expo pr
 Certificate pins are configured per server domain and must be updated when server certificates are rotated.
 
 ::: info Screenshot
-![Screenshot: Biometric authentication](./screenshots/mobile-biometric.png)
+**[Screenshot placeholder: Biometric authentication]**
 
 _TODO: Add screenshot of the biometric authentication lock screen with Face ID/Touch ID prompt_
 :::

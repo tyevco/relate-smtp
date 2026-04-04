@@ -3,7 +3,7 @@
 The web application uses SignalR to receive real-time push notifications from the backend. When new emails arrive, existing emails are updated, or delivery statuses change, the server pushes events to connected clients through a WebSocket connection. This eliminates the need for polling and provides instant UI updates.
 
 ::: info Screenshot
-![Screenshot: Real-time update](./screenshots/signalr-realtime.png)
+**[Screenshot placeholder: Real-time update]**
 
 _TODO: Add screenshot showing a new email appearing in the inbox in real time_
 :::

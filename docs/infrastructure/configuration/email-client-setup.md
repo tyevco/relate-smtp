@@ -76,7 +76,7 @@ Thunderbird is a free, open-source email client available for Windows, macOS, an
 If you prefer STARTTLS over implicit TLS, use port 143 for IMAP and port 587 for SMTP, and select "STARTTLS" as the connection security.
 
 ::: info Screenshot
-![Screenshot: Thunderbird account setup](./screenshots/email-client-thunderbird.png)
+**[Screenshot placeholder: Thunderbird account setup]**
 
 _TODO: Add screenshot of Thunderbird manual account configuration dialog_
 :::

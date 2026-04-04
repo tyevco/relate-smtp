@@ -4,6 +4,9 @@ export default defineConfig({
   title: 'Relate Mail',
   description: 'Documentation for the Relate Mail full-stack email platform',
   base: '/',
+  ignoreDeadLinks: [
+    /^https?:\/\/localhost/,
+  ],
 
   head: [
     ['link', { rel: 'icon', href: '/logo.svg' }],

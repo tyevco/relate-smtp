@@ -105,7 +105,7 @@ This starts the Vite dev server for the frontend and the Tauri development windo
 For production builds and platform-specific packaging, see [Building](./building.md).
 
 ::: info Screenshot
-![Screenshot: Desktop window](./screenshots/desktop-window.png)
+**[Screenshot placeholder: Desktop window]**
 
 _TODO: Add screenshot of the desktop application window showing the main email interface_
 :::

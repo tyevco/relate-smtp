@@ -163,7 +163,7 @@ The SignalR connection authenticates using the same token as the REST API:
 - **API key** -- can also be used, though this is primarily for protocol host connections
 
 ::: info Screenshot
-![Screenshot: Real-time notification flow](./screenshots/signalr-notification-flow.png)
+**[Screenshot placeholder: Real-time notification flow]**
 
 _TODO: Add screenshot of the browser DevTools showing SignalR WebSocket messages_
 :::

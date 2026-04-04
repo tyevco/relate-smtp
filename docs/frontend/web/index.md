@@ -3,7 +3,7 @@
 The Relate Mail web application is a single-page app built with React 19, TypeScript, and Vite 7.3. It provides a full-featured email client in the browser with real-time updates, composing and sending mail, label and filter management, and user preferences.
 
 ::: info Screenshot
-![Screenshot: Inbox view](./screenshots/web-inbox.png)
+**[Screenshot placeholder: Inbox view]**
 
 _TODO: Add screenshot of the inbox view showing the email list, search bar, and detail panel_
 :::
