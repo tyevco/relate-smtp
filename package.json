@@ -4,7 +4,8 @@
   "workspaces": [
     "packages/*",
     "web",
-    "desktop"
+    "desktop",
+    "docs"
   ],
   "scripts": {
     "dev:web": "npm run dev -w web",
@@ -13,7 +14,10 @@
     "build:desktop": "npm run tauri:build -w desktop",
     "build:shared": "npm run build -w @relate/shared",
     "lint": "npm run lint -w web",
-    "test": "npm run test -w web"
+    "test": "npm run test -w web",
+    "docs:dev": "npm run dev -w @relate/docs",
+    "docs:build": "npm run build -w @relate/docs",
+    "docs:preview": "npm run preview -w @relate/docs"
   },
   "engines": {
     "node": ">=20.0.0"
