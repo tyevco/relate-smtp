@@ -59,7 +59,8 @@ npm run build            # Production build (tsc + vite)
 npm run lint             # ESLint
 npm run test:run         # Vitest unit tests (single run)
 npm run test             # Vitest watch mode
-npm run test:coverage    # Coverage report (thresholds: 50%/45% branches)
+npm run test:coverage    # Coverage report (thresholds: 60%/55% branches)
+npx vitest run src/path/to/file.test.ts  # Run a single test file
 npm run test:e2e         # Playwright E2E (requires running dev server)
 ```
 
@@ -69,7 +70,7 @@ npm run test:e2e         # Playwright E2E (requires running dev server)
 cd mobile
 npm start                # Expo dev server
 npm test                 # Jest unit tests
-npm run test:coverage    # Coverage (thresholds: 50%/40% branches)
+npm run test:coverage    # Coverage with thresholds
 npm run test:e2e:ios     # Detox E2E on iOS simulator
 npm run test:e2e:android # Detox E2E on Android emulator
 ```
@@ -104,6 +105,7 @@ api/src/
 - `ApiKeyAuthenticationHandler` handles Bearer/ApiKey token validation
 - SignalR hub at `/hubs/email` for real-time notifications; SMTP/POP3/IMAP hosts notify via HTTP
 - Auto-migration on startup in development mode
+- Test projects: `Tests.Unit`, `Tests.Integration`, `Tests.E2E`, `Tests.Common` (shared fixtures)
 - Test categories use `[Trait("Category", "Unit|Integration|E2E")]`; E2E uses `FullStackFixture` with Testcontainers
 
 **API Controllers:**
@@ -171,6 +173,18 @@ Backend uses `appsettings.json` + environment variable overrides. Key settings:
 - `{Protocol}__ServerName`, `{Protocol}__Port`, `{Protocol}__SecurePort` — server binding
 
 Frontend uses `VITE_API_URL` (defaults to `/api`), `VITE_OIDC_AUTHORITY`, `VITE_OIDC_CLIENT_ID`.
+
+Additional backend settings (see `docker/.env.example`):
+- `CORS_ALLOWED_ORIGINS` — Comma-separated allowed origins for CORS
+- `INTERNAL_API_KEY` — Pre-shared key for service-to-service calls (SMTP/POP3/IMAP → API)
+
+## Conventions
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/):
+- Format: `type(scope): description`
+- Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `perf`
+- Scopes: `api`, `web`, `mobile`, `desktop`, `shared`, `docker`, `ci`, `deps`
+- Branch naming: `feat/`, `fix/`, `docs/`, `refactor/`, `test/`, `chore/` prefixes
 
 ## CI/CD
 
