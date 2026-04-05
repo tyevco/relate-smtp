@@ -16,17 +16,24 @@ RUN npm ci && npm run build:web
 FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:f061e5a7532b36fa1d1b684857fe1f504ba92115b9934f154643266613c44c62 AS build
 WORKDIR /src
 
-# Copy csproj files and restore
+# Copy Directory.Build.props, csproj files, and lock files for restore
+COPY api/Directory.Build.props api/Directory.Build.props
 COPY api/src/Relate.Smtp.Core/Relate.Smtp.Core.csproj api/src/Relate.Smtp.Core/
 COPY api/src/Relate.Smtp.Infrastructure/Relate.Smtp.Infrastructure.csproj api/src/Relate.Smtp.Infrastructure/
 COPY api/src/Relate.Smtp.Api/Relate.Smtp.Api.csproj api/src/Relate.Smtp.Api/
 COPY api/src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj api/src/Relate.Smtp.SmtpHost/
 COPY api/src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj api/src/Relate.Smtp.Pop3Host/
 COPY api/src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj api/src/Relate.Smtp.ImapHost/
-RUN dotnet restore api/src/Relate.Smtp.Api/Relate.Smtp.Api.csproj
-RUN dotnet restore api/src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj
-RUN dotnet restore api/src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj
-RUN dotnet restore api/src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj
+COPY api/src/Relate.Smtp.Core/packages.lock.json api/src/Relate.Smtp.Core/
+COPY api/src/Relate.Smtp.Infrastructure/packages.lock.json api/src/Relate.Smtp.Infrastructure/
+COPY api/src/Relate.Smtp.Api/packages.lock.json api/src/Relate.Smtp.Api/
+COPY api/src/Relate.Smtp.SmtpHost/packages.lock.json api/src/Relate.Smtp.SmtpHost/
+COPY api/src/Relate.Smtp.Pop3Host/packages.lock.json api/src/Relate.Smtp.Pop3Host/
+COPY api/src/Relate.Smtp.ImapHost/packages.lock.json api/src/Relate.Smtp.ImapHost/
+RUN dotnet restore --locked-mode api/src/Relate.Smtp.Api/Relate.Smtp.Api.csproj
+RUN dotnet restore --locked-mode api/src/Relate.Smtp.SmtpHost/Relate.Smtp.SmtpHost.csproj
+RUN dotnet restore --locked-mode api/src/Relate.Smtp.Pop3Host/Relate.Smtp.Pop3Host.csproj
+RUN dotnet restore --locked-mode api/src/Relate.Smtp.ImapHost/Relate.Smtp.ImapHost.csproj
 
 # Copy backend sources
 COPY api api/
