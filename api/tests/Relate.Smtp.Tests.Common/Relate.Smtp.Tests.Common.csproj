@@ -32,7 +32,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.2" />
 
 		<!-- Protocol Testing -->
-		<PackageReference Include="MailKit" Version="4.15.1" />
+		<PackageReference Include="MailKit" Version="4.16.0" />
 	</ItemGroup>
 
 	<ItemGroup>
